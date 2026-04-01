@@ -2,14 +2,38 @@
   "name": "dastify-digital",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20 <23"
+  },
   "scripts": {
+    "predev": "npm run db:migrate",
     "dev": "next dev",
+    "dev:node22": "npm run db:migrate && npx -y node@22 ./node_modules/next/dist/bin/next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "payload": "payload",
+    "payload:node22": "npx -y node@22 ./node_modules/.bin/payload",
+    "payload:types": "npm run payload:node22 -- generate:types",
+    "payload:importmap": "npm run payload:node22 -- generate:importmap",
+    "seed:homepage": "node --import tsx ./scripts/seed-homepage.ts",
+    "seed:homepage:node22": "npx -y node@22 --import tsx ./scripts/seed-homepage.ts",
+    "db:migrate": "node --import tsx ./scripts/db-migrate.ts",
+    "db:backup": "node --import tsx ./scripts/db-backup.ts",
+    "db:restore": "node --import tsx ./scripts/db-restore.ts",
+    "db:migrate:safe": "npm run db:backup -- --label pre-migrate && npm run db:migrate",
+    "db:fix-homepage-schema": "node --import tsx ./scripts/fix-homepage-schema.ts",
+    "seed:homepage:safe": "npm run db:backup -- --label pre-seed && npm run seed:homepage",
+    "sync:homepage-media:safe": "npm run db:backup -- --label pre-sync-media && npm run sync:homepage-media",
+    "smoke": "npx -y node@22 --import tsx ./scripts/smoke.ts",
+    "sync:homepage-media": "node --import tsx ./scripts/sync-homepage-media.ts"
   },
   "dependencies": {
+    "@payloadcms/db-sqlite": "^3.81.0",
+    "@payloadcms/next": "^3.81.0",
+    "@payloadcms/richtext-lexical": "^3.81.0",
     "next": "16.2.2",
+    "payload": "^3.81.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

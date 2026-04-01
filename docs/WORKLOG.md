@@ -1,0 +1,290 @@
+# Dastify Digital Work Log
+
+This file tracks implementation progress and upcoming tasks for the repo.
+
+## Progress
+- [x] ~~Phase 1: Pixel-perfect Next.js replica from `dastify-final_15.html`~~
+- [x] Phase 2: Payload CMS scaffold and homepage connection
+
+## Phase 2 Completed
+- Installed Payload v3 packages (`payload`, `@payloadcms/next`, `@payloadcms/db-sqlite`, `@payloadcms/richtext-lexical`).
+- Added Payload config and local SQLite adapter in `payload.config.ts`.
+- Added `users` auth collection for admin access.
+- Added `homepage` global with a JSON `content` field seeded by `homepageContent`.
+- Added Payload admin route at `/admin`.
+- Added Payload REST API route at `/api/*`.
+- Connected Next.js homepage data source to Payload (`getHomepageContent`) with fallback to local static content.
+- Enabled Payload Next integration in `next.config.ts` using `withPayload`.
+- Added scripts: `payload`, `payload:types`, `payload:importmap`.
+- Fixed Payload admin routing/layout integration for Next.js App Router:
+  - Split app into route groups so site and payload use separate root layouts.
+  - Removed nested `<html>/<body>` hydration conflict in admin layout path.
+  - Fixed `/admin` dashboard 404 by preserving optional catch-all params.
+  - Fixed runtime import map error (`CollectionCards` undefined) by using generated `src/app/(payload)/admin/importMap.js` in both Payload root layout and admin page.
+- Added runtime storage self-heal for `homepage` global:
+  - Added originally to unblock local development while migrations were unavailable.
+  - Later removed in favor of adapter-managed schema sync and deterministic DB pathing.
+- Added role-based access controls:
+  - `users` collection now has a required `role` (`admin` / `editor`).
+  - `homepage` global update access is restricted to `admin` and `editor`.
+- Implemented structured Payload editor model for homepage:
+  - `src/payload/globals/Homepage.ts` now exposes section-by-section editable tabs/groups/arrays
+    (`nav`, `hero`, `brandAcronym`, `about`, `features`, `caseStudies`, `services`, `mission`, `insights`, `faq`, `cta`, `footer`).
+  - Kept backward compatibility by preserving hidden legacy `content` JSON and syncing it in `beforeValidate`.
+  - Frontend read path remains stable via `resolveHomepageContent(...)`.
+- Fixed critical save regression after structured schema rollout:
+  - Root cause: `resolveHomepageContent` accepted empty `caseStudies.main` object from structured DB rows and propagated missing required fields.
+  - Fix: added deep normalizer for `caseStudies.main` in `src/lib/resolve-homepage-content.ts` so partial/empty nested objects fallback to defaults safely.
+  - Restoration: reseeded original homepage JSON source with `npm run seed:homepage`.
+- Fixed admin 404 crash (`Cannot create property 'id' on string 'Healthcare SEO'`):
+  - Root cause: structured array UI fields received string arrays (e.g. `hero.marquee`) during global hooks, but Payload array rows require object items.
+  - Fix in `src/payload/globals/Homepage.ts`:
+    - added `toAdminShape(...)` mapper for UI arrays (`marquee`, `paragraphs`, `titleLines`, `checks`) to always be `{ text }[]`.
+    - `beforeRead` and `beforeValidate` now write structured admin-safe shape + canonical `content`.
+    - removed per-field `beforeValidate` array-to-string hooks that were causing shape conflicts.
+  - Recovered content via `npm run seed:homepage`.
+- Fixed save persistence rejection (`The following field is invalid: Content`):
+  - Root cause: `caseStudies.tabs` array item `id` coming from Payload row IDs may be numeric, while validator only accepted string IDs.
+  - Fixes:
+    - `src/lib/validate-homepage-content.ts`: `validateIdLabelItems` now accepts string or number `id`.
+    - `src/lib/resolve-homepage-content.ts`: added `normalizeCaseTabs(...)` to coerce tab IDs into stable strings for canonical JSON.
+  - Re-seeded baseline content after schema hardening.
+- Stabilized admin saves by removing hidden `content` field as a hard validation gate:
+  - `src/payload/globals/Homepage.ts`: hidden `content` JSON is now system-maintained only (no required/validate enforcement).
+  - Rationale: structured fields are the editor contract; hidden canonical JSON should never block user saves.
+- Applied explicit DB schema patch to existing local SQLite:
+  - Added missing `users.role` column (`TEXT NOT NULL DEFAULT 'admin'`) to resolve `/admin/login` query error.
+  - Verified first user row now has role `admin`.
+- Pinned Node runtime for team consistency:
+  - Added `.nvmrc` (`22`).
+  - Added `package.json` `engines.node` (`>=20 <23`).
+- Added homepage JSON contract validation in Payload:
+  - New helper `src/lib/validate-homepage-content.ts`.
+  - Wired to `Homepage` global `content` field validation.
+- Added dedicated homepage seeding script:
+  - `scripts/seed-homepage.ts` seeds/upserts `homepage.content` directly in SQLite and uses an absolute DB path fallback for consistency.
+- Added one-shot schema repair for legacy homepage table:
+  - `scripts/fix-homepage-schema.ts`
+  - `npm run db:fix-homepage-schema`
+  - Purpose: patch old JSON-only `homepage` table by adding new structured columns expected by Payload (`nav_logo`, etc.) without resetting users/auth tables.
+- Hardened local DB consistency:
+  - Switched SQLite default URL to absolute path in `payload.config.ts` (`file:${path.resolve(dirname, 'payload.db')}`).
+  - Removed custom SQL storage patching from:
+    - `src/app/(payload)/layout.tsx`
+    - `src/app/api/[...slug]/route.ts`
+    - `src/lib/payload.ts`
+    - deleted `src/lib/ensure-homepage-global-storage.ts`
+- Added Node-22-safe scripts for Payload tooling:
+  - `npm run dev:node22`
+  - `npm run payload:node22`
+  - `npm run seed:homepage:node22`
+- Added resolver layer to support future migration from legacy JSON global shape to sectioned shape without breaking frontend reads:
+  - `src/lib/resolve-homepage-content.ts`
+  - wired in `src/lib/get-homepage-content.ts`
+- Added media upload collection scaffold:
+  - `src/payload/collections/Media.ts`
+  - registered in `payload.config.ts` (`collections: [Users, Media]`)
+  - added optional upload relation fields (`imageMedia`) across homepage image-bearing sections.
+- Added bulk media sync + linking script:
+  - `scripts/sync-homepage-media.ts`
+  - command: `npm run sync:homepage-media`
+  - Copies files from `public/images` to `public/media`, creates/updates `media` records, and injects `imageMedia` refs in canonical `homepage.content`.
+  - Verified: `media_count=20`, and content JSON now includes values like `/media/hero-image.webp`.
+- Switched homepage admin image editing to relation-first UX:
+  - In `src/payload/globals/Homepage.ts`, legacy string `image` text fields are now hidden in admin UI (kept in schema for backward compatibility).
+  - Editors now interact with `imageMedia` upload fields, while runtime still falls back to legacy `image` paths when needed.
+- Enabled homepage versioning / drafts / autosave:
+  - `src/payload/globals/Homepage.ts` now has `versions` config:
+    - `max: 50`
+    - `drafts.autosave.interval: 1200`
+    - `drafts.showSaveDraftButton: true`
+    - `drafts.schedulePublish: true`
+    - `drafts.validate: false`
+
+## Current Source of Truth
+- Primary runtime source: Payload global `homepage.content`.
+- Fallback source (if CMS is unavailable): `src/lib/homepage-content.ts`.
+
+## Notes
+- Payload + Next in this repo is stable on Node `20.x/22.x`; Node `25.x` caused repeated CLI/runtime incompatibilities (`ERR_REQUIRE_ASYNC_MODULE`, env loader failures). Use `.nvmrc` and run under Node 22 for all admin/schema tasks.
+- Verified locally via HTTP checks:
+  - `GET /admin` returns `200`
+  - `GET /admin/globals/homepage` returns `200`
+- April 1, 2026 stability fix:
+  - Removed `defaultValue: homepageContent` from hidden `content` JSON field in `src/payload/globals/Homepage.ts`.
+  - Reason: Payload attempted to materialize that full JSON as SQL default for `_homepage_v.version_content`, causing SQL syntax errors (`near "s"`) due to embedded apostrophes.
+  - Expanded `scripts/fix-homepage-schema.ts` to backfill all currently expected drift columns:
+    - `homepage`: `_status`, `hero_image_media_id`, `about_image_media_id`, `case_studies_main_image_media_id`, `mission_image_media_id` (plus existing structured fields safeguard).
+    - arrays: `homepage_features_cards.image_media_id`, `homepage_case_studies_minis.image_media_id`, `homepage_services_items.image_media_id`, `homepage_insights_items.image_media_id`.
+  - Validation:
+    - `npm run db:fix-homepage-schema` completed (`added_columns=9`).
+    - `npm run build` passed.
+- April 1, 2026 follow-up lock-table fix:
+  - Error observed in admin lock check query: `payload_locked_documents_rels.media_id` missing.
+  - Updated `scripts/fix-homepage-schema.ts` to backfill `payload_locked_documents_rels.media_id`.
+  - Re-ran `npm run db:fix-homepage-schema` (`added_columns=1`).
+- April 2, 2026 media edit/display fix:
+  - Fixed resolver priority in `src/lib/resolve-homepage-content.ts`:
+    - Prefer structured global sections over `content` JSON when both exist.
+    - This ensures relation-based media (`imageMedia`) chosen in admin is used on the landing page.
+  - Fixed destructive admin hook behavior in `src/payload/globals/Homepage.ts`:
+    - `beforeRead` and `beforeValidate` no longer rewrite structured section payloads for modern docs.
+    - This prevents dropping relation fields (especially nested array item `imageMedia`) that caused blank image fields in admin and ignored frontend image updates.
+  - Validation:
+    - `npm run build` passed.
+    - `npm run lint` passed with existing image optimization warnings only (no errors).
+- April 2, 2026 save validation follow-up:
+  - Fixed required section ID validation failures during full save (`POST /api/globals/homepage?depth=0 400` with missing `... > Id` fields).
+  - Added `withRequiredSectionIds(...)` in `src/payload/globals/Homepage.ts` and applied it in `beforeValidate` for structured payloads.
+  - This preserves media edits while guaranteeing required IDs:
+    - `hero.id`, `brandAcronym.id`, `about.id`, `caseStudies.id`, `services.id`, `insights.id`, `faq.id`.
+  - Validation: `npm run build` passed.
+- April 2, 2026 dev stability automation:
+  - Added automatic schema backfill on startup:
+    - `package.json` `predev`: `npm run db:fix-homepage-schema`
+    - `dev:node22` now also runs schema fix before starting Next.
+  - Added operator guide for CMS editing:
+    - `docs/HOMEPAGE_EDITOR_GUIDE.md`
+    - Covers text edits, image edits via `imageMedia`, required `Alt`, and failure runbook.
+  - Validation:
+    - `npm run build` passed.
+    - `npm run lint` passed (warnings only, no errors).
+    - Verified `predev` executes on `npm run dev`.
+- April 2, 2026 Payload CLI generation compatibility fix:
+  - Root cause: `@payloadcms/richtext-lexical` import in `payload.config.ts` pulled Lexical node modules with top-level await, while Payload CLI loaded config via `require()`, causing `ERR_REQUIRE_ASYNC_MODULE`.
+  - Fix:
+    - Removed explicit `editor: lexicalEditor()` from `payload.config.ts` (not needed for current schema fields).
+    - Switched `package.json` scripts to Node-22-safe wrappers:
+      - `payload:types` -> `npm run payload:node22 -- generate:types`
+      - `payload:importmap` -> `npm run payload:node22 -- generate:importmap`
+  - Validation:
+    - `npm run payload:types` passed and generated `src/payload-types.ts`.
+    - `npm run payload:importmap` passed.
+    - `npm run build` passed.
+- April 2, 2026 draft preview workflow:
+  - Added preview entry route: `src/app/api/preview/route.ts`
+    - Validates `secret` (`PREVIEW_SECRET` fallback `PAYLOAD_SECRET`)
+    - Enables Next Draft Mode
+    - Redirects to safe local `slug`
+  - Added preview exit route: `src/app/api/exit-preview/route.ts`
+    - Disables Draft Mode
+    - Redirects to safe local `slug`
+  - Wired homepage loader for draft reads:
+    - `src/lib/get-homepage-content.ts` now accepts `{ draft?: boolean }` and passes `draft` to `payload.findGlobal`.
+    - `src/app/(site)/page.tsx` now reads `draftMode()`, disables cache in preview (`noStore()`), and loads draft content when enabled.
+  - Added env/config docs:
+    - `.env.example` now includes `PREVIEW_SECRET`.
+    - `docs/HOMEPAGE_EDITOR_GUIDE.md` now includes preview/exit URLs.
+  - Validation:
+    - `npm run build` passed.
+    - `npm run lint` passed with existing image warnings only.
+- April 2, 2026 native admin preview UI wiring:
+  - Added global-level admin preview config in `src/payload/globals/Homepage.ts`:
+    - `admin.preview` points to `/api/preview?...`
+    - `admin.livePreview.url` points to `/api/preview?...`
+  - Result: Homepage global now has native preview/live-preview integration in Payload admin UI.
+  - Validation:
+    - `npm run payload:types` passed.
+    - `npm run build` passed.
+- April 2, 2026 preview control visibility hardening:
+  - Added explicit admin control component:
+    - `src/payload/components/HomepagePreviewLink.tsx`
+  - Injected it into global document controls:
+    - `src/payload/globals/Homepage.ts`
+    - `admin.components.elements.beforeDocumentControls` with import-map path string
+      `src/payload/components/HomepagePreviewLink.tsx#HomepagePreviewLink`
+  - Regenerated import map and verified mapping exists in:
+    - `src/app/(payload)/admin/importMap.js`
+  - Validation:
+    - `npm run payload:importmap` passed.
+    - `npm run payload:types` passed.
+    - `npm run build` passed.
+  - Follow-up fix for admin startup crash:
+    - Next/Turbopack could not resolve import-map path `src/payload/components/HomepagePreviewLink.tsx`.
+    - Updated `tsconfig.json` with:
+      - `"baseUrl": "."`
+      - path alias `"src/*": ["./src/*"]`
+    - Result: import-map `src/...` module resolves in admin build.
+- April 2, 2026 live preview reliability update:
+  - Fixed `Invalid preview secret` failure in local preview entry:
+    - `src/app/api/preview/route.ts` now allows no-secret preview in local development, while still enforcing secret checks in production-style requests.
+  - Made preview URL generation resilient:
+    - `src/payload/globals/Homepage.ts` now always builds `/api/preview?slug=/` and appends `secret` only when configured.
+  - Added real-time preview refresh behavior:
+    - `src/app/components/home/LivePreviewSync.tsx` listens to Payload live-preview postMessage events.
+    - Added polling fallback refresh (~1.2s) in draft mode so text/image edits appear without manual browser reload.
+    - Wired on homepage in `src/app/(site)/page.tsx`.
+  - Validation:
+    - `npm run build` passed.
+- April 2, 2026 formal migration system:
+  - Added versioned schema migrations runner:
+    - `scripts/db-migrate.ts`
+    - `scripts/migrations/*`
+    - tracks applied migrations in SQLite table `schema_migrations`.
+  - Migrated prior one-off schema fixes into versioned migrations:
+    - `users.role` backfill
+    - homepage structured/media relation columns
+    - `payload_locked_documents_rels.media_id`
+  - Updated startup scripts:
+    - `predev` now runs `npm run db:migrate`
+    - `dev:node22` now runs `npm run db:migrate` before starting Next.
+  - Kept backward compatibility:
+    - `db:fix-homepage-schema` now delegates to `db:migrate` (deprecated alias).
+- April 2, 2026 determinism + release safety hardening:
+  - Source-of-truth cleanup:
+    - `src/lib/resolve-homepage-content.ts` no longer reads legacy JSON `content` as runtime fallback.
+    - Runtime now deterministically resolves from structured homepage sections only.
+  - Publish guard rails:
+    - Added `beforeChange` publish validation in `src/payload/globals/Homepage.ts`.
+    - Publishing is blocked if required media/alt/critical content is missing in key sections.
+  - DB backup + rollback routine:
+    - Added `scripts/db-backup.ts` and `scripts/db-restore.ts`.
+    - Added safe scripts in `package.json`:
+      - `db:migrate:safe`
+      - `seed:homepage:safe`
+      - `sync:homepage-media:safe`
+  - Smoke test command:
+    - Added `scripts/smoke.ts` and `npm run smoke`.
+    - Verifies `/`, `/admin`, preview enter/exit, and draft global save path.
+
+## Next Tasks
+- [x] Generate Payload TypeScript types and commit `src/payload-types.ts`.
+- [x] Add `payload:importmap` script and regenerate import map during setup/build when admin components change.
+- [x] Add a seeding script to initialize `homepage.content`.
+- [x] Replace JSON global with structured editable fields (section-by-section) for better editor UX.
+- [ ] Add media collection and migrate image paths to uploaded media relations.
+  - Collection scaffold done; canonical content now linked to media URLs.
+  - Remaining: fully deprecate legacy string paths in schema and data after confidence window.
+- [x] Add access control rules for editors vs admins.
+- [x] Add autosave/versioning strategy for homepage global.
+- [x] Add preview workflow for draft homepage changes.
+- [x] Add validation layer to guarantee Payload content matches `HomepageContent` contract.
+- [x] Move homepage global from single JSON field to structured section fields.
+- [x] Remove runtime SQL self-heal and rely on adapter-managed schema sync.
+- [x] Add formal versioned SQL/Drizzle migrations for all schema changes (including `users.role`) for production safety.
+- [x] Complete schema/source-of-truth cleanup (remove legacy homepage fallback paths).
+- [x] Add publish guards for critical content/media constraints.
+- [x] Add backup + rollback routine for `payload.db`.
+- [x] Add smoke test coverage for site/admin/preview/save path.
+- [x] Resolve Payload CLI generation incompatibility in current environment (`payload generate:types` / `generate:importmap`) and commit generated artifacts.
+
+## Runbook
+1. Copy `.env.example` to `.env` and set `PAYLOAD_SECRET`.
+2. Run `npm run dev:node22` (preferred) or ensure local Node version is 22 before running `npm run dev`.
+   - `predev` now auto-runs `npm run db:migrate`.
+3. If `/admin/globals/homepage` errors with `no such column: nav_logo`, run `npm run db:migrate` once.
+4. If errors mention `hero_image_media_id` / `_status` / `image_media_id`, run `npm run db:migrate` again after pulling latest code.
+4. Open `/admin/create-first-user` (first run only) and create admin user.
+5. Edit `Homepage Content` global in admin.
+6. Reload `/` to see CMS-driven content.
+7. For image updates, follow `docs/HOMEPAGE_EDITOR_GUIDE.md`.
+8. For draft preview:
+   - Enter: `/api/preview?secret=YOUR_PREVIEW_SECRET&slug=/`
+   - Exit: `/api/exit-preview?slug=/`
+9. For safe schema/content operations:
+   - `npm run db:migrate:safe`
+   - `npm run seed:homepage:safe`
+10. For rollback:
+   - `npm run db:restore -- --file /absolute/path/to/backup-payload.db`
+11. For smoke verification (with dev server running):
+   - `npm run smoke`
