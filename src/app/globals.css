@@ -340,7 +340,7 @@ img {
 
 /* LINE REVEAL */
 .line-wrap {
-  overflow: hidden;
+  overflow: visible;
   display: block;
 }
 
@@ -565,6 +565,13 @@ img {
   border-right: none;
 }
 
+.hero-stat-v {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
 .hero-stat-n {
   font-family: var(--fd);
   font-weight: 800;
@@ -572,7 +579,9 @@ img {
   line-height: 1;
   letter-spacing: -.03em;
   color: var(--green);
-  display: block;
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
   min-width: 4ch;
 }
 
@@ -588,6 +597,7 @@ img {
   font-family: var(--fd);
   font-weight: 800;
   font-size: 28px;
+  line-height: 1;
   color: var(--green);
 }
 

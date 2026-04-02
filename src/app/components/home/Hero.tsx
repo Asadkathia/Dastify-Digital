@@ -50,13 +50,16 @@ export function Hero({ data }: HeroProps) {
             {data.stats.map((stat) => (
               <div key={stat.label} className="hero-stat">
                 {stat.counterTarget ? (
-                  <span className="hero-stat-n" data-count={stat.counterTarget}>
+                  <span className="hero-stat-n" data-count={stat.counterTarget} data-suffix={stat.suffix ?? ''}>
                     {stat.value}
+                    {stat.suffix ?? ''}
                   </span>
                 ) : (
-                  <span className="hero-stat-n">{stat.value}</span>
+                  <span className="hero-stat-n">
+                    {stat.value}
+                    {stat.suffix ?? ''}
+                  </span>
                 )}
-                {stat.suffix ? <span className="hero-stat-suffix">{stat.suffix}</span> : null}
                 <div className="hero-stat-l">{stat.label}</div>
               </div>
             ))}

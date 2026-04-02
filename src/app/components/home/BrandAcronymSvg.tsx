@@ -122,9 +122,8 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
           'stroke-width': 1.8,
           'stroke-linecap': 'round',
           class: 'bai-line',
-          style: `opacity:0;stroke-dasharray:${lineSize};stroke-dashoffset:${lineSize};transition:opacity .01s ease ${(
-            delay + 0.15
-          ).toFixed(2)}s,stroke-dashoffset .45s cubic-bezier(.16,1,.3,1) ${(delay + 0.15).toFixed(2)}s;`,
+          // Add a micro delay and a slightly longer draw so it does not pop instantly.
+          style: `opacity:0;stroke-dasharray:${lineSize};stroke-dashoffset:${lineSize};transition:opacity .12s ease .15s,stroke-dashoffset .3s cubic-bezier(.16,1,.3,1) .15s;`,
         });
 
         const ring = gEl('circle', {
@@ -135,9 +134,7 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
           stroke: '#7EB63E',
           'stroke-width': 1.4,
           class: 'bai-node bai-ring',
-          style: `opacity:0;transform:scale(0);transform-origin:${x}px ${nodeY}px;transition:opacity .25s ease ${(
-            delay + 0.44
-          ).toFixed(2)}s,transform .4s cubic-bezier(.34,1.56,.64,1) ${(delay + 0.44).toFixed(2)}s;`,
+          style: `opacity:0;transform:scale(0);transform-origin:${x}px ${nodeY}px;transition:opacity .12s ease .15s,transform .3s cubic-bezier(.34,1.56,.64,1) .15s;`,
         });
 
         const dot = gEl('circle', {
@@ -146,9 +143,7 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
           r: nodeR,
           fill: '#7EB63E',
           class: 'bai-node bai-inner-dot',
-          style: `opacity:0;transform:scale(0);transform-origin:${x}px ${nodeY}px;transition:opacity .3s ease ${(
-            delay + 0.42
-          ).toFixed(2)}s,transform .38s cubic-bezier(.34,1.56,.64,1) ${(delay + 0.42).toFixed(2)}s;`,
+          style: `opacity:0;transform:scale(0);transform-origin:${x}px ${nodeY}px;transition:opacity .12s ease .15s,transform .3s cubic-bezier(.34,1.56,.64,1) .15s;`,
         });
 
         const labelY = up ? nodeY - nodeR * 2.5 - 3 : nodeY + nodeR * 2.5 + 3;
@@ -182,21 +177,30 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
         });
         label2.textContent = item.t2;
 
+        let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+
         g.addEventListener('mouseenter', () => {
+          if (hoverTimer) clearTimeout(hoverTimer);
           letter.style.filter = `drop-shadow(0 0 10px ${color})`;
-          line.style.opacity = '1';
-          line.style.strokeDashoffset = '0';
-          ring.style.opacity = '1';
-          ring.style.transform = 'scale(1)';
-          dot.style.opacity = '1';
-          dot.style.transform = 'scale(1)';
-          [label1, label2].forEach((label) => {
-            label.style.opacity = '1';
-            label.style.transform = 'translateY(0)';
-          });
+          hoverTimer = setTimeout(() => {
+            line.style.opacity = '1';
+            line.style.strokeDashoffset = '0';
+            ring.style.opacity = '1';
+            ring.style.transform = 'scale(1)';
+            dot.style.opacity = '1';
+            dot.style.transform = 'scale(1)';
+            [label1, label2].forEach((label) => {
+              label.style.opacity = '1';
+              label.style.transform = 'translateY(0)';
+            });
+          }, 150);
         });
 
         g.addEventListener('mouseleave', () => {
+          if (hoverTimer) {
+            clearTimeout(hoverTimer);
+            hoverTimer = null;
+          }
           letter.style.filter = '';
           line.style.opacity = '0';
           line.style.strokeDashoffset = String(lineSize);

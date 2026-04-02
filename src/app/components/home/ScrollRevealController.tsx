@@ -75,6 +75,7 @@ export function ScrollRevealController() {
             counted.add(entry.target);
             const el = entry.target as HTMLElement;
             const target = Number.parseInt(el.dataset.count ?? '', 10);
+            const suffix = el.dataset.suffix ?? '';
             if (Number.isNaN(target)) return;
 
             const duration = 1800;
@@ -83,9 +84,9 @@ export function ScrollRevealController() {
             const tick = (now: number) => {
               const progress = Math.min((now - start) / duration, 1);
               const ease = 1 - (1 - progress) ** 3;
-              el.textContent = Math.floor(target * ease).toLocaleString();
+              el.textContent = `${Math.floor(target * ease).toLocaleString()}${suffix}`;
               if (progress < 1) window.requestAnimationFrame(tick);
-              else el.textContent = target.toLocaleString();
+              else el.textContent = `${target.toLocaleString()}${suffix}`;
             };
 
             window.requestAnimationFrame(tick);
