@@ -9,6 +9,8 @@ type BrandAcronymSvgProps = {
 
 export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const hasRevealedRef = useRef(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -31,6 +33,8 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
     };
 
     const render = () => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
       svg.innerHTML = '';
       const parent = svg.parentElement;
       if (!parent) return;
@@ -75,6 +79,9 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
         const up = item.dir === 'up';
         const delay = Number((0.05 + index * 0.09).toFixed(2));
         const nodeY = up ? nodeTop : nodeBottom;
+        const letterStyle = hasRevealedRef.current
+          ? 'opacity:1;transform:translateY(0);transition:filter .2s ease;'
+          : `opacity:0;transform:translateY(${up ? '6px' : '-6px'});transition:opacity .5s ease ${delay}s,transform .5s ease ${delay}s,filter .2s ease;`;
 
         const g = document.createElementNS(NS, 'g');
         g.setAttribute('class', 'bai-group');
@@ -106,7 +113,7 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
           'letter-spacing': '-0.04em',
           fill: color,
           class: 'bai-letter',
-          style: `opacity:0;transform:translateY(${up ? '6px' : '-6px'});transition:opacity .5s ease ${delay}s,transform .5s ease ${delay}s,filter .2s ease;`,
+          style: letterStyle,
         });
         letter.textContent = item.l;
 
@@ -215,10 +222,14 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
         });
       });
 
+      if (hasRevealedRef.current) return;
+
       const observer = new IntersectionObserver(
         (entries) => {
           if (!entries[0]?.isIntersecting) return;
           observer.disconnect();
+          observerRef.current = null;
+          hasRevealedRef.current = true;
           window.requestAnimationFrame(() => {
             svg.querySelectorAll<SVGElement>('.bai-letter').forEach((node) => {
               node.style.opacity = '1';
@@ -229,6 +240,7 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
         { threshold: 0.2 },
       );
 
+      observerRef.current = observer;
       observer.observe(svg);
     };
 
@@ -244,6 +256,8 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.clearTimeout(resizeTimeout);
+      observerRef.current?.disconnect();
+      observerRef.current = null;
     };
   }, [items]);
 
