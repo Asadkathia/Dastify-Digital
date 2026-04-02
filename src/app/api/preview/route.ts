@@ -1,6 +1,8 @@
 import { draftMode } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const preferredRegion = 'sin1';
+
 function isSafeRedirectPath(path: string): boolean {
   return path.startsWith('/') && !path.startsWith('//');
 }

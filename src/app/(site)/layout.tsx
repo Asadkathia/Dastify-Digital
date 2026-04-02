@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Lato, Manrope } from 'next/font/google';
 import '../globals.css';
 
+export const preferredRegion = 'sin1';
+
 const manrope = Manrope({
   variable: '--font-manrope',
   subsets: ['latin'],

@@ -6,6 +6,7 @@ import type { ServerFunctionClient } from 'payload';
 import { getPayload } from 'payload';
 
 export const dynamic = 'force-dynamic';
+export const preferredRegion = 'sin1';
 
 type PayloadRootLayoutProps = {
   children: React.ReactNode;

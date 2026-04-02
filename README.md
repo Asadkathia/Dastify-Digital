@@ -31,7 +31,47 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project can deploy on Vercel, with one important condition:
+- Do not use local SQLite (`file:./payload.db`) in production.
+- Use a remote Postgres database (recommended: Neon) in `DATABASE_URI`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Required production environment variables:
+- `PAYLOAD_SECRET`
+- `PREVIEW_SECRET`
+- `DATABASE_URI` (`postgres://...` or `postgresql://...`, not `file:`)
+- `NEXT_PUBLIC_SITE_URL` (your Vercel domain)
+
+### Create remote DB (Neon)
+
+```bash
+# Use Neon dashboard to create a project + database
+# Copy the pooled connection string and set it as DATABASE_URI
+# Example:
+# DATABASE_URI=postgresql://<user>:<pass>@<host>/<db>?sslmode=require
+```
+
+### One-command deployment
+
+From project root:
+
+```bash
+npm run deploy:vercel
+```
+
+The script:
+1. Validates required env vars.
+2. Runs DB migrations (`npm run db:migrate`).
+3. Builds the app (`npm run build`).
+4. Runs `vercel pull` and `vercel deploy --prod`.
+
+### First-time setup
+
+```bash
+vercel link
+vercel env add PAYLOAD_SECRET production
+vercel env add PREVIEW_SECRET production
+vercel env add DATABASE_URI production
+vercel env add NEXT_PUBLIC_SITE_URL production
+```
+
 # Dastify-Digital
