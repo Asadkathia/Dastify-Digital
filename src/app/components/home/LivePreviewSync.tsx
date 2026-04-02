@@ -22,6 +22,8 @@ function isPayloadPreviewMessage(data: unknown): boolean {
 
 export function LivePreviewSync({ enabled }: LivePreviewSyncProps) {
   const router = useRouter();
+  const isEmbeddedPreview =
+    typeof window !== 'undefined' && window.self !== window.top && document.referrer.includes('/admin');
 
   useEffect(() => {
     if (!enabled) {
@@ -59,7 +61,7 @@ export function LivePreviewSync({ enabled }: LivePreviewSyncProps) {
   }, [enabled, router]);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || !isEmbeddedPreview) {
       return;
     }
 
@@ -70,7 +72,7 @@ export function LivePreviewSync({ enabled }: LivePreviewSyncProps) {
     return () => {
       clearInterval(interval);
     };
-  }, [enabled, router]);
+  }, [enabled, isEmbeddedPreview, router]);
 
   return null;
 }

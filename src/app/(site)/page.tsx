@@ -17,11 +17,11 @@ import { Services } from '../components/home/Services';
 import { Faq } from '../components/home/Faq';
 import { getHomepageContent } from '@/lib/get-homepage-content';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const { isEnabled } = await draftMode();
-  if (isEnabled) {
-    noStore();
-  }
+  noStore();
 
   const homepageContent = await getHomepageContent({ draft: isEnabled });
 
