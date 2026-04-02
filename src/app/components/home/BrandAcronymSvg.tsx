@@ -41,9 +41,9 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
       if (!parent) return;
 
       const totalW = Math.max(parent.clientWidth - 32, 820);
-      const gap = 1.4;
-      const wordGap = totalW * 0.0105;
-      const slotW = (totalW - wordGap - gap * 13) / 14;
+      // Keep spacing uniform across all letters for a consistent rhythm.
+      const gap = 1.1;
+      const slotW = (totalW - gap * 13) / 14;
       const letterFs = Math.min(slotW * 1.28, 150);
       const nodeR = Math.max(letterFs * 0.06, 5);
       const labelFs = 13;
@@ -60,7 +60,7 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
 
       const xs: number[] = [];
       for (let i = 0; i < 14; i += 1) {
-        xs.push((i + 0.5) * (slotW + gap) - gap / 2 + (i >= 7 ? wordGap : 0));
+        xs.push((i + 0.5) * (slotW + gap) - gap / 2);
       }
 
       const dividerX = (xs[6] + xs[7]) / 2;
