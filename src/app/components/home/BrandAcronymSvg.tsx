@@ -40,9 +40,9 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
       const parent = svg.parentElement;
       if (!parent) return;
 
-      const totalW = Math.max(parent.clientWidth - 48, 900);
-      const gap = 3;
-      const wordGap = totalW * 0.016;
+      const totalW = Math.max(parent.clientWidth - 32, 820);
+      const gap = 1.4;
+      const wordGap = totalW * 0.0105;
       const slotW = (totalW - wordGap - gap * 13) / 14;
       const letterFs = Math.min(slotW * 1.28, 150);
       const nodeR = Math.max(letterFs * 0.06, 5);
@@ -75,6 +75,7 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
       });
 
       items.forEach((item, index) => {
+        const isAlwaysActive = index === 0;
         const x = xs[index];
         const color = item.color === 'purple' ? PURPLE : BLUE;
         const up = item.dir === 'up';
@@ -131,7 +132,9 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
           'stroke-linecap': 'round',
           class: 'bai-line',
           // Add a micro delay and a slightly longer draw so it does not pop instantly.
-          style: `opacity:0;stroke-dasharray:${lineSize};stroke-dashoffset:${lineSize};transition:opacity .12s ease .15s,stroke-dashoffset .3s cubic-bezier(.16,1,.3,1) .15s;`,
+          style: isAlwaysActive
+            ? `opacity:1;stroke-dasharray:${lineSize};stroke-dashoffset:0;transition:opacity .12s ease .15s,stroke-dashoffset .3s cubic-bezier(.16,1,.3,1) .15s;`
+            : `opacity:0;stroke-dasharray:${lineSize};stroke-dashoffset:${lineSize};transition:opacity .12s ease .15s,stroke-dashoffset .3s cubic-bezier(.16,1,.3,1) .15s;`,
         });
 
         const ring = gEl('circle', {
@@ -142,7 +145,9 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
           stroke: '#7EB63E',
           'stroke-width': 1.4,
           class: 'bai-node bai-ring',
-          style: `opacity:0;transform:scale(0);transform-origin:${x}px ${nodeY}px;transition:opacity .12s ease .15s,transform .3s cubic-bezier(.34,1.56,.64,1) .15s;`,
+          style: isAlwaysActive
+            ? `opacity:1;transform:scale(1);transform-origin:${x}px ${nodeY}px;transition:opacity .12s ease .15s,transform .3s cubic-bezier(.34,1.56,.64,1) .15s;animation:bai-ring-pulse 1.6s ease-out infinite;`
+            : `opacity:0;transform:scale(0);transform-origin:${x}px ${nodeY}px;transition:opacity .12s ease .15s,transform .3s cubic-bezier(.34,1.56,.64,1) .15s;`,
         });
 
         const dot = gEl('circle', {
@@ -151,7 +156,9 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
           r: nodeR,
           fill: '#7EB63E',
           class: 'bai-node bai-inner-dot',
-          style: `opacity:0;transform:scale(0);transform-origin:${x}px ${nodeY}px;transition:opacity .12s ease .15s,transform .3s cubic-bezier(.34,1.56,.64,1) .15s;`,
+          style: isAlwaysActive
+            ? `opacity:1;transform:scale(1);transform-origin:${x}px ${nodeY}px;transition:opacity .12s ease .15s,transform .3s cubic-bezier(.34,1.56,.64,1) .15s;animation:bai-pulse 1.2s ease-in-out infinite;`
+            : `opacity:0;transform:scale(0);transform-origin:${x}px ${nodeY}px;transition:opacity .12s ease .15s,transform .3s cubic-bezier(.34,1.56,.64,1) .15s;`,
         });
 
         const labelY = up ? nodeY - nodeR * 2.5 - 3 : nodeY + nodeR * 2.5 + 3;
@@ -167,7 +174,9 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
           'font-size': labelFs,
           fill: color,
           class: 'bai-label',
-          style: `opacity:0;transition:opacity .2s ease,transform .2s ease;transform:translateY(${up ? '-4px' : '4px'});`,
+          style: isAlwaysActive
+            ? 'opacity:1;transition:opacity .2s ease,transform .2s ease;transform:translateY(0);'
+            : `opacity:0;transition:opacity .2s ease,transform .2s ease;transform:translateY(${up ? '-4px' : '4px'});`,
         });
         label1.textContent = item.t1;
 
@@ -181,9 +190,15 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
           'font-size': labelFs - 1,
           fill: color,
           class: 'bai-label',
-          style: `opacity:0;transition:opacity .2s ease .04s,transform .2s ease .04s;transform:translateY(${up ? '-4px' : '4px'});`,
+          style: isAlwaysActive
+            ? 'opacity:1;transition:opacity .2s ease .04s,transform .2s ease .04s;transform:translateY(0);'
+            : `opacity:0;transition:opacity .2s ease .04s,transform .2s ease .04s;transform:translateY(${up ? '-4px' : '4px'});`,
         });
         label2.textContent = item.t2;
+
+        if (isAlwaysActive) {
+          letter.style.filter = `drop-shadow(0 0 10px ${color})`;
+        }
 
         let hoverTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -209,6 +224,21 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
             clearTimeout(hoverTimer);
             hoverTimer = null;
           }
+          if (isAlwaysActive) {
+            letter.style.filter = `drop-shadow(0 0 10px ${color})`;
+            line.style.opacity = '1';
+            line.style.strokeDashoffset = '0';
+            ring.style.opacity = '1';
+            ring.style.transform = 'scale(1)';
+            dot.style.opacity = '1';
+            dot.style.transform = 'scale(1)';
+            [label1, label2].forEach((label) => {
+              label.style.opacity = '1';
+              label.style.transform = 'translateY(0)';
+            });
+            return;
+          }
+
           letter.style.filter = '';
           line.style.opacity = '0';
           line.style.strokeDashoffset = String(lineSize);
