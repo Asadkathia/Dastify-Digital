@@ -9,8 +9,9 @@ type BrandAcronymSvgProps = {
 
 export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const hasRevealedRef = useRef(false);
+  const revealStateRef = useRef<'idle' | 'revealing' | 'revealed'>('idle');
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const revealDoneTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -79,7 +80,7 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
         const up = item.dir === 'up';
         const delay = Number((0.05 + index * 0.09).toFixed(2));
         const nodeY = up ? nodeTop : nodeBottom;
-        const letterStyle = hasRevealedRef.current
+        const letterStyle = revealStateRef.current === 'revealed'
           ? 'opacity:1;transform:translateY(0);transition:filter .2s ease;'
           : `opacity:0;transform:translateY(${up ? '6px' : '-6px'});transition:opacity .5s ease ${delay}s,transform .5s ease ${delay}s,filter .2s ease;`;
 
@@ -222,20 +223,28 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
         });
       });
 
-      if (hasRevealedRef.current) return;
+      if (revealStateRef.current === 'revealed') return;
 
       const observer = new IntersectionObserver(
         (entries) => {
           if (!entries[0]?.isIntersecting) return;
           observer.disconnect();
           observerRef.current = null;
-          hasRevealedRef.current = true;
+          if (revealStateRef.current === 'revealed') return;
+          revealStateRef.current = 'revealing';
           window.requestAnimationFrame(() => {
             svg.querySelectorAll<SVGElement>('.bai-letter').forEach((node) => {
               node.style.opacity = '1';
               node.style.transform = 'translateY(0)';
             });
           });
+
+          // Mark as fully revealed only after the longest stagger + duration finishes.
+          if (revealDoneTimerRef.current) window.clearTimeout(revealDoneTimerRef.current);
+          revealDoneTimerRef.current = window.setTimeout(() => {
+            revealStateRef.current = 'revealed';
+            revealDoneTimerRef.current = null;
+          }, 1800);
         },
         { threshold: 0.2 },
       );
@@ -248,6 +257,7 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
 
     let resizeTimeout: number;
     const handleResize = () => {
+      if (revealStateRef.current === 'revealing') return;
       window.clearTimeout(resizeTimeout);
       resizeTimeout = window.setTimeout(render, 160);
     };
@@ -256,6 +266,10 @@ export function BrandAcronymSvg({ items }: BrandAcronymSvgProps) {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.clearTimeout(resizeTimeout);
+      if (revealDoneTimerRef.current) {
+        window.clearTimeout(revealDoneTimerRef.current);
+        revealDoneTimerRef.current = null;
+      }
       observerRef.current?.disconnect();
       observerRef.current = null;
     };
