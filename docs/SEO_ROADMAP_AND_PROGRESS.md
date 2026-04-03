@@ -1,5 +1,7 @@
 # SEO + WordPress-Parity Roadmap and Progress Log
 
+Related Tracker: [Storyblok Integration Roadmap and Worklog](./STORYBLOK_INTEGRATION_ROADMAP_AND_WORKLOG.md)
+
 ## Goals and Locked Decisions
 - Full SEO control from Payload admin (meta, canonical, noindex, OG/Twitter, JSON-LD).
 - Multi-page architecture with Pages, Services, Case Studies, Blog.
