@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { StoryblokServerComponent } from '@storyblok/react/rsc';
+import { StoryblokStory } from '@storyblok/react/rsc';
 import { JsonLd } from '@/components/JsonLd';
 import { PageBlocksRenderer } from '@/components/blocks/PageBlocksRenderer';
 import { mapPayloadBlocksToPageBuilderBlocks } from '@/components/blocks/types';
-import { StoryblokBridgeLoader } from '@/components/storyblok/StoryblokBridgeLoader';
 import '@/components/storyblok';
 import { asPathnameFromSegments } from '@/lib/cms/slug';
 import { extractSeoMeta, findOneBySlug, isDraftEnabled } from '@/lib/cms/queries';
@@ -89,8 +88,7 @@ export default async function GenericPage({ params }: Props) {
 
       return (
         <>
-          <StoryblokServerComponent blok={story.content} />
-          {draft ? <StoryblokBridgeLoader /> : null}
+          <StoryblokStory story={story} />
           <JsonLd
             data={
               buildBreadcrumbJsonLd([
