@@ -3,6 +3,7 @@ import { homepageContent } from '../../lib/homepage-content.ts';
 import type { HomepageContent } from '../../lib/homepage-content.ts';
 import { resolveHomepageContent } from '../../lib/resolve-homepage-content.ts';
 import { isAdminOrEditor } from '../access.ts';
+import { revalidateGlobalChange } from '../hooks/revalidate.ts';
 
 const linkFields: Field[] = [
   { name: 'label', type: 'text', required: true },
@@ -371,6 +372,7 @@ export const Homepage: GlobalConfig = {
     update: ({ req }) => isAdminOrEditor(req),
   },
   hooks: {
+    afterChange: [revalidateGlobalChange('homepage', ['/'])],
     beforeChange: [
       ({ data, originalDoc }) => {
         if (!hasStructuredInput(data)) {

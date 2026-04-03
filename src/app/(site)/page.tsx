@@ -16,6 +16,52 @@ import { ScrollRevealController } from '../components/home/ScrollRevealControlle
 import { Services } from '../components/home/Services';
 import { Faq } from '../components/home/Faq';
 import { getHomepageContent } from '@/lib/get-homepage-content';
+import { withManagedMenus } from '@/lib/cms/menus';
+import { JsonLd } from '@/components/JsonLd';
+import { buildFAQJsonLd, buildOrganizationJsonLd, buildWebsiteJsonLd } from '@/lib/seo/jsonld';
+import { buildMetadata } from '@/lib/seo/metadata';
+import { getSiteSettings } from '@/lib/site-settings';
+import { getPayloadClient } from '@/lib/payload';
+import type { Metadata } from 'next';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [payload, settings] = await Promise.all([getPayloadClient(), getSiteSettings()]);
+
+  try {
+    const homepage = (await payload.findGlobal({ slug: 'homepage', depth: 1 })) as {
+      meta?: {
+        title?: string;
+        description?: string;
+        canonicalURL?: string;
+        keywords?: string;
+        noindex?: boolean;
+        image?: { url?: string };
+      };
+    };
+
+    return buildMetadata({
+      pathname: '/',
+      settings,
+      seo: {
+        title: homepage.meta?.title,
+        description: homepage.meta?.description,
+        canonicalURL: homepage.meta?.canonicalURL,
+        keywords: homepage.meta?.keywords,
+        noindex: homepage.meta?.noindex,
+        image: homepage.meta?.image?.url,
+      },
+      fallbackTitle: settings.siteName,
+      fallbackDescription: settings.siteDescription,
+    });
+  } catch {
+    return buildMetadata({
+      pathname: '/',
+      settings,
+      fallbackTitle: settings.siteName,
+      fallbackDescription: settings.siteDescription,
+    });
+  }
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +69,14 @@ export default async function Home() {
   const { isEnabled } = await draftMode();
   noStore();
 
-  const homepageContent = await getHomepageContent({ draft: isEnabled });
+  const [homepageContent, settings] = await Promise.all([
+    withManagedMenus(await getHomepageContent({ draft: isEnabled })),
+    getSiteSettings(),
+  ]);
+
+  const organizationJsonLd = buildOrganizationJsonLd(settings);
+  const websiteJsonLd = buildWebsiteJsonLd(settings);
+  const faqJsonLd = buildFAQJsonLd(homepageContent.faq.items);
 
   return (
     <>
@@ -43,6 +96,9 @@ export default async function Home() {
       <Faq data={homepageContent.faq} />
       <Cta data={homepageContent.cta} />
       <Footer data={homepageContent.footer} />
+      <JsonLd data={organizationJsonLd} />
+      <JsonLd data={websiteJsonLd} />
+      <JsonLd data={faqJsonLd} />
     </>
   );
 }

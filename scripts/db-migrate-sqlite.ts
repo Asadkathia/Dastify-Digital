@@ -14,43 +14,43 @@ const client = createClient({
   authToken: process.env.DATABASE_AUTH_TOKEN,
 });
 
-const MIGRATION_TABLE = 'schema_migrations';
+const LEGACY_MIGRATION_TABLE = 'schema_migrations';
+const APP_MIGRATION_TABLE = 'app_schema_migrations';
 
-async function ensureMigrationTable(): Promise<void> {
-  await client.execute(`
-    CREATE TABLE IF NOT EXISTS "${MIGRATION_TABLE}" (
-      "id" text PRIMARY KEY NOT NULL,
-      "name" text NOT NULL,
-      "applied_at" text DEFAULT CURRENT_TIMESTAMP NOT NULL
-    );
-  `);
-}
-
-async function getAppliedMigrationIds(): Promise<Set<string>> {
-  const result = await client.execute(`SELECT "id" FROM "${MIGRATION_TABLE}";`);
-  return new Set((result.rows ?? []).map((row) => String(row.id)));
-}
-
-async function markApplied(id: string, name: string): Promise<void> {
-  await client.execute({
-    sql: `INSERT INTO "${MIGRATION_TABLE}" ("id", "name") VALUES (?, ?);`,
-    args: [id, name],
+async function tableExists(tableName: string): Promise<boolean> {
+  const result = await client.execute({
+    sql: 'SELECT name FROM sqlite_master WHERE type = ? AND name = ? LIMIT 1;',
+    args: ['table', tableName],
   });
+
+  return (result.rows?.length ?? 0) > 0;
+}
+
+async function migrateLegacyTableName(): Promise<void> {
+  const hasLegacy = await tableExists(LEGACY_MIGRATION_TABLE);
+  const hasCurrent = await tableExists(APP_MIGRATION_TABLE);
+
+  if (hasLegacy && !hasCurrent) {
+    await client.execute(`ALTER TABLE "${LEGACY_MIGRATION_TABLE}" RENAME TO "${APP_MIGRATION_TABLE}";`);
+  }
+}
+
+async function dropCustomMigrationTables(): Promise<void> {
+  await client.execute(`DROP TABLE IF EXISTS "${LEGACY_MIGRATION_TABLE}";`);
+  await client.execute(`DROP TABLE IF EXISTS "${APP_MIGRATION_TABLE}";`);
 }
 
 async function main() {
-  await ensureMigrationTable();
-  const applied = await getAppliedMigrationIds();
+  // Migrations are intentionally idempotent. We run all every time so local SQLite
+  // never drifts, while avoiding extra app-owned migration tables that can confuse
+  // Drizzle schema push prompts during dev startup.
+  await migrateLegacyTableName();
+  await dropCustomMigrationTables();
 
   let appliedNow = 0;
 
   for (const migration of migrations) {
-    if (applied.has(migration.id)) {
-      continue;
-    }
-
     await migration.up(client, { dbUri });
-    await markApplied(migration.id, migration.name);
     appliedNow += 1;
 
     console.log(`[db:migrate] applied ${migration.id} - ${migration.name}`);

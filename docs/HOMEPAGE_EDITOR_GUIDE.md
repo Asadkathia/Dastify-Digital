@@ -56,9 +56,41 @@ Checks include:
 - preview enter/exit routes
 - homepage draft save through REST API (optional with `SMOKE_ADMIN_EMAIL` / `SMOKE_ADMIN_PASSWORD`)
 
+## Admin Health Check
+With local dev server running, execute:
+- `npm run health:admin`
+
+Checks include:
+- `/admin` responds with `200`
+- `/admin/globals/homepage` responds with `200`
+- response duration for both endpoints (for quick regression spotting)
+
+## Rollout Gates
+Use staged verification gates before promotion:
+
+- `npm run gate:local` (schema + build checks)
+- `npm run gate:runtime` (admin health + runtime smoke checks, requires running server)
+- `npm run gate:full` (local + runtime)
+
+See `docs/ROLLOUT_VERIFICATION_GATES.md` for policy and failure handling.
+
 ## Notes
 - Autosave writes draft updates; use main `Save` to persist final document changes.
 - The landing page reads structured fields as the single runtime source of truth.
+
+## If Admin Is Slow, Unstyled, or Stuck
+1. Ensure only one dev server is running:
+   - `lsof -iTCP:3000 -sTCP:LISTEN -n -P`
+2. If multiple `next dev` instances are active, stop stale ones:
+   - `kill <PID>`
+3. Restart clean:
+   - `npm run dev`
+4. Re-check schema + admin endpoints:
+   - `npm run db:verify`
+   - `npm run health:admin`
+5. If homepage global editor fails specifically, re-run migrations:
+   - `npm run db:migrate`
+   - then reload `/admin/globals/homepage`.
 
 ## Draft Preview Workflow
 Use preview mode to review draft changes before final publish.

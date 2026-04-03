@@ -1,4 +1,5 @@
 import type { HomepageContent } from '@/lib/homepage-content';
+import { CmsImage } from '@/components/CmsImage';
 
 type ServicesProps = {
   data: HomepageContent['services'];
@@ -33,7 +34,15 @@ export function Services({ data }: ServicesProps) {
                 <div className="svc-desc">{item.description}</div>
               </div>
               <div className="svc-img">
-                <img src={item.image} alt={item.alt} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <CmsImage
+                  src={item.image}
+                  alt={item.alt}
+                  objectFit="cover"
+                  fill={false}
+                  width={320}
+                  height={160}
+                  sizes="320px"
+                />
               </div>
               <div className="svc-arr">↗</div>
             </div>

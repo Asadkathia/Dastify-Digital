@@ -7,18 +7,19 @@ import { getPayload } from 'payload';
 
 export const dynamic = 'force-dynamic';
 export const preferredRegion = 'sin1';
+const payloadConfig = await config;
 
 type PayloadRootLayoutProps = {
   children: React.ReactNode;
 };
 
 export default async function PayloadRootLayout({ children }: PayloadRootLayoutProps) {
-  await getPayload({ config });
+  await getPayload({ config: payloadConfig });
 
   const serverFunction: ServerFunctionClient = async (args) => {
     'use server';
 
-    await getPayload({ config });
+    await getPayload({ config: payloadConfig });
     return handleServerFunctions({
       ...args,
       config,

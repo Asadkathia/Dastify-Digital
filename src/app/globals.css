@@ -1791,7 +1791,7 @@ img {
   background: var(--bg2);
   position: relative;
   overflow: visible;
-  padding: 74px 0 120px;
+  padding: 40px 0 48px;
 }
 
 .bai-sec::before {
@@ -1833,211 +1833,40 @@ img {
   position: relative;
   z-index: 2;
   width: 100%;
-  overflow: visible;
-  padding: 0 10px;
-  -webkit-overflow-scrolling: touch;
-}
-
-#bai-svg {
-  display: block;
+  max-width: 1100px;
   margin: 0 auto;
-  min-width: 760px;
+  padding: 0 16px;
+}
+
+.bai2-svg {
+  display: block;
+  width: 100%;
+  max-width: 900px;
+  max-height: 62vh;
+  margin: 0 auto;
   overflow: visible;
 }
 
-@keyframes bai-pulse {
-  0%, 100% {
-    r: var(--nr, 5);
-    opacity: .9;
-  }
-  50% {
-    r: calc(var(--nr, 5) * 1.6);
-    opacity: .4;
-  }
-}
-
-@keyframes bai-ring-pulse {
-  0% { transform: scale(1); opacity: .4; }
-  70% { transform: scale(2.2); opacity: 0; }
-  100% { transform: scale(2.2); opacity: 0; }
+.bai2-node-group:focus-visible circle:first-child {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
 }
 
 @media (max-width: 640px) {
-  /* Keep horizontal scroll only on small screens; avoid vertical clipping on desktop. */
   .bai-wrap {
     overflow-x: auto;
-    overflow-y: visible;
+  }
+  .bai2-svg {
+    min-width: 580px;
   }
 }
 
-/* ═══════════════════════════════════════════════
-   PROCESS INFOGRAPHIC
-═══════════════════════════════════════════════ */
-.pi-root {
-  position: relative;
-  z-index: 2;
-  padding: 64px 0 0;
-}
-
-.pi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 32px;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-/* ── Stage card ── */
-.pi-stage {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity .6s var(--expo), transform .6s var(--expo);
-  cursor: default;
-}
-
-.pi-stage.pi-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Hover glow */
-.pi-stage.pi-active .pi-plate {
-  box-shadow: 0 0 24px rgba(124, 58, 237, .12), 0 4px 20px rgba(0, 0, 0, .06);
-  transform: scale(1.04);
-}
-
-/* ── Visual container (arc + plate) ── */
-.pi-visual {
-  position: relative;
-  width: 140px;
-  height: 140px;
-  margin-bottom: 4px;
-}
-
-/* ── Arc SVG ── */
-.pi-arc {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transform: scale(.8);
-  transition: opacity .5s var(--expo), transform .5s var(--expo);
-}
-
-.pi-arc.pi-arc-visible {
-  opacity: 1;
-  transform: scale(1);
-}
-
-/* ── White plate ── */
-.pi-plate {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  width: 112px;
-  height: 112px;
-  background: var(--bg2);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, .06);
-  opacity: 0;
-  transform: scale(.7);
-  transition: opacity .5s var(--expo), transform .5s var(--spring), box-shadow .3s ease;
-}
-
-.pi-plate.pi-plate-visible {
-  opacity: 1;
-  transform: scale(1);
-}
-
-/* ── Icon ── */
-.pi-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* ── Stem ── */
-.pi-stem {
-  width: 3px;
-  height: 0;
-  border-radius: 2px;
-  transition: height .5s var(--expo);
-  margin-bottom: 14px;
-}
-
-.pi-stem.pi-stem-visible {
-  height: 36px;
-}
-
-/* ── Step number ── */
-.pi-step {
-  font-family: var(--fd);
-  font-weight: 800;
-  font-size: 13px;
-  letter-spacing: .08em;
-  margin-bottom: 6px;
-}
-
-/* ── Title ── */
-.pi-title {
-  font-family: var(--fd);
-  font-weight: 700;
-  font-size: 16px;
-  color: var(--ink);
-  margin-bottom: 6px;
-  letter-spacing: -.01em;
-}
-
-/* ── Description ── */
-.pi-desc {
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--t2);
-  max-width: 220px;
-}
-
-/* ── Active stage subtle emphasis ── */
-.pi-stage.pi-active .pi-title {
-  color: var(--ink);
-}
-
-.pi-stage.pi-active .pi-arc {
-  filter: drop-shadow(0 0 8px rgba(124, 58, 237, .15));
-}
-
-/* ── Responsive ── */
-@media (max-width: 900px) {
-  .pi-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 40px 32px;
-  }
-}
-
-@media (max-width: 540px) {
-  .pi-grid {
-    grid-template-columns: 1fr;
-    gap: 40px;
-    max-width: 340px;
-  }
-}
-
-/* ── Reduced motion ── */
+/* ── Reduced motion: bai2 infographic ── */
 @media (prefers-reduced-motion: reduce) {
-  .pi-stage,
-  .pi-arc,
-  .pi-plate,
-  .pi-stem {
+  .bai2-svg circle,
+  .bai2-svg line,
+  .bai2-svg text,
+  .bai2-svg path {
     transition: none !important;
   }
-  .pi-stage { opacity: 1; transform: none; }
-  .pi-arc { opacity: 1; transform: none; }
-  .pi-plate { opacity: 1; transform: none; }
-  .pi-stem { height: 36px; }
 }

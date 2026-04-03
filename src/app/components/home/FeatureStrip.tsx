@@ -1,4 +1,5 @@
 import type { HomepageContent } from '@/lib/homepage-content';
+import { CmsImage } from '@/components/CmsImage';
 
 type FeatureStripProps = {
   data: HomepageContent['features'];
@@ -11,7 +12,7 @@ export function FeatureStrip({ data }: FeatureStripProps) {
       <div className="feat-grid">
         {data.cards.map((card, index) => (
           <div key={card.title} className="feat-card img-reveal" data-r={index === 0 ? 'L' : 'R'}>
-            <img src={card.image} alt={card.alt} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <CmsImage src={card.image} alt={card.alt} objectFit="cover" />
             <div className="feat-overlay">
               <div className="feat-cat">{card.category}</div>
               <div className="feat-title">{card.title}</div>

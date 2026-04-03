@@ -1,6 +1,5 @@
 import type { HomepageContent } from '@/lib/homepage-content';
 import { BrandAcronymSvg } from './BrandAcronymSvg';
-import { ProcessInfographic } from './ProcessInfographic';
 
 type BrandAcronymProps = {
   data: HomepageContent['brandAcronym'];
@@ -20,7 +19,6 @@ export function BrandAcronym({ data }: BrandAcronymProps) {
       <div className="bai-wrap">
         <BrandAcronymSvg items={data.items} />
       </div>
-      <ProcessInfographic />
     </section>
   );
 }

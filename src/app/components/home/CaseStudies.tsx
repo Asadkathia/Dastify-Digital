@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import type { HomepageContent } from '@/lib/homepage-content';
 import { CaseTabs } from './CaseTabs';
+import { CmsImage } from '@/components/CmsImage';
 
 type CaseStudiesProps = {
   data: HomepageContent['caseStudies'];
@@ -22,25 +24,25 @@ export function CaseStudies({ data }: CaseStudiesProps) {
               {data.title}
             </h2>
           </div>
-          <button className="btn-ol" data-r type="button">
+          <Link className="btn-ol" data-r href="/case-studies">
             {data.cta}
-          </button>
+          </Link>
         </div>
 
         <CaseTabs tabs={data.tabs} />
 
         <div className="cases-grid" data-r data-delay="2">
           <div className="case-main">
-            <img src={data.main.image} alt={data.main.alt} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <CmsImage src={data.main.image} alt={data.main.alt} objectFit="cover" />
             <div className="case-info-overlay">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div>
                   <div className="case-tag">{data.main.tag}</div>
                   <div className="case-title">{data.main.title}</div>
                   <div className="case-desc">{data.main.description}</div>
-                  <a className="view-link" href="#">
+                  <Link className="view-link" href="/case-studies">
                     View Case Study →
-                  </a>
+                  </Link>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '32px' }}>
                   <div className="case-stat-big">{data.main.stat}</div>
@@ -53,7 +55,7 @@ export function CaseStudies({ data }: CaseStudiesProps) {
           <div className="case-side">
             {data.minis.map((mini) => (
               <div key={mini.title} className="case-mini">
-                <img src={mini.image} alt={mini.alt} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <CmsImage src={mini.image} alt={mini.alt} objectFit="cover" />
                 <div className="case-mini-ov">
                   <div className="case-mini-tag">{mini.tag}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>

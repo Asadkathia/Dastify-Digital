@@ -246,6 +246,129 @@ This file tracks implementation progress and upcoming tasks for the repo.
   - Smoke test command:
     - Added `scripts/smoke.ts` and `npm run smoke`.
     - Verifies `/`, `/admin`, preview enter/exit, and draft global save path.
+- April 3, 2026 schema parity guardrail:
+  - Added cross-database schema verification script:
+    - `scripts/db-verify-schema.ts`
+    - checks critical tables/columns for homepage + versions + key collections (`homepage`, `_homepage_v`, `menus`, `redirects`, `blog_posts`, `_blog_posts_v`)
+    - supports both SQLite (`file:`) and Postgres (`postgres://`, `postgresql://`).
+  - Added script:
+    - `npm run db:verify`
+  - Startup hardening:
+    - `predev` now runs `db:migrate` + `db:verify`
+    - `dev:node22` now runs `db:migrate` + `db:verify` before Next dev
+  - Validation:
+    - `npm run db:verify` passed.
+- April 3, 2026 baseline CMS seed/backfill:
+  - Added `scripts/seed-cms-baseline.ts` (SQLite + Postgres aware).
+  - Adds baseline data only when missing (non-destructive):
+    - `site-settings` global row
+    - `menus` rows for `header` and `footer`
+    - default `menus_items` links for both menu locations
+  - Added commands:
+    - `npm run seed:cms-baseline`
+    - `npm run seed:cms-baseline:safe`
+  - Validation:
+    - `site_settings` row count = 1
+    - `menus` contains `header` + `footer`
+    - `menus_items` seeded (`header=4`, `footer=2`)
+- April 3, 2026 staged rollout verification gates:
+  - Added `scripts/verify-rollout-gates.ts` with staged execution:
+    - `local`: `db:migrate` -> `db:verify` -> `seed:cms-baseline` -> `build`
+    - `runtime`: `smoke` (against running app)
+    - `full`: local + runtime
+  - Added npm commands:
+    - `npm run gate:local`
+    - `npm run gate:runtime`
+    - `npm run gate:full`
+  - Added rollout policy doc:
+    - `docs/ROLLOUT_VERIFICATION_GATES.md`
+  - Validation:
+    - `npm run gate:local` passed.
+- April 3, 2026 internal linking improvements:
+  - Updated homepage internal link surfaces to route-level links where applicable:
+    - Navbar defaults now prioritize `/services`, `/case-studies`, `/blog`.
+    - Case studies section CTA + “View Case Study” now link to `/case-studies`.
+    - Insights section CTA + card “Learn more” now link to `/blog`.
+    - Footer default service/specialty links now target `/services` and `/case-studies`.
+    - Footer contact links now use actionable URLs (`/#cta`, `mailto:`, `tel:`) instead of dead `#`.
+  - Component rendering improvement:
+    - Navbar/Footer now use `next/link` for internal links and plain `<a>` for external links.
+  - Validation:
+    - `npm run build` passed.
+- April 3, 2026 Lexical re-enable investigation:
+  - Tested re-enabling form-builder `richText` fields by removing textarea override.
+  - Observed hard failure in Payload CLI generation:
+    - `MissingEditorProp: RichText field "message" is missing the editor prop`
+  - Tested field-level Lexical adapter import for custom block and confirmed prior tooling blocker still applies:
+    - `ERR_REQUIRE_ASYNC_MODULE` when loading config graph with `@payloadcms/richtext-lexical`.
+  - Decision:
+    - Keep safe textarea override in `formBuilderPlugin` for stable `payload:types`, `payload:importmap`, and build workflows.
+    - Track Lexical re-enable as pending blocker until config/tooling import path supports Lexical adapter loading without async-module require failures.
+  - Validation after rollback:
+    - `npm run payload:types` passed.
+    - `npm run payload:importmap` passed.
+    - `npm run build` passed.
+- April 3, 2026 Lexical safely re-enabled:
+  - Implemented async Payload config factory in `payload.config.ts` and moved Lexical loading to lazy `import()` to avoid static `require()` path conflicts.
+  - Added recursive form-builder field transform that injects Lexical `editor` into all plugin `richText` fields, satisfying `MissingEditorProp` for nested/sub fields.
+  - Added fallback mode:
+    - `PAYLOAD_DISABLE_LEXICAL=true` keeps existing textarea rewrite behavior for emergency rollback.
+  - Validation:
+    - `npm run payload:types` passed.
+    - `npm run payload:importmap` passed.
+    - `npm run build` passed.
+- April 3, 2026 runtime verification hardening + admin stability checks:
+  - Added dedicated admin health script:
+    - `scripts/admin-health.ts`
+    - `npm run health:admin`
+    - Verifies `/admin` and `/admin/globals/homepage` return `200` and reports response duration.
+  - Wired admin health into rollout runtime gates:
+    - `scripts/verify-rollout-gates.ts` runtime stage now runs `health:admin` before `smoke`.
+  - Completed verification:
+    - `npm run gate:runtime` passed.
+    - `npm run gate:full` passed (local + runtime).
+- April 3, 2026 homepage image warning fix:
+  - Updated `src/components/CmsImage.tsx` non-fill mode to preserve intrinsic aspect ratio (`height: auto`) instead of forcing `height: 100%`.
+  - Purpose: remove Next image warnings on services images caused by width/height mismatch styling.
+- April 3, 2026 SEO metadata refinement pass:
+  - Updated shared metadata builder (`src/lib/seo/metadata.ts`):
+    - Added dynamic OG fallback (`/og?title=...`) when no explicit SEO/default OG image is available.
+    - Added RSS alternate metadata link (`application/rss+xml`).
+    - Added `twitter.site` from `siteSettings.twitterHandle`.
+  - Updated site layout (`src/app/(site)/layout.tsx`):
+    - Removed duplicate layout-level `generateMetadata` fetch path.
+    - Added Google Analytics script injection when `site-settings.googleAnalyticsId` is configured.
+  - Added migration:
+    - `scripts/migrations/20260403_0008_collection_seo_extra_columns.ts`
+    - Adds `meta_canonical_url`, `meta_noindex`, `meta_keywords` (+ version-prefixed variants) across `pages`, `services`, `case_studies`, `blog_posts` and version tables.
+  - Validation:
+    - `npm run db:migrate` passed.
+    - `npm run payload:types` passed.
+    - `npm run payload:importmap` passed.
+    - `npm run db:verify` passed.
+    - `npm run build` passed.
+  - Note:
+    - Attempting to explicitly add `meta` fields in collection configs triggered `DuplicateFieldName('meta')`, confirming `seoPlugin` is already injecting `meta` fields for configured collections.
+- April 3, 2026 SEO editor parity follow-up (meta field expansion):
+  - Extended `seoPlugin` configuration in `payload.config.ts` using plugin `fields` override to add:
+    - `meta.canonicalURL`
+    - `meta.noindex`
+    - `meta.keywords`
+  - Added migration coverage for expanded SEO fields:
+    - `20260403_0008_collection_seo_extra_columns` (collections + versions)
+    - `20260403_0009_global_seo_extra_columns` (homepage/site-settings + homepage versions)
+  - Expanded schema verification guardrails in `scripts/db-verify-schema.ts` for SEO columns across:
+    - `homepage`, `_homepage_v`, `site_settings`
+    - `pages`, `_pages_v`
+    - `services`, `_services_v`
+    - `case_studies`, `_case_studies_v`
+    - `blog_posts`, `_blog_posts_v`
+  - Validation:
+    - `npm run db:migrate` passed.
+    - `npm run db:verify` passed.
+    - `npm run payload:types` passed (confirmed `canonicalURL/noindex/keywords` in generated types).
+    - `npm run payload:importmap` passed.
+    - `npm run build` passed.
 
 ## Next Tasks
 - [x] Generate Payload TypeScript types and commit `src/payload-types.ts`.
@@ -258,6 +381,7 @@ This file tracks implementation progress and upcoming tasks for the repo.
 - [x] Add access control rules for editors vs admins.
 - [x] Add autosave/versioning strategy for homepage global.
 - [x] Add preview workflow for draft homepage changes.
+- [x] Add seed/backfill scripts for new globals/collections.
 - [x] Add validation layer to guarantee Payload content matches `HomepageContent` contract.
 - [x] Move homepage global from single JSON field to structured section fields.
 - [x] Remove runtime SQL self-heal and rely on adapter-managed schema sync.
@@ -271,7 +395,7 @@ This file tracks implementation progress and upcoming tasks for the repo.
 ## Runbook
 1. Copy `.env.example` to `.env` and set `PAYLOAD_SECRET`.
 2. Run `npm run dev:node22` (preferred) or ensure local Node version is 22 before running `npm run dev`.
-   - `predev` now auto-runs `npm run db:migrate`.
+   - `predev` now auto-runs `npm run db:migrate` and `npm run db:verify`.
 3. If `/admin/globals/homepage` errors with `no such column: nav_logo`, run `npm run db:migrate` once.
 4. If errors mention `hero_image_media_id` / `_status` / `image_media_id`, run `npm run db:migrate` again after pulling latest code.
 4. Open `/admin/create-first-user` (first run only) and create admin user.
@@ -288,3 +412,38 @@ This file tracks implementation progress and upcoming tasks for the repo.
    - `npm run db:restore -- --file /absolute/path/to/backup-payload.db`
 11. For smoke verification (with dev server running):
    - `npm run smoke`
+12. For admin endpoint health verification (with dev server running):
+   - `npm run health:admin`
+
+- April 3, 2026 SEO + CMS expansion rollout (phase-driven):
+  - Added roadmap/progress tracker:
+    - `docs/SEO_ROADMAP_AND_PROGRESS.md`
+    - Includes phase checklist, progress log, and strike-through completion updates.
+  - Added new Payload collections and global scaffolding:
+    - Collections: `pages`, `services`, `case-studies`, `blog-posts`, `blog-categories`, `tags`, `menus`
+    - Global: `site-settings`
+    - Shared hooks/utilities for preview URL and cache revalidation.
+  - Added plugin wiring in `payload.config.ts`:
+    - Enabled: `@payloadcms/plugin-seo`, `@payloadcms/plugin-nested-docs`, `@payloadcms/plugin-redirects`, `@payloadcms/plugin-search`
+    - Deferred from runtime due editor-compat constraints: `@payloadcms/plugin-form-builder` enablement.
+  - Added new frontend routes + metadata/JSON-LD:
+    - `/services`, `/services/[slug]`
+    - `/case-studies`, `/case-studies/[slug]`
+    - `/blog`, `/blog/[slug]`, `/blog/page/[page]`, `/blog/category/[slug]`, `/blog/tag/[slug]`
+    - `/(site)/[...slug]` for generic pages
+  - Added SEO infrastructure endpoints:
+    - `src/app/sitemap.ts`
+    - `src/app/robots.ts`
+    - `src/app/feed.xml/route.ts`
+    - `src/app/og/route.tsx`
+  - Added redirect + cache infra:
+    - `middleware.ts` for admin-managed redirects
+    - `src/app/api/revalidate/route.ts`
+    - Payload `afterChange/afterDelete` revalidation hooks.
+  - Technical SEO updates:
+    - Added `<main>` landmark in `src/app/(site)/layout.tsx`.
+    - Replaced homepage raw `<img>` usage with `next/image` via `src/components/CmsImage.tsx`.
+  - Validation:
+    - `npm run payload:types` passed.
+    - `npm run payload:importmap` passed.
+    - `npm run build` passed.

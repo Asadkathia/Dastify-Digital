@@ -3,5 +3,6 @@ import { getPayload } from 'payload';
 import config from '@payload-config';
 
 export const getPayloadClient = cache(async () => {
-  return getPayload({ config });
+  const payloadConfig = await config;
+  return getPayload({ config: payloadConfig });
 });

@@ -1,4 +1,5 @@
 import type { HomepageContent } from '@/lib/homepage-content';
+import { CmsImage } from '@/components/CmsImage';
 
 type MissionProps = {
   data: HomepageContent['mission'];
@@ -12,7 +13,7 @@ export function Mission({ data }: MissionProps) {
       <span className="sec-wm g3">M</span>
       <div className="mission-grid">
         <div className="mission-img img-reveal" data-r="L">
-          <img src={data.image} alt={data.imageAlt} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <CmsImage src={data.image} alt={data.imageAlt} objectFit="cover" />
         </div>
         <div className="mission-content">
           <div data-r>

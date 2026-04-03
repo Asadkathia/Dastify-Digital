@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { HomepageContent } from '@/lib/homepage-content';
 
 type NavbarProps = {
@@ -16,9 +17,15 @@ export function Navbar({ data }: NavbarProps) {
       </div>
       <div className="nav-links">
         {data.links.map((link) => (
-          <a key={link.label} className="nav-link" href={link.href}>
-            {link.label}
-          </a>
+          link.href.startsWith('#') ? (
+            <a key={link.label} className="nav-link" href={link.href}>
+              {link.label}
+            </a>
+          ) : (
+            <Link key={link.label} className="nav-link" href={link.href}>
+              {link.label}
+            </Link>
+          )
         ))}
       </div>
       <button className="btn-dk nav-cta" type="button">

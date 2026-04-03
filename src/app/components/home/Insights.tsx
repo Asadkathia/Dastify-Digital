@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import type { HomepageContent } from '@/lib/homepage-content';
+import { CmsImage } from '@/components/CmsImage';
 
 type InsightsProps = {
   data: HomepageContent['insights'];
@@ -25,23 +27,23 @@ export function Insights({ data }: InsightsProps) {
               {titleBottom}
             </h2>
           </div>
-          <button className="btn-ol" data-r type="button">
+          <Link className="btn-ol" data-r href="/blog">
             {data.cta}
-          </button>
+          </Link>
         </div>
 
         <div className="blog-grid">
           {data.items.map((item, index) => (
             <div key={item.title} className="blog-card" data-r data-delay={((index % 3) + 1).toString()}>
               <div className="blog-img img-reveal">
-                <img src={item.image} alt={item.alt} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                <CmsImage src={item.image} alt={item.alt} objectFit="cover" />
               </div>
               <div className="blog-info">
                 <div className="blog-date">{item.date}</div>
                 <div className="blog-title">{item.title}</div>
-                <a className="blog-link" href="#">
+                <Link className="blog-link" href="/blog">
                   Learn more →
-                </a>
+                </Link>
               </div>
             </div>
           ))}

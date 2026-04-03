@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { HomepageContent } from '@/lib/homepage-content';
 
 type FooterProps = {
@@ -6,6 +7,7 @@ type FooterProps = {
 
 export function Footer({ data }: FooterProps) {
   const [brandLeft, brandRight] = data.logo.split('.');
+  const isInternalHref = (href: string) => href.startsWith('/') || href.startsWith('#');
 
   return (
     <footer className="footer">
@@ -27,13 +29,19 @@ export function Footer({ data }: FooterProps) {
             </div>
           </div>
 
-          {data.columns.map((column) => (
+              {data.columns.map((column) => (
             <div key={column.title}>
               <div className="footer-col-t">{column.title}</div>
               {column.links.map((link) => (
-                <a key={link.label} className="footer-link" href={link.href}>
-                  {link.label}
-                </a>
+                isInternalHref(link.href) ? (
+                  <Link key={link.label} className="footer-link" href={link.href}>
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a key={link.label} className="footer-link" href={link.href}>
+                    {link.label}
+                  </a>
+                )
               ))}
               {column.button ? (
                 <div style={{ marginTop: '20px' }}>

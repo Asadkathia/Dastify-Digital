@@ -1,4 +1,5 @@
 import type { HomepageContent } from '@/lib/homepage-content';
+import { CmsImage } from '@/components/CmsImage';
 
 type AboutProps = {
   data: HomepageContent['about'];
@@ -11,7 +12,7 @@ export function About({ data }: AboutProps) {
       <div className="wrap">
         <div className="about-grid">
           <div className="img-reveal about-img-wrap" data-r="L">
-            <img src={data.image} alt={data.imageAlt} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+            <CmsImage src={data.image} alt={data.imageAlt} objectFit="contain" />
           </div>
           <div>
             <div className="about-chip-lt" data-r data-delay="1">

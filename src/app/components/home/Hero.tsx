@@ -1,4 +1,5 @@
 import type { HomepageContent } from '@/lib/homepage-content';
+import { CmsImage } from '@/components/CmsImage';
 
 type HeroProps = {
   data: HomepageContent['hero'];
@@ -68,7 +69,7 @@ export function Hero({ data }: HeroProps) {
 
         <div className="hero-right" data-r="R">
           <div className="hero-img-wrap img-reveal">
-            <img src={data.image} alt={data.imageAlt} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+            <CmsImage src={data.image} alt={data.imageAlt} objectFit="contain" priority />
           </div>
           <div className="hero-badge">
             <div className="hero-badge-n">{data.badgeValue}</div>
