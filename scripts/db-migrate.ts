@@ -37,21 +37,32 @@ async function clearDevModeMigrationMarker(): Promise<void> {
   try {
     await client.connect();
 
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS "payload-migrations" (
-        id serial PRIMARY KEY,
-        name varchar,
-        batch integer
-      )
-    `);
+    // Payload's postgres migration table is typically `payload_migrations`.
+    // Keep a fallback check for legacy/hyphenated naming to be defensive.
+    const tableNameCandidates = ['payload_migrations', '"payload-migrations"'];
 
-    const result = await client.query(
-      'DELETE FROM "payload-migrations" WHERE batch = -1 RETURNING id',
-    );
+    let removedMarkers = 0;
 
-    if (result.rowCount && result.rowCount > 0) {
+    for (const tableName of tableNameCandidates) {
+      try {
+        const existsResult = await client.query<{ exists: string | null }>(
+          `SELECT to_regclass('${tableName}') AS exists`,
+        );
+
+        if (!existsResult.rows[0]?.exists) {
+          continue;
+        }
+
+        const deleteResult = await client.query(`DELETE FROM ${tableName} WHERE batch = -1`);
+        removedMarkers += deleteResult.rowCount ?? 0;
+      } catch {
+        // Continue through candidates; table may not exist in this shape.
+      }
+    }
+
+    if (removedMarkers > 0) {
       console.log(
-        `[db:migrate] removed ${result.rowCount} dev-mode migration marker(s) (batch=-1) for CI/Vercel non-interactive migration.`,
+        `[db:migrate] removed ${removedMarkers} dev-mode migration marker(s) (batch=-1) for CI/Vercel non-interactive migration.`,
       );
     }
   } catch (error) {
