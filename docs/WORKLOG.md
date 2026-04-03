@@ -2,8 +2,6 @@
 
 This file tracks implementation progress and upcoming tasks for the repo.
 
-Related Tracker: [Storyblok Integration Roadmap and Worklog](./STORYBLOK_INTEGRATION_ROADMAP_AND_WORKLOG.md)
-
 ## Progress
 - [x] ~~Phase 1: Pixel-perfect Next.js replica from `dastify-final_15.html`~~
 - [x] Phase 2: Payload CMS scaffold and homepage connection

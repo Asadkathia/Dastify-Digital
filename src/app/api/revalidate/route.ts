@@ -1,17 +1,9 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-import { storyblokSlugToPathname } from '@/lib/storyblok';
 
 type PayloadWebhookBody = {
   paths?: unknown;
   tags?: unknown;
-};
-
-type StoryblokWebhookBody = {
-  action?: unknown;
-  story?: {
-    full_slug?: unknown;
-  };
 };
 
 function normalizePaths(input: unknown): string[] {
@@ -40,33 +32,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 
-  const payload = (await request.json().catch(() => ({}))) as PayloadWebhookBody & StoryblokWebhookBody;
+  const payload = (await request.json().catch(() => ({}))) as PayloadWebhookBody;
 
   const payloadPaths = normalizePaths(payload.paths);
   const payloadTags = normalizeTags(payload.tags);
 
-  let source: 'payload' | 'storyblok' | 'unknown' = 'unknown';
-  let ignoredReason: string | undefined;
-  let paths = payloadPaths;
-  let tags = payloadTags;
-
-  if (paths.length > 0 || tags.length > 0) {
-    source = 'payload';
-  } else if (typeof payload.story?.full_slug === 'string') {
-    const action = typeof payload.action === 'string' ? payload.action : '';
-
-    if (action !== 'published' && action !== 'unpublished') {
-      source = 'storyblok';
-      ignoredReason = `Unsupported Storyblok action: ${action || 'unknown'}`;
-    } else {
-      source = 'storyblok';
-      const storyPath = storyblokSlugToPathname(payload.story.full_slug);
-      paths = [storyPath];
-      tags = ['storyblok-page'];
-    }
-  } else {
-    ignoredReason = 'Unsupported payload shape';
-  }
+  const source: 'payload' | 'unknown' = payloadPaths.length > 0 || payloadTags.length > 0 ? 'payload' : 'unknown';
+  const ignoredReason = source === 'unknown' ? 'Unsupported payload shape' : undefined;
+  const paths = payloadPaths;
+  const tags = payloadTags;
 
   for (const path of paths) {
     revalidatePath(path);
