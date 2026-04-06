@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useEditorStore, deserializeBlocksFromPayload } from './store';
+import { useEditorStore, deserializeSectionsFromPayload } from './store';
 
 type Version = {
   id: string;
@@ -21,7 +21,7 @@ export function RevisionHistory({ pageId, onClose }: RevisionHistoryProps) {
   const [versions, setVersions] = useState<Version[]>([]);
   const [loading, setLoading] = useState(true);
   const [restoring, setRestoring] = useState<string | null>(null);
-  const setBlocks = useEditorStore((s) => s.setBlocks);
+  const setSections = useEditorStore((s) => s.setSections);
   const setSaveStatus = useEditorStore((s) => s.setSaveStatus);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export function RevisionHistory({ pageId, onClose }: RevisionHistoryProps) {
       const data: { version?: { blocks?: Record<string, unknown>[] } } = await res.json();
       const blocks = data.version?.blocks;
       if (Array.isArray(blocks)) {
-        setBlocks(deserializeBlocksFromPayload(blocks));
+        setSections(deserializeSectionsFromPayload(blocks));
         setSaveStatus('dirty');
         onClose();
       }

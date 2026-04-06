@@ -9,6 +9,9 @@ import { migration as homepageVersionSeoColumns } from './20260403_0007_homepage
 import { migration as collectionSeoExtraColumns } from './20260403_0008_collection_seo_extra_columns.ts';
 import { migration as globalSeoExtraColumns } from './20260403_0009_global_seo_extra_columns.ts';
 import { migration as canonicalUrlColumnNameFix } from './20260403_0010_canonical_url_column_name_fix.ts';
+import { migration as sectionBlockTables } from './20260406_0011_section_block_tables.ts';
+import { migration as newBlockTables } from './20260407_0012_new_block_tables.ts';
+import { migration as newBlockTables2 } from './20260407_0013_new_block_tables_2.ts';
 
 export const migrations: Migration[] = [
   usersRole,
@@ -21,4 +24,7 @@ export const migrations: Migration[] = [
   collectionSeoExtraColumns,
   globalSeoExtraColumns,
   canonicalUrlColumnNameFix,
+  sectionBlockTables,
+  newBlockTables,
+  newBlockTables2,
 ];

@@ -1,142 +1,28 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useDroppable,
+} from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useEditorStore } from './store';
 import { getBlockDefinition } from './block-registry';
 import { blockTemplates } from './block-templates';
-import type { BlockInstance } from './types';
+import type { BlockInstance, ColumnInstance, ColumnWidth, SectionInstance } from './types';
 
-// ─── Block card in the canvas ───────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-type BlockCardProps = {
-  block: BlockInstance;
-  isSelected: boolean;
-  onSelect: () => void;
-  onDelete: () => void;
-  onDuplicate: () => void;
+const COLUMN_WIDTH_LABELS: Record<ColumnWidth, string> = {
+  '1/1': 'Full',
+  '1/2': '1/2',
+  '1/3': '1/3',
+  '2/3': '2/3',
+  '1/4': '1/4',
+  '3/4': '3/4',
 };
 
-function BlockCard({ block, isSelected, onSelect, onDelete, onDuplicate }: BlockCardProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: block.id,
-    data: { type: 'canvas-block', blockId: block.id },
-  });
-
-  const def = getBlockDefinition(block.blockType);
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  };
-
-  const title = (block.data.title as string | undefined) || def?.label || block.blockType;
-  const subtitle = (block.data.eyebrow as string | undefined) || (block.data.subtitle as string | undefined);
-  const dataSummary = (() => {
-    const arrayItems = Object.values(block.data).find((value) => Array.isArray(value));
-    if (Array.isArray(arrayItems)) return `${arrayItems.length} items`;
-    if (typeof block.data.content === 'string') return `${Math.min(999, block.data.content.length)} chars`;
-    return def?.label ?? block.blockType;
-  })();
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      onClick={onSelect}
-    >
-      <div
-        style={{
-          position: 'relative',
-          borderRadius: '8px',
-          border: isSelected ? '2px solid #0ea5e9' : '1px solid #2a2a2a',
-          background: isSelected ? '#0c1a24' : '#161616',
-          marginBottom: '6px',
-          transition: 'border-color 0.15s, background 0.15s',
-          cursor: 'pointer',
-          overflow: 'hidden',
-        }}
-        onMouseEnter={(e) => {
-          const toolbar = e.currentTarget.querySelector('[data-hover-toolbar]') as HTMLElement | null;
-          if (toolbar) toolbar.style.opacity = '1';
-        }}
-        onMouseLeave={(e) => {
-          const toolbar = e.currentTarget.querySelector('[data-hover-toolbar]') as HTMLElement | null;
-          if (toolbar && !isSelected) toolbar.style.opacity = '0';
-        }}
-      >
-        {/* Drag handle + block info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px' }}>
-          <div
-            {...attributes}
-            {...listeners}
-            style={{
-              cursor: 'grab',
-              color: '#444',
-              fontSize: '14px',
-              lineHeight: 1,
-              flexShrink: 0,
-              padding: '2px',
-            }}
-            onClick={(e) => e.stopPropagation()}
-            title="Drag to reorder"
-          >
-            ⠿
-          </div>
-          <span style={{ fontSize: '16px', flexShrink: 0 }}>{def?.icon || '📦'}</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: isSelected ? '#7dd3fc' : '#ddd', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {title}
-            </p>
-            {subtitle ? (
-              <p style={{ margin: 0, fontSize: '11px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
-                {subtitle}
-              </p>
-            ) : null}
-            <p style={{ margin: 0, fontSize: '10px', color: '#444', marginTop: '2px' }}>{dataSummary}</p>
-          </div>
-          {isSelected && (
-            <span style={{ fontSize: '10px', background: '#0ea5e9', color: '#fff', borderRadius: '4px', padding: '2px 6px', flexShrink: 0, fontWeight: 600 }}>
-              Selected
-            </span>
-          )}
-        </div>
-
-        {/* Hover toolbar */}
-        <div
-          data-hover-toolbar
-          style={{
-            position: 'absolute',
-            top: '6px',
-            right: '8px',
-            display: 'flex',
-            gap: '4px',
-            opacity: isSelected ? 1 : 0,
-            transition: 'opacity 0.15s',
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={onDuplicate}
-            title="Duplicate block"
-            style={toolbarBtnStyle}
-          >
-            ⧉
-          </button>
-          <button
-            onClick={onDelete}
-            title="Delete block"
-            style={{ ...toolbarBtnStyle, color: '#f87171' }}
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+const COLUMN_WIDTH_OPTIONS: ColumnWidth[] = ['1/1', '1/2', '1/3', '2/3', '1/4', '3/4'];
 
 const toolbarBtnStyle: React.CSSProperties = {
   background: '#222',
@@ -149,54 +35,339 @@ const toolbarBtnStyle: React.CSSProperties = {
   padding: '4px 6px',
 };
 
-// ─── Drop zone ───────────────────────────────────────────────────────────────
+// ─── Drag ID conventions ──────────────────────────────────────────────────────
+// block:{sectionId}:{columnId}:{blockId}
+// column:{sectionId}:{columnId}
+// section:{sectionId}
 
-function DropZone({ id }: { id: string }) {
-  const { isOver, setNodeRef } = useDroppable({ id });
+function blockDragId(sectionId: string, columnId: string, blockId: string) {
+  return `block:${sectionId}:${columnId}:${blockId}`;
+}
+function columnDragId(sectionId: string, columnId: string) {
+  return `column:${sectionId}:${columnId}`;
+}
+function sectionDragId(sectionId: string) {
+  return `section:${sectionId}`;
+}
+
+// ─── Block card ───────────────────────────────────────────────────────────────
+
+type BlockCardProps = {
+  sectionId: string;
+  columnId: string;
+  blockId: string;
+  isSelected: boolean;
+  isMatch: boolean;
+};
+
+const BlockCard = memo(function BlockCard({ sectionId, columnId, blockId, isSelected, isMatch }: BlockCardProps) {
+  const block = useEditorStore((s) =>
+    s.sections
+      .find((sec) => sec.id === sectionId)
+      ?.columns.find((col) => col.id === columnId)
+      ?.blocks.find((b) => b.id === blockId),
+  ) as BlockInstance | undefined;
+
+  const selectBlock = useEditorStore((s) => s.selectBlock);
+  const removeBlock = useEditorStore((s) => s.removeBlock);
+  const duplicateBlock = useEditorStore((s) => s.duplicateBlock);
+
+  const dndId = blockDragId(sectionId, columnId, blockId);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: dndId,
+    data: { type: 'block', sectionId, columnId, blockId },
+  });
+
+  if (!block) return null;
+
+  const def = getBlockDefinition(block.blockType);
+  const title = (block.data.title as string | undefined) || def?.label || block.blockType;
+  const subtitle = (block.data.eyebrow as string | undefined) || (block.data.subtitle as string | undefined);
+  const dataSummary = (() => {
+    const arrayItems = Object.values(block.data).find((v) => Array.isArray(v));
+    if (Array.isArray(arrayItems)) return `${arrayItems.length} items`;
+    if (typeof block.data.content === 'string') return `${Math.min(999, block.data.content.length)} chars`;
+    return def?.label ?? block.blockType;
+  })();
+
   return (
     <div
       ref={setNodeRef}
-      style={{
-        height: isOver ? '40px' : '8px',
-        borderRadius: '6px',
-        background: isOver ? 'rgba(14, 165, 233, 0.15)' : 'transparent',
-        border: isOver ? '2px dashed #0ea5e9' : '2px dashed transparent',
-        transition: 'all 0.15s',
-        margin: '2px 0',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1 }}
+      onClick={() => selectBlock(sectionId, columnId, blockId)}
     >
-      {isOver && <span style={{ fontSize: '11px', color: '#0ea5e9', fontWeight: 600 }}>Drop here</span>}
+      <div
+        style={{
+          position: 'relative',
+          borderRadius: '6px',
+          border: isSelected
+            ? '2px solid #0ea5e9'
+            : isMatch
+            ? '2px solid #f59e0b'
+            : '1px solid #2a2a2a',
+          background: isSelected ? '#0c1a24' : '#161616',
+          marginBottom: '4px',
+          cursor: 'pointer',
+          overflow: 'hidden',
+          transition: 'border-color 0.15s, background 0.15s',
+        }}
+        onMouseEnter={(e) => {
+          const t = e.currentTarget.querySelector('[data-hover-toolbar]') as HTMLElement | null;
+          if (t) t.style.opacity = '1';
+        }}
+        onMouseLeave={(e) => {
+          const t = e.currentTarget.querySelector('[data-hover-toolbar]') as HTMLElement | null;
+          if (t && !isSelected) t.style.opacity = '0';
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px' }}>
+          <div
+            {...attributes}
+            {...listeners}
+            style={{ cursor: 'grab', color: '#444', fontSize: '13px', flexShrink: 0, padding: '2px' }}
+            onClick={(e) => e.stopPropagation()}
+            title="Drag to reorder"
+          >
+            ⠿
+          </div>
+          <span style={{ fontSize: '14px', flexShrink: 0 }}>{def?.icon || '📦'}</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: isSelected ? '#7dd3fc' : '#ddd', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {title}
+            </p>
+            {subtitle && (
+              <p style={{ margin: 0, fontSize: '10px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '1px' }}>
+                {subtitle}
+              </p>
+            )}
+            <p style={{ margin: 0, fontSize: '10px', color: '#3a3a3a', marginTop: '1px' }}>{dataSummary}</p>
+          </div>
+          {isSelected && (
+            <span style={{ fontSize: '9px', background: '#0ea5e9', color: '#fff', borderRadius: '3px', padding: '2px 5px', flexShrink: 0, fontWeight: 600 }}>
+              ●
+            </span>
+          )}
+        </div>
+        <div
+          data-hover-toolbar
+          style={{ position: 'absolute', top: '4px', right: '6px', display: 'flex', gap: '3px', opacity: isSelected ? 1 : 0, transition: 'opacity 0.15s' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button onClick={() => duplicateBlock(sectionId, columnId, blockId)} style={toolbarBtnStyle} title="Duplicate">⧉</button>
+          <button onClick={() => removeBlock(sectionId, columnId, blockId)} style={{ ...toolbarBtnStyle, color: '#f87171' }} title="Delete">✕</button>
+        </div>
+      </div>
     </div>
   );
-}
+});
 
-// ─── Empty state ─────────────────────────────────────────────────────────────
+// ─── Column ───────────────────────────────────────────────────────────────────
+
+type ColumnProps = {
+  sectionId: string;
+  column: ColumnInstance;
+  selectedBlockId: string | null;
+  searchMatchIds: Set<string>;
+  addBlock: (blockType: string, sectionId: string, columnId: string) => void;
+};
+
+const Column = memo(function Column({ sectionId, column, selectedBlockId, searchMatchIds, addBlock }: ColumnProps) {
+  const removeColumn = useEditorStore((s) => s.removeColumnFromSection);
+  const updateWidth = useEditorStore((s) => s.updateColumnWidth);
+  const sections = useEditorStore((s) => s.sections);
+  const totalCols = sections.find((s) => s.id === sectionId)?.columns.length ?? 1;
+
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `col-drop:${sectionId}:${column.id}` });
+
+  const blockDragIds = column.blocks.map((b) => blockDragId(sectionId, column.id, b.id));
+
+  return (
+    <div
+      style={{
+        flex: 1,
+        minWidth: 0,
+        background: '#111',
+        borderRadius: '6px',
+        border: isOver ? '1px solid #0ea5e9' : '1px solid #1e1e1e',
+        transition: 'border-color 0.15s',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Column header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 8px', borderBottom: '1px solid #1a1a1a' }}>
+        <select
+          value={column.width}
+          onChange={(e) => updateWidth(sectionId, column.id, e.target.value as ColumnWidth)}
+          style={{ flex: 1, background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: '4px', color: '#666', fontSize: '10px', padding: '2px 4px', cursor: 'pointer' }}
+        >
+          {COLUMN_WIDTH_OPTIONS.map((w) => (
+            <option key={w} value={w}>{COLUMN_WIDTH_LABELS[w]}</option>
+          ))}
+        </select>
+        {totalCols > 1 && (
+          <button
+            onClick={() => removeColumn(sectionId, column.id)}
+            style={{ ...toolbarBtnStyle, padding: '2px 5px', color: '#555', fontSize: '10px' }}
+            title="Remove column"
+          >✕</button>
+        )}
+      </div>
+
+      {/* Blocks */}
+      <div ref={setDropRef} style={{ flex: 1, padding: '6px', minHeight: '48px' }}>
+        <SortableContext items={blockDragIds} strategy={verticalListSortingStrategy}>
+          {column.blocks.map((block) => (
+            <BlockCard
+              key={block.id}
+              sectionId={sectionId}
+              columnId={column.id}
+              blockId={block.id}
+              isSelected={block.id === selectedBlockId}
+              isMatch={searchMatchIds.has(block.id)}
+            />
+          ))}
+        </SortableContext>
+        {column.blocks.length === 0 && (
+          <div
+            style={{
+              border: '1px dashed #2a2a2a',
+              borderRadius: '6px',
+              padding: '10px 8px',
+              textAlign: 'center',
+              color: '#333',
+              fontSize: '11px',
+            }}
+          >
+            Drop blocks here
+          </div>
+        )}
+      </div>
+
+      {/* Add block shortcut */}
+      <button
+        onClick={() => addBlock('rich-text-block', sectionId, column.id)}
+        style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '11px', padding: '5px', borderTop: '1px solid #1a1a1a', transition: 'color 0.15s' }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#666'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#333'; }}
+        title="Add text block"
+      >
+        ＋ block
+      </button>
+    </div>
+  );
+});
+
+// ─── Section card ─────────────────────────────────────────────────────────────
+
+type SectionCardProps = {
+  section: SectionInstance;
+  selectedBlockId: string | null;
+  selectedSectionId: string | null;
+  searchMatchIds: Set<string>;
+};
+
+const SectionCard = memo(function SectionCard({ section, selectedBlockId, selectedSectionId, searchMatchIds }: SectionCardProps) {
+  const addBlock = useEditorStore((s) => s.addBlock);
+  const removeSection = useEditorStore((s) => s.removeSection);
+  const duplicateSection = useEditorStore((s) => s.duplicateSection);
+  const addColumn = useEditorStore((s) => s.addColumnToSection);
+  const selectSection = useEditorStore((s) => s.selectSection);
+
+  const isSelected = section.id === selectedSectionId;
+
+  const columnDragIds = section.columns.map((c) => columnDragId(section.id, c.id));
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: sectionDragId(section.id),
+    data: { type: 'section', sectionId: section.id },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1, marginBottom: '8px' }}
+    >
+      <div
+        style={{
+          borderRadius: '8px',
+          border: isSelected ? '1px solid #334155' : '1px solid #1e1e1e',
+          background: '#0c0c0c',
+          overflow: 'hidden',
+        }}
+        onClick={() => selectSection(section.id)}
+      >
+        {/* Section header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 10px', borderBottom: '1px solid #1a1a1a', background: '#111' }}>
+          <div
+            {...attributes}
+            {...listeners}
+            style={{ cursor: 'grab', color: '#333', fontSize: '13px', flexShrink: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            title="Drag section"
+          >
+            ⠿⠿
+          </div>
+          <span style={{ flex: 1, fontSize: '11px', color: '#555', fontWeight: 500 }}>
+            {section.label || 'Section'}
+          </span>
+          <span style={{ fontSize: '10px', color: '#333' }}>{section.columns.length} col{section.columns.length !== 1 ? 's' : ''}</span>
+          <div style={{ display: 'flex', gap: '3px' }} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => addColumn(section.id)} style={{ ...toolbarBtnStyle, fontSize: '10px' }} title="Add column">+ col</button>
+            <button onClick={() => duplicateSection(section.id)} style={toolbarBtnStyle} title="Duplicate section">⧉</button>
+            <button onClick={() => removeSection(section.id)} style={{ ...toolbarBtnStyle, color: '#f87171' }} title="Delete section">✕</button>
+          </div>
+        </div>
+
+        {/* Columns */}
+        <div style={{ padding: '6px', display: 'flex', gap: '6px' }}>
+          <SortableContext items={columnDragIds} strategy={horizontalListSortingStrategy}>
+            {section.columns.map((col) => (
+              <Column
+                key={col.id}
+                sectionId={section.id}
+                column={col}
+                selectedBlockId={selectedBlockId}
+                searchMatchIds={searchMatchIds}
+                addBlock={addBlock}
+              />
+            ))}
+          </SortableContext>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
 
 function EmptyState() {
-  const addBlock = useEditorStore((s) => s.addBlock);
-  const setBlocks = useEditorStore((s) => s.setBlocks);
+  const addSection = useEditorStore((s) => s.addSection);
+  const setSections = useEditorStore((s) => s.setSections);
 
   function loadTemplate(templateId: string) {
     const tpl = blockTemplates.find((t) => t.id === templateId);
     if (!tpl) return;
     const blocks = tpl.blocks();
-    setBlocks(blocks);
+    const { deserializeSectionsFromPayload } = require('./store') as typeof import('./store');
+    const fakePayload = blocks.map((b) => ({ blockType: b.blockType, ...b.data }));
+    setSections(deserializeSectionsFromPayload(fakePayload));
   }
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '20px 12px' }}>
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-        <div style={{ fontSize: '36px', marginBottom: '10px' }}>📄</div>
-        <h3 style={{ margin: '0 0 6px', color: '#ccc', fontSize: '14px', fontWeight: 600 }}>Start building your page</h3>
-        <p style={{ margin: 0, color: '#555', fontSize: '12px', lineHeight: 1.5 }}>
-          Load a template or drag blocks from the left
-        </p>
+        <div style={{ fontSize: '32px', marginBottom: '10px' }}>📄</div>
+        <h3 style={{ margin: '0 0 6px', color: '#ccc', fontSize: '13px', fontWeight: 600 }}>Start building your page</h3>
+        <p style={{ margin: '0 0 12px', color: '#555', fontSize: '11px' }}>Load a template or add a section</p>
+        <button
+          onClick={() => addSection()}
+          style={{ background: '#0ea5e9', border: 'none', borderRadius: '6px', color: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 600, padding: '8px 16px' }}
+        >
+          + Add Section
+        </button>
       </div>
 
-      {/* Templates */}
       <div style={{ marginBottom: '20px' }}>
         <p style={{ fontSize: '10px', fontWeight: 600, color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px 2px' }}>
           Templates
@@ -206,29 +377,12 @@ function EmptyState() {
             key={tpl.id}
             onClick={() => loadTemplate(tpl.id)}
             style={{
-              width: '100%',
-              background: '#161616',
-              border: '1px solid #2a2a2a',
-              borderRadius: '8px',
-              color: '#aaa',
-              cursor: 'pointer',
-              fontSize: '12px',
-              padding: '10px 12px',
-              textAlign: 'left',
-              marginBottom: '6px',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px',
-              transition: 'background 0.15s, border-color 0.15s',
+              width: '100%', background: '#161616', border: '1px solid #2a2a2a', borderRadius: '8px',
+              color: '#aaa', cursor: 'pointer', fontSize: '12px', padding: '10px 12px', textAlign: 'left',
+              marginBottom: '6px', display: 'flex', alignItems: 'flex-start', gap: '10px',
             }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = '#1e1e1e';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '#3a3a3a';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = '#161616';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a2a2a';
-            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#1e1e1e'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#161616'; }}
           >
             <span style={{ fontSize: '18px', flexShrink: 0 }}>{tpl.icon}</span>
             <div>
@@ -238,97 +392,61 @@ function EmptyState() {
           </button>
         ))}
       </div>
-
-      {/* Quick add */}
-      <div>
-        <p style={{ fontSize: '10px', fontWeight: 600, color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px 2px' }}>
-          Quick Add
-        </p>
-        {[
-          { blockType: 'hero-block', label: '🖼️ Hero' },
-          { blockType: 'cta-block', label: '🔔 CTA' },
-          { blockType: 'rich-text-block', label: '📝 Rich Text' },
-        ].map(({ blockType, label }) => (
-          <button
-            key={blockType}
-            onClick={() => addBlock(blockType)}
-            style={{
-              width: '100%',
-              background: 'transparent',
-              border: '1px dashed #2a2a2a',
-              borderRadius: '6px',
-              color: '#555',
-              cursor: 'pointer',
-              fontSize: '12px',
-              padding: '8px 10px',
-              textAlign: 'left',
-              marginBottom: '4px',
-              transition: 'color 0.15s, border-color 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.color = '#aaa';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '#444';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.color = '#555';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a2a2a';
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }
 
 // ─── Canvas ───────────────────────────────────────────────────────────────────
 
-export function Canvas() {
-  const blocks = useEditorStore((s) => s.blocks);
-  const selectedBlockId = useEditorStore((s) => s.selectedBlockId);
-  const selectBlock = useEditorStore((s) => s.selectBlock);
-  const removeBlock = useEditorStore((s) => s.removeBlock);
-  const duplicateBlock = useEditorStore((s) => s.duplicateBlock);
-  const addBlock = useEditorStore((s) => s.addBlock);
+type CanvasProps = {
+  activeDrag: { type: string; label: string; icon: string } | null;
+};
+
+export function Canvas({ activeDrag: _activeDrag }: CanvasProps) {
+  const sections = useEditorStore((s) => s.sections);
+  const selection = useEditorStore((s) => s.selection);
+  const addSection = useEditorStore((s) => s.addSection);
+
   const [search, setSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const normalized = search.trim().toLowerCase();
-  const matchingIds = useMemo(() => {
-    if (!normalized) return [];
-    return blocks
-      .filter((block) => {
-        const def = getBlockDefinition(block.blockType);
-        const title = typeof block.data.title === 'string' ? block.data.title : '';
-        const content = typeof block.data.content === 'string' ? block.data.content : '';
-        const label = def?.label ?? block.blockType;
-        return `${label} ${title} ${content}`.toLowerCase().includes(normalized);
-      })
-      .map((b) => b.id);
-  }, [blocks, normalized]);
 
-  const { setNodeRef } = useDroppable({ id: 'canvas-root' });
+  const selectedBlockId = selection?.kind === 'block' ? selection.blockId : null;
+  const selectedSectionId = selection?.kind === 'section' ? selection.sectionId : selection?.kind === 'block' ? selection.sectionId : null;
 
-  useEffect(() => {
-    function focusCanvasSearch() {
-      searchInputRef.current?.focus();
-      searchInputRef.current?.select();
+  // Block IDs that match the search
+  const searchMatchIds = useMemo<Set<string>>(() => {
+    if (!normalized) return new Set();
+    const ids = new Set<string>();
+    for (const sec of sections) {
+      for (const col of sec.columns) {
+        for (const block of col.blocks) {
+          const def = getBlockDefinition(block.blockType);
+          const title = typeof block.data.title === 'string' ? block.data.title : '';
+          const content = typeof block.data.content === 'string' ? block.data.content : '';
+          const label = def?.label ?? block.blockType;
+          if ([title, content, label, block.blockType].some((s) => s.toLowerCase().includes(normalized))) {
+            ids.add(block.id);
+          }
+        }
+      }
     }
-    window.addEventListener('page-editor-focus-canvas-search', focusCanvasSearch);
-    return () => window.removeEventListener('page-editor-focus-canvas-search', focusCanvasSearch);
+    return ids;
+  }, [normalized, sections]);
+
+  // Ctrl+F → focus canvas search
+  useEffect(() => {
+    function handler() { searchInputRef.current?.focus(); searchInputRef.current?.select(); }
+    window.addEventListener('page-editor-focus-canvas-search', handler);
+    return () => window.removeEventListener('page-editor-focus-canvas-search', handler);
   }, []);
 
-  function jumpToFirstMatch() {
-    if (matchingIds.length === 0) return;
-    const targetId = matchingIds[0];
-    selectBlock(targetId);
-    document.getElementById(`canvas-card-${targetId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
+  const sectionDragIds = sections.map((s) => sectionDragId(s.id));
 
   return (
     <div
       style={{
-        width: '280px',
+        width: '300px',
         flexShrink: 0,
         background: '#0f0f0f',
         borderRight: '1px solid #222',
@@ -338,99 +456,63 @@ export function Canvas() {
       }}
     >
       {/* Header */}
-      <div
-        style={{
-          padding: '16px 14px 10px',
-          borderBottom: '1px solid #222',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
+      <div style={{ padding: '12px 12px 8px', borderBottom: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <p style={{ fontSize: '11px', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
           Page Structure
         </p>
-        <span style={{ fontSize: '11px', color: '#444' }}>{blocks.length} block{blocks.length !== 1 ? 's' : ''}</span>
+        <span style={{ fontSize: '11px', color: '#444' }}>{sections.length} section{sections.length !== 1 ? 's' : ''}</span>
       </div>
-      <div style={{ padding: '0 14px 10px', borderBottom: '1px solid #222', display: 'flex', gap: '6px' }}>
+
+      {/* Search */}
+      <div style={{ padding: '6px 10px 8px', borderBottom: '1px solid #1a1a1a', flexShrink: 0 }}>
         <input
           ref={searchInputRef}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') jumpToFirstMatch();
-          }}
           placeholder="Find block (Ctrl+F)"
           style={{
-            flex: 1,
-            background: '#111',
-            border: '1px solid #222',
-            borderRadius: '6px',
-            color: '#aaa',
-            fontSize: '12px',
-            padding: '6px 8px',
-            outline: 'none',
+            width: '100%', background: '#111', border: '1px solid #222', borderRadius: '6px',
+            color: '#aaa', fontSize: '12px', padding: '5px 8px', outline: 'none', boxSizing: 'border-box',
           }}
         />
-        <button onClick={jumpToFirstMatch} style={{ ...toolbarBtnStyle, padding: '6px 8px' }} title="Jump to first match">
-          ↵
-        </button>
       </div>
 
-      {/* Block list */}
-      <div ref={setNodeRef} style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
-        {blocks.length === 0 ? (
+      {/* Body */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {sections.length === 0 ? (
           <EmptyState />
         ) : (
-          <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-            <DropZone id="drop-top" />
-            {blocks.map((block, index) => (
-              <div key={block.id} id={`canvas-card-${block.id}`}>
-                <BlockCard
-                  block={block}
-                  isSelected={block.id === selectedBlockId}
-                  onSelect={() => selectBlock(block.id)}
-                  onDelete={() => removeBlock(block.id)}
-                  onDuplicate={() => duplicateBlock(block.id)}
+          <div style={{ padding: '8px' }}>
+            <SortableContext items={sectionDragIds} strategy={verticalListSortingStrategy}>
+              {sections.map((section) => (
+                <SectionCard
+                  key={section.id}
+                  section={section}
+                  selectedBlockId={selectedBlockId}
+                  selectedSectionId={selectedSectionId}
+                  searchMatchIds={searchMatchIds}
                 />
-                <DropZone id={`drop-after-${index}`} />
-              </div>
-            ))}
-          </SortableContext>
+              ))}
+            </SortableContext>
+          </div>
         )}
       </div>
 
-      {/* Add block button */}
-      {blocks.length > 0 && (
-        <div style={{ padding: '10px 8px', borderTop: '1px solid #222' }}>
+      {/* Footer */}
+      {sections.length > 0 && (
+        <div style={{ padding: '8px', borderTop: '1px solid #1a1a1a', flexShrink: 0 }}>
           <button
-            onClick={() => addBlock('rich-text-block')}
+            onClick={() => addSection()}
             style={{
-              width: '100%',
-              background: 'transparent',
-              border: '1px dashed #333',
-              borderRadius: '8px',
-              color: '#555',
-              cursor: 'pointer',
-              fontSize: '12px',
-              padding: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
+              width: '100%', background: 'transparent', border: '1px dashed #333', borderRadius: '8px',
+              color: '#555', cursor: 'pointer', fontSize: '12px', padding: '7px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
               transition: 'color 0.15s, border-color 0.15s',
             }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.color = '#aaa';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '#555';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.color = '#555';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '#333';
-            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#aaa'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#555'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#555'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#333'; }}
           >
-            <span>＋</span>
-            <span>Add Block</span>
+            <span>＋</span><span>Add Section</span>
           </button>
         </div>
       )}

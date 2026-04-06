@@ -207,7 +207,34 @@ export interface Page {
   title: string;
   slug: string;
   excerpt?: string | null;
-  blocks: (HeroBlock | RichTextBlock | TextImageBlock | CtaBlock | FaqBlock | StatsBlock | TestimonialsBlock)[];
+  blocks: (
+    | SectionBlock
+    | HeroBlock
+    | RichTextBlock
+    | TextImageBlock
+    | CtaBlock
+    | FaqBlock
+    | StatsBlock
+    | TestimonialsBlock
+    | TwoColBlock
+    | ThreeColBlock
+    | PricingBlock
+    | LogoCarouselBlock
+    | VideoEmbedBlock
+    | SpacerBlock
+    | AccordionBlock
+    | CardGridBlock
+    | ButtonBlock
+    | HeadingBlock
+    | ImageBlock
+    | AlertBlock
+    | TabsBlock
+    | SocialIconsBlock
+    | CustomHtmlBlock
+    | CounterBlock
+    | ProgressBarBlock
+    | ImageGalleryBlock
+  )[];
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -237,6 +264,42 @@ export interface Page {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SectionBlock".
+ */
+export interface SectionBlock {
+  label?: string | null;
+  paddingTop?: number | null;
+  paddingBottom?: number | null;
+  backgroundColor?: string | null;
+  columns: {
+    width?: ('1/1' | '1/2' | '1/3' | '2/3' | '1/4' | '3/4') | null;
+    blocks?:
+      | (
+          | HeroBlock
+          | RichTextBlock
+          | TextImageBlock
+          | CtaBlock
+          | FaqBlock
+          | StatsBlock
+          | TestimonialsBlock
+          | TwoColBlock
+          | ThreeColBlock
+          | PricingBlock
+          | LogoCarouselBlock
+          | VideoEmbedBlock
+          | SpacerBlock
+          | AccordionBlock
+          | CardGridBlock
+        )[]
+      | null;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'section-block';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -343,6 +406,349 @@ export interface TestimonialsBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'testimonials-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TwoColBlock".
+ */
+export interface TwoColBlock {
+  leftTitle?: string | null;
+  leftText?: string | null;
+  rightTitle?: string | null;
+  rightText?: string | null;
+  gap?: ('small' | 'medium' | 'large') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'two-col-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ThreeColBlock".
+ */
+export interface ThreeColBlock {
+  col1Title?: string | null;
+  col1Text?: string | null;
+  col2Title?: string | null;
+  col2Text?: string | null;
+  col3Title?: string | null;
+  col3Text?: string | null;
+  gap?: ('small' | 'medium' | 'large') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'three-col-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PricingBlock".
+ */
+export interface PricingBlock {
+  title?: string | null;
+  subtitle?: string | null;
+  plans?:
+    | {
+        name: string;
+        price: string;
+        period?: string | null;
+        description?: string | null;
+        /**
+         * One feature per line
+         */
+        features?: string | null;
+        ctaLabel?: string | null;
+        ctaHref?: string | null;
+        highlighted?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'pricing-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LogoCarouselBlock".
+ */
+export interface LogoCarouselBlock {
+  /**
+   * Optional label above logos (e.g. "Trusted by")
+   */
+  title?: string | null;
+  logos?:
+    | {
+        image: number | Media;
+        imageAlt?: string | null;
+        /**
+         * Optional link URL
+         */
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'logo-carousel-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VideoEmbedBlock".
+ */
+export interface VideoEmbedBlock {
+  /**
+   * YouTube or Vimeo URL (e.g. https://www.youtube.com/watch?v=...)
+   */
+  url: string;
+  title?: string | null;
+  caption?: string | null;
+  autoplay?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'video-embed-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SpacerBlock".
+ */
+export interface SpacerBlock {
+  /**
+   * Height in pixels
+   */
+  height: number;
+  /**
+   * Show a horizontal line
+   */
+  showDivider?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'spacer-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AccordionBlock".
+ */
+export interface AccordionBlock {
+  title?: string | null;
+  items?:
+    | {
+        heading: string;
+        body: string;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'accordion-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CardGridBlock".
+ */
+export interface CardGridBlock {
+  title?: string | null;
+  subtitle?: string | null;
+  columns?: ('2' | '3' | '4') | null;
+  cards?:
+    | {
+        image?: (number | null) | Media;
+        imageAlt?: string | null;
+        eyebrow?: string | null;
+        title: string;
+        text?: string | null;
+        ctaLabel?: string | null;
+        ctaHref?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'card-grid-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ButtonBlock".
+ */
+export interface ButtonBlock {
+  label: string;
+  href: string;
+  variant?: ('solid' | 'outline' | 'ghost') | null;
+  size?: ('sm' | 'md' | 'lg') | null;
+  /**
+   * CSS color e.g. #0ea5e9
+   */
+  color?: string | null;
+  align?: ('left' | 'center' | 'right') | null;
+  openInNewTab?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'button-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeadingBlock".
+ */
+export interface HeadingBlock {
+  text: string;
+  tag?: ('h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6') | null;
+  size?: ('xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') | null;
+  align?: ('left' | 'center' | 'right') | null;
+  color?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'heading-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ImageBlock".
+ */
+export interface ImageBlock {
+  image?: (number | null) | Media;
+  imageAlt?: string | null;
+  caption?: string | null;
+  href?: string | null;
+  openInNewTab?: boolean | null;
+  borderRadius?: number | null;
+  objectPosition?:
+    | ('center' | 'top' | 'bottom' | 'left' | 'right' | 'top left' | 'top right' | 'bottom left' | 'bottom right')
+    | null;
+  maxWidth?: number | null;
+  align?: ('left' | 'center' | 'right') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'image-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AlertBlock".
+ */
+export interface AlertBlock {
+  variant?: ('info' | 'success' | 'warning' | 'error') | null;
+  title?: string | null;
+  body: string;
+  dismissible?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'alert-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TabsBlock".
+ */
+export interface TabsBlock {
+  tabs?:
+    | {
+        label: string;
+        content: string;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'tabs-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SocialIconsBlock".
+ */
+export interface SocialIconsBlock {
+  title?: string | null;
+  align?: ('left' | 'center' | 'right') | null;
+  size?: ('sm' | 'md' | 'lg') | null;
+  links?:
+    | {
+        /**
+         * e.g. facebook, instagram, linkedin, twitter, youtube, tiktok, github
+         */
+        platform: string;
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'social-icons-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CustomHtmlBlock".
+ */
+export interface CustomHtmlBlock {
+  /**
+   * Internal label for this block
+   */
+  label?: string | null;
+  /**
+   * Raw HTML or embed code (iframe, script, etc.)
+   */
+  html: string;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'custom-html-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CounterBlock".
+ */
+export interface CounterBlock {
+  title?: string | null;
+  /**
+   * Animation duration in milliseconds
+   */
+  duration?: number | null;
+  items?:
+    | {
+        value: number;
+        prefix?: string | null;
+        suffix?: string | null;
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'counter-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ProgressBarBlock".
+ */
+export interface ProgressBarBlock {
+  title?: string | null;
+  items?:
+    | {
+        label: string;
+        /**
+         * Percentage 0–100
+         */
+        value: number;
+        /**
+         * Hex color e.g. #0ea5e9
+         */
+        color?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'progress-bar-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ImageGalleryBlock".
+ */
+export interface ImageGalleryBlock {
+  title?: string | null;
+  columns?: ('2' | '3' | '4') | null;
+  lightbox?: boolean | null;
+  images?:
+    | {
+        image: number | Media;
+        imageAlt?: string | null;
+        caption?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'image-gallery-block';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1001,6 +1407,7 @@ export interface PagesSelect<T extends boolean = true> {
   blocks?:
     | T
     | {
+        'section-block'?: T | SectionBlockSelect<T>;
         'hero-block'?: T | HeroBlockSelect<T>;
         'rich-text-block'?: T | RichTextBlockSelect<T>;
         'text-image-block'?: T | TextImageBlockSelect<T>;
@@ -1008,6 +1415,24 @@ export interface PagesSelect<T extends boolean = true> {
         'faq-block'?: T | FaqBlockSelect<T>;
         'stats-block'?: T | StatsBlockSelect<T>;
         'testimonials-block'?: T | TestimonialsBlockSelect<T>;
+        'two-col-block'?: T | TwoColBlockSelect<T>;
+        'three-col-block'?: T | ThreeColBlockSelect<T>;
+        'pricing-block'?: T | PricingBlockSelect<T>;
+        'logo-carousel-block'?: T | LogoCarouselBlockSelect<T>;
+        'video-embed-block'?: T | VideoEmbedBlockSelect<T>;
+        'spacer-block'?: T | SpacerBlockSelect<T>;
+        'accordion-block'?: T | AccordionBlockSelect<T>;
+        'card-grid-block'?: T | CardGridBlockSelect<T>;
+        'button-block'?: T | ButtonBlockSelect<T>;
+        'heading-block'?: T | HeadingBlockSelect<T>;
+        'image-block'?: T | ImageBlockSelect<T>;
+        'alert-block'?: T | AlertBlockSelect<T>;
+        'tabs-block'?: T | TabsBlockSelect<T>;
+        'social-icons-block'?: T | SocialIconsBlockSelect<T>;
+        'custom-html-block'?: T | CustomHtmlBlockSelect<T>;
+        'counter-block'?: T | CounterBlockSelect<T>;
+        'progress-bar-block'?: T | ProgressBarBlockSelect<T>;
+        'image-gallery-block'?: T | ImageGalleryBlockSelect<T>;
       };
   meta?:
     | T
@@ -1031,6 +1456,43 @@ export interface PagesSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SectionBlock_select".
+ */
+export interface SectionBlockSelect<T extends boolean = true> {
+  label?: T;
+  paddingTop?: T;
+  paddingBottom?: T;
+  backgroundColor?: T;
+  columns?:
+    | T
+    | {
+        width?: T;
+        blocks?:
+          | T
+          | {
+              'hero-block'?: T | HeroBlockSelect<T>;
+              'rich-text-block'?: T | RichTextBlockSelect<T>;
+              'text-image-block'?: T | TextImageBlockSelect<T>;
+              'cta-block'?: T | CtaBlockSelect<T>;
+              'faq-block'?: T | FaqBlockSelect<T>;
+              'stats-block'?: T | StatsBlockSelect<T>;
+              'testimonials-block'?: T | TestimonialsBlockSelect<T>;
+              'two-col-block'?: T | TwoColBlockSelect<T>;
+              'three-col-block'?: T | ThreeColBlockSelect<T>;
+              'pricing-block'?: T | PricingBlockSelect<T>;
+              'logo-carousel-block'?: T | LogoCarouselBlockSelect<T>;
+              'video-embed-block'?: T | VideoEmbedBlockSelect<T>;
+              'spacer-block'?: T | SpacerBlockSelect<T>;
+              'accordion-block'?: T | AccordionBlockSelect<T>;
+              'card-grid-block'?: T | CardGridBlockSelect<T>;
+            };
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1126,6 +1588,290 @@ export interface TestimonialsBlockSelect<T extends boolean = true> {
         quote?: T;
         name?: T;
         role?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TwoColBlock_select".
+ */
+export interface TwoColBlockSelect<T extends boolean = true> {
+  leftTitle?: T;
+  leftText?: T;
+  rightTitle?: T;
+  rightText?: T;
+  gap?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ThreeColBlock_select".
+ */
+export interface ThreeColBlockSelect<T extends boolean = true> {
+  col1Title?: T;
+  col1Text?: T;
+  col2Title?: T;
+  col2Text?: T;
+  col3Title?: T;
+  col3Text?: T;
+  gap?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PricingBlock_select".
+ */
+export interface PricingBlockSelect<T extends boolean = true> {
+  title?: T;
+  subtitle?: T;
+  plans?:
+    | T
+    | {
+        name?: T;
+        price?: T;
+        period?: T;
+        description?: T;
+        features?: T;
+        ctaLabel?: T;
+        ctaHref?: T;
+        highlighted?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "LogoCarouselBlock_select".
+ */
+export interface LogoCarouselBlockSelect<T extends boolean = true> {
+  title?: T;
+  logos?:
+    | T
+    | {
+        image?: T;
+        imageAlt?: T;
+        href?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "VideoEmbedBlock_select".
+ */
+export interface VideoEmbedBlockSelect<T extends boolean = true> {
+  url?: T;
+  title?: T;
+  caption?: T;
+  autoplay?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SpacerBlock_select".
+ */
+export interface SpacerBlockSelect<T extends boolean = true> {
+  height?: T;
+  showDivider?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AccordionBlock_select".
+ */
+export interface AccordionBlockSelect<T extends boolean = true> {
+  title?: T;
+  items?:
+    | T
+    | {
+        heading?: T;
+        body?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CardGridBlock_select".
+ */
+export interface CardGridBlockSelect<T extends boolean = true> {
+  title?: T;
+  subtitle?: T;
+  columns?: T;
+  cards?:
+    | T
+    | {
+        image?: T;
+        imageAlt?: T;
+        eyebrow?: T;
+        title?: T;
+        text?: T;
+        ctaLabel?: T;
+        ctaHref?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ButtonBlock_select".
+ */
+export interface ButtonBlockSelect<T extends boolean = true> {
+  label?: T;
+  href?: T;
+  variant?: T;
+  size?: T;
+  color?: T;
+  align?: T;
+  openInNewTab?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "HeadingBlock_select".
+ */
+export interface HeadingBlockSelect<T extends boolean = true> {
+  text?: T;
+  tag?: T;
+  size?: T;
+  align?: T;
+  color?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ImageBlock_select".
+ */
+export interface ImageBlockSelect<T extends boolean = true> {
+  image?: T;
+  imageAlt?: T;
+  caption?: T;
+  href?: T;
+  openInNewTab?: T;
+  borderRadius?: T;
+  objectPosition?: T;
+  maxWidth?: T;
+  align?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AlertBlock_select".
+ */
+export interface AlertBlockSelect<T extends boolean = true> {
+  variant?: T;
+  title?: T;
+  body?: T;
+  dismissible?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TabsBlock_select".
+ */
+export interface TabsBlockSelect<T extends boolean = true> {
+  tabs?:
+    | T
+    | {
+        label?: T;
+        content?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SocialIconsBlock_select".
+ */
+export interface SocialIconsBlockSelect<T extends boolean = true> {
+  title?: T;
+  align?: T;
+  size?: T;
+  links?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CustomHtmlBlock_select".
+ */
+export interface CustomHtmlBlockSelect<T extends boolean = true> {
+  label?: T;
+  html?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CounterBlock_select".
+ */
+export interface CounterBlockSelect<T extends boolean = true> {
+  title?: T;
+  duration?: T;
+  items?:
+    | T
+    | {
+        value?: T;
+        prefix?: T;
+        suffix?: T;
+        label?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ProgressBarBlock_select".
+ */
+export interface ProgressBarBlockSelect<T extends boolean = true> {
+  title?: T;
+  items?:
+    | T
+    | {
+        label?: T;
+        value?: T;
+        color?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ImageGalleryBlock_select".
+ */
+export interface ImageGalleryBlockSelect<T extends boolean = true> {
+  title?: T;
+  columns?: T;
+  lightbox?: T;
+  images?:
+    | T
+    | {
+        image?: T;
+        imageAlt?: T;
+        caption?: T;
         id?: T;
       };
   id?: T;

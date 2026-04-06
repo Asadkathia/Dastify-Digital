@@ -9,21 +9,22 @@ type KeyboardShortcutsProps = {
 };
 
 export function KeyboardShortcuts({ onSaveDraft, onPublish }: KeyboardShortcutsProps) {
-  const selectedBlockId = useEditorStore((s) => s.selectedBlockId);
-  const blocks = useEditorStore((s) => s.blocks);
+  const selection = useEditorStore((s) => s.selection);
+  const sections = useEditorStore((s) => s.sections);
   const removeBlock = useEditorStore((s) => s.removeBlock);
   const duplicateBlock = useEditorStore((s) => s.duplicateBlock);
   const copyBlock = useEditorStore((s) => s.copyBlock);
   const pasteBlock = useEditorStore((s) => s.pasteBlock);
   const clipboard = useEditorStore((s) => s.clipboard);
-  const moveBlock = useEditorStore((s) => s.moveBlock);
-  const selectBlock = useEditorStore((s) => s.selectBlock);
+  const moveBlockWithinColumn = useEditorStore((s) => s.moveBlockWithinColumn);
+  const clearSelection = useEditorStore((s) => s.clearSelection);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Don't fire shortcuts when typing in an input/textarea/select
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-      const isEditing = tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target as HTMLElement)?.isContentEditable;
+      const isEditing =
+        tag === 'input' || tag === 'textarea' || tag === 'select' ||
+        (e.target as HTMLElement)?.isContentEditable;
       if (isEditing) return;
 
       const ctrl = e.ctrlKey || e.metaKey;
@@ -63,64 +64,61 @@ export function KeyboardShortcuts({ onSaveDraft, onPublish }: KeyboardShortcutsP
         return;
       }
 
+      // Escape — deselect
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        clearSelection();
+        return;
+      }
+
       // Block-level shortcuts — only when a block is selected
-      if (!selectedBlockId) return;
+      if (selection?.kind !== 'block') return;
+      const { sectionId, columnId, blockId } = selection;
 
       // Delete / Backspace — delete selected block
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        removeBlock(selectedBlockId);
+        removeBlock(sectionId, columnId, blockId);
         return;
       }
 
-      // Escape — deselect
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        selectBlock(null);
-        return;
-      }
-
-      // Ctrl+D — duplicate selected block
+      // Ctrl+D — duplicate
       if (ctrl && e.key === 'd') {
         e.preventDefault();
-        duplicateBlock(selectedBlockId);
+        duplicateBlock(sectionId, columnId, blockId);
         return;
       }
 
-      // Ctrl+C — copy selected block
+      // Ctrl+C — copy
       if (ctrl && e.key === 'c') {
         e.preventDefault();
-        copyBlock(selectedBlockId);
+        copyBlock(sectionId, columnId, blockId);
         return;
       }
 
-      // Ctrl+V — paste copied block
+      // Ctrl+V — paste into same column
       if (ctrl && e.key === 'v' && clipboard) {
         e.preventDefault();
-        pasteBlock();
+        pasteBlock(sectionId, columnId);
         return;
       }
 
-      // ArrowUp — move block up
-      if (e.key === 'ArrowUp' && !ctrl) {
+      // ArrowUp / ArrowDown — move block within column
+      if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && !ctrl) {
         e.preventDefault();
-        const idx = blocks.findIndex((b) => b.id === selectedBlockId);
-        if (idx > 0) moveBlock(idx, idx - 1);
-        return;
-      }
-
-      // ArrowDown — move block down
-      if (e.key === 'ArrowDown' && !ctrl) {
-        e.preventDefault();
-        const idx = blocks.findIndex((b) => b.id === selectedBlockId);
-        if (idx !== -1 && idx < blocks.length - 1) moveBlock(idx, idx + 1);
-        return;
+        const col = sections
+          .find((s) => s.id === sectionId)
+          ?.columns.find((c) => c.id === columnId);
+        if (!col) return;
+        const idx = col.blocks.findIndex((b) => b.id === blockId);
+        if (e.key === 'ArrowUp' && idx > 0) moveBlockWithinColumn(sectionId, columnId, idx, idx - 1);
+        if (e.key === 'ArrowDown' && idx !== -1 && idx < col.blocks.length - 1) moveBlockWithinColumn(sectionId, columnId, idx, idx + 1);
       }
     }
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedBlockId, blocks, removeBlock, duplicateBlock, copyBlock, pasteBlock, clipboard, moveBlock, selectBlock, onSaveDraft, onPublish]);
+  }, [selection, sections, removeBlock, duplicateBlock, copyBlock, pasteBlock, clipboard, moveBlockWithinColumn, clearSelection, onSaveDraft, onPublish]);
 
   return null;
 }

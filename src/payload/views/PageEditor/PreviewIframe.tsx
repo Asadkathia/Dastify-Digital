@@ -16,21 +16,19 @@ export function PreviewIframe() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [frameLoaded, setFrameLoaded] = useState(false);
-  const blocks = useEditorStore((s) => s.blocks);
-  const selectedBlockId = useEditorStore((s) => s.selectedBlockId);
+  const sections = useEditorStore((s) => s.sections);
+  const selection = useEditorStore((s) => s.selection);
   const responsiveMode = useEditorStore((s) => s.responsiveMode);
   const selectBlock = useEditorStore((s) => s.selectBlock);
   const setIframeReady = useEditorStore((s) => s.setIframeReady);
   const iframeReady = useEditorStore((s) => s.iframeReady);
-
   const updateBlockData = useEditorStore((s) => s.updateBlockData);
 
-  // Listen for messages from the preview iframe
+  const selectedBlockId = selection?.kind === 'block' ? selection.blockId : null;
+
+  // Fallback ready if EDITOR_READY message never arrives
   useEffect(() => {
-    const fallback = setTimeout(() => {
-      setFrameLoaded(true);
-      setIframeReady(true);
-    }, 1500);
+    const fallback = setTimeout(() => { setFrameLoaded(true); setIframeReady(true); }, 1500);
     return () => clearTimeout(fallback);
   }, [setIframeReady]);
 
@@ -45,7 +43,15 @@ export function PreviewIframe() {
       }
 
       if (data.type === 'BLOCK_CLICKED') {
-        selectBlock(data.blockId);
+        // Find the block's section+column to build full selection
+        for (const sec of sections) {
+          for (const col of sec.columns) {
+            if (col.blocks.some((b) => b.id === data.blockId)) {
+              selectBlock(sec.id, col.id, data.blockId);
+              return;
+            }
+          }
+        }
       }
 
       if (data.type === 'INLINE_EDIT_END') {
@@ -55,25 +61,23 @@ export function PreviewIframe() {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [selectBlock, setIframeReady, updateBlockData]);
+  }, [sections, selectBlock, setIframeReady, updateBlockData]);
 
-  // Send blocks to iframe (debounced)
-  const sendBlocks = useCallback(() => {
+  // Send sections to iframe (debounced)
+  const sendSections = useCallback(() => {
     if (!iframeRef.current?.contentWindow) return;
     iframeRef.current.contentWindow.postMessage(
-      { type: 'UPDATE_BLOCKS', blocks, responsiveMode } satisfies EditorMessage,
+      { type: 'UPDATE_SECTIONS', sections, responsiveMode } satisfies EditorMessage,
       '*',
     );
-  }, [blocks, responsiveMode]);
+  }, [sections, responsiveMode]);
 
   useEffect(() => {
     if (!frameLoaded) return;
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(sendBlocks, DEBOUNCE_MS);
-    return () => {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    };
-  }, [blocks, responsiveMode, frameLoaded, sendBlocks]);
+    debounceTimer.current = setTimeout(sendSections, DEBOUNCE_MS);
+    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+  }, [sections, responsiveMode, frameLoaded, sendSections]);
 
   // Send selected block to iframe
   useEffect(() => {
@@ -84,13 +88,11 @@ export function PreviewIframe() {
     );
   }, [selectedBlockId, frameLoaded]);
 
-  // When iframe loads, optimistically mark ready and push a full sync.
-  // This avoids deadlocks if EDITOR_READY message is dropped.
   function handleLoad() {
     setFrameLoaded(true);
     setIframeReady(true);
     setTimeout(() => {
-      sendBlocks();
+      sendSections();
       if (iframeRef.current?.contentWindow) {
         iframeRef.current.contentWindow.postMessage(
           { type: 'SELECT_BLOCK', blockId: selectedBlockId } satisfies EditorMessage,
@@ -113,7 +115,6 @@ export function PreviewIframe() {
         alignItems: 'center',
         overflow: 'auto',
         padding: isConstrained ? '20px' : 0,
-        gap: 0,
       }}
     >
       <div
@@ -132,18 +133,7 @@ export function PreviewIframe() {
         }}
       >
         {!frameLoaded && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'rgba(26,26,26,0.6)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10,
-              fontFamily: 'sans-serif',
-            }}
-          >
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(26,26,26,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, fontFamily: 'sans-serif' }}>
             <span style={{ color: '#888', fontSize: '13px' }}>Loading preview…</span>
           </div>
         )}
@@ -151,13 +141,7 @@ export function PreviewIframe() {
           ref={iframeRef}
           src="/page-editor-preview"
           onLoad={handleLoad}
-          style={{
-            width: '100%',
-            height: '100%',
-            border: 'none',
-            display: 'block',
-            minHeight: isConstrained ? '80vh' : '100%',
-          }}
+          style={{ width: '100%', height: '100%', border: 'none', display: 'block', minHeight: isConstrained ? '80vh' : '100%' }}
           title="Page preview"
         />
       </div>

@@ -22,17 +22,41 @@ export type BlockDefinition = {
   blockType: string;
   label: string;
   icon: string;
-  category: 'Layout' | 'Content' | 'Conversion';
+  category: 'Layout' | 'Content' | 'Conversion' | 'Media';
   fields: EditorField[];
   defaultData: Record<string, unknown>;
 };
 
 export type BlockStyles = {
+  // Spacing
   paddingTop?: number;
   paddingBottom?: number;
+  paddingLeft?: number;
+  paddingRight?: number;
+  marginTop?: number;
+  marginBottom?: number;
+  // Appearance
   backgroundColor?: string;
+  backgroundImage?: string;
+  opacity?: number;
+  // Border
+  borderRadius?: number;
+  borderWidth?: number;
+  borderColor?: string;
+  // Shadow
+  boxShadow?: string;
+  // Typography
+  textColor?: string;
+  fontSize?: number;
+  textAlign?: 'left' | 'center' | 'right';
+  fontWeight?: 'normal' | 'medium' | 'semibold' | 'bold';
+  // Responsive
   hiddenOn?: Array<'desktop' | 'tablet' | 'mobile'>;
+  // Max width
+  maxWidth?: number;
 };
+
+// ─── Hierarchy: Page → Sections → Columns → Blocks ───────────────────────────
 
 export type BlockInstance = {
   id: string;
@@ -41,12 +65,36 @@ export type BlockInstance = {
   styles?: BlockStyles;
 };
 
+export type ColumnWidth = '1/1' | '1/2' | '1/3' | '2/3' | '1/4' | '3/4';
+
+export type ColumnInstance = {
+  id: string;
+  width: ColumnWidth;
+  blocks: BlockInstance[];
+};
+
+export type SectionInstance = {
+  id: string;
+  label?: string;
+  columns: ColumnInstance[];
+  styles?: BlockStyles;
+};
+
+// ─── Selection ────────────────────────────────────────────────────────────────
+
+export type SelectionTarget =
+  | { kind: 'block'; sectionId: string; columnId: string; blockId: string }
+  | { kind: 'section'; sectionId: string }
+  | null;
+
+// ─── Other editor types ───────────────────────────────────────────────────────
+
 export type ResponsiveMode = 'desktop' | 'tablet' | 'mobile';
 
 export type SaveStatus = 'saved' | 'saving' | 'dirty' | 'error';
 
 export type EditorMessage =
-  | { type: 'UPDATE_BLOCKS'; blocks: BlockInstance[]; responsiveMode: ResponsiveMode }
+  | { type: 'UPDATE_SECTIONS'; sections: SectionInstance[]; responsiveMode: ResponsiveMode }
   | { type: 'SELECT_BLOCK'; blockId: string | null }
   | { type: 'BLOCK_CLICKED'; blockId: string }
   | { type: 'INLINE_EDIT_START'; blockId: string; fieldName: string }

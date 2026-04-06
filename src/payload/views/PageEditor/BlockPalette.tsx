@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { blockCategories } from './block-registry';
 import type { BlockDefinition } from './types';
@@ -9,7 +9,7 @@ type DraggablePaletteItemProps = {
   block: BlockDefinition;
 };
 
-function DraggablePaletteItem({ block }: DraggablePaletteItemProps) {
+const DraggablePaletteItem = memo(function DraggablePaletteItem({ block }: DraggablePaletteItemProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `palette-${block.blockType}`,
     data: { type: 'palette-block', blockType: block.blockType },
@@ -49,7 +49,7 @@ function DraggablePaletteItem({ block }: DraggablePaletteItemProps) {
       <span style={{ fontSize: '13px', color: '#ccc', fontWeight: 500 }}>{block.label}</span>
     </div>
   );
-}
+});
 
 export function BlockPalette() {
   const [search, setSearch] = useState('');

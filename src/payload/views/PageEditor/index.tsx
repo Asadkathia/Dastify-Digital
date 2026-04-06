@@ -8,8 +8,10 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
-import { useEditorStore, serializeBlocksForPayload, deserializeBlocksFromPayload } from './store';
+import { useEditorStore, serializeSectionsForPayload, deserializeSectionsFromPayload } from './store';
+import { getBlockDefinition } from './block-registry';
 import { BlockPalette } from './BlockPalette';
 import { Canvas } from './Canvas';
 import { ConfigPanel } from './ConfigPanel';
@@ -172,54 +174,138 @@ type PageEditorCoreProps = {
   onPublish: () => void;
 };
 
-function PageEditorCore({ pageId, onSaveDraft, onPublish }: PageEditorCoreProps) {
-  const blocks = useEditorStore((s) => s.blocks);
+function PageEditorCore({ onSaveDraft, onPublish }: Omit<PageEditorCoreProps, 'pageId'>) {
+  const sections = useEditorStore((s) => s.sections);
   const addBlock = useEditorStore((s) => s.addBlock);
-  const moveBlock = useEditorStore((s) => s.moveBlock);
+  const moveSection = useEditorStore((s) => s.moveSection);
+  const moveBlockWithinColumn = useEditorStore((s) => s.moveBlockWithinColumn);
+  const moveBlockBetweenColumns = useEditorStore((s) => s.moveBlockBetweenColumns);
+  const moveColumn = useEditorStore((s) => s.moveColumn);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-  );
+  const [activeDrag, setActiveDrag] = useState<{ type: string; label: string; icon: string } | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  function handleDragStart(event: DragStartEvent) {
+    const data = event.active.data.current as Record<string, unknown> | undefined;
+    if (!data) return;
+
+    if (data.type === 'palette-block') {
+      const def = getBlockDefinition(String(data.blockType));
+      setActiveDrag({ type: 'palette', label: def?.label || String(data.blockType), icon: def?.icon || '📦' });
+    } else if (data.type === 'block') {
+      const block = sections
+        .find((s) => s.id === data.sectionId)
+        ?.columns.find((c) => c.id === data.columnId)
+        ?.blocks.find((b) => b.id === data.blockId);
+      const def = block ? getBlockDefinition(block.blockType) : undefined;
+      setActiveDrag({ type: 'block', label: (block?.data?.title as string) || def?.label || 'Block', icon: def?.icon || '📦' });
+    } else if (data.type === 'section') {
+      setActiveDrag({ type: 'section', label: 'Section', icon: '▦' });
+    } else if (data.type === 'column') {
+      setActiveDrag({ type: 'column', label: 'Column', icon: '▥' });
+    }
+  }
 
   function handleDragEnd(event: DragEndEvent) {
+    setActiveDrag(null);
     const { active, over } = event;
-    if (!over) return;
+    if (!over || active.id === over.id) return;
 
-    const activeData = active.data.current as { type: string; blockType?: string } | undefined;
+    const activeData = active.data.current as Record<string, unknown> | undefined;
 
-    // Palette → canvas: append
+    // ── Palette block dropped onto canvas ──────────────────────────────────
     if (activeData?.type === 'palette-block' && activeData.blockType) {
-      addBlock(activeData.blockType);
+      const overId = String(over.id);
+      if (overId.startsWith('col-drop:')) {
+        const [, secId, colId] = overId.split(':');
+        addBlock(String(activeData.blockType), secId, colId);
+      } else if (overId.startsWith('block:')) {
+        const [, secId, colId] = overId.split(':');
+        addBlock(String(activeData.blockType), secId, colId);
+      }
       return;
     }
 
-    // Canvas reorder
-    if (activeData?.type === 'canvas-block') {
-      const fromIndex = blocks.findIndex((b) => b.id === String(active.id));
-      const toIndex = blocks.findIndex((b) => b.id === String(over.id));
-      if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
-        moveBlock(fromIndex, toIndex);
+    // ── Section reorder ────────────────────────────────────────────────────
+    if (activeData?.type === 'section') {
+      const fromIndex = sections.findIndex((s) => s.id === activeData.sectionId);
+      const toIndex = sections.findIndex((s) => s.id === String(over.id).replace('section:', ''));
+      if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) moveSection(fromIndex, toIndex);
+      return;
+    }
+
+    // ── Column reorder ─────────────────────────────────────────────────────
+    if (activeData?.type === 'column') {
+      const sectionId = String(activeData.sectionId);
+      const section = sections.find((s) => s.id === sectionId);
+      if (!section) return;
+      const fromIndex = section.columns.findIndex((c) => c.id === activeData.columnId);
+      const toColId = String(over.id).replace(`column:${sectionId}:`, '');
+      const toIndex = section.columns.findIndex((c) => c.id === toColId);
+      if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) moveColumn(sectionId, fromIndex, toIndex);
+      return;
+    }
+
+    // ── Block reorder / move ───────────────────────────────────────────────
+    if (activeData?.type === 'block') {
+      const { sectionId: fromSec, columnId: fromCol, blockId } = activeData as { sectionId: string; columnId: string; blockId: string };
+      const overId = String(over.id);
+      let toSec: string, toCol: string, toIndex: number;
+
+      if (overId.startsWith('col-drop:')) {
+        const [, s, c] = overId.split(':');
+        toSec = s; toCol = c;
+        const col = sections.find((sec) => sec.id === s)?.columns.find((col) => col.id === c);
+        toIndex = col?.blocks.length ?? 0;
+      } else if (overId.startsWith('block:')) {
+        const [, s, c, targetBlockId] = overId.split(':');
+        toSec = s; toCol = c;
+        const col = sections.find((sec) => sec.id === s)?.columns.find((col) => col.id === c);
+        toIndex = col?.blocks.findIndex((b) => b.id === targetBlockId) ?? 0;
+      } else {
+        return;
+      }
+
+      if (fromSec === toSec && fromCol === toCol) {
+        const col = sections.find((s) => s.id === fromSec)?.columns.find((c) => c.id === fromCol);
+        const fromIndex = col?.blocks.findIndex((b) => b.id === blockId) ?? -1;
+        if (fromIndex !== -1 && fromIndex !== toIndex) moveBlockWithinColumn(fromSec, fromCol, fromIndex, toIndex);
+      } else {
+        const col = sections.find((s) => s.id === fromSec)?.columns.find((c) => c.id === fromCol);
+        const fromIndex = col?.blocks.findIndex((b) => b.id === blockId) ?? -1;
+        if (fromIndex !== -1) moveBlockBetweenColumns(fromSec, fromCol, fromIndex, toSec, toCol, toIndex);
       }
     }
   }
 
   return (
-    <>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={() => setActiveDrag(null)}>
       <KeyboardShortcuts onSaveDraft={onSaveDraft} onPublish={onPublish} />
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          <BlockPalette />
-          <Canvas />
-          <PreviewIframe />
-          <ConfigPanel />
-        </div>
-        <DragOverlay>
-          <div style={{ background: '#1e3a4c', border: '1px solid #0ea5e9', borderRadius: '8px', padding: '10px 14px', color: '#7dd3fc', fontSize: '13px' }}>
-            Moving block…
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <BlockPalette />
+        <Canvas activeDrag={activeDrag} />
+        <PreviewIframe />
+        <ConfigPanel />
+      </div>
+      <DragOverlay dropAnimation={{ duration: 120, easing: 'ease' }}>
+        {activeDrag && (
+          <div style={{
+            background: '#0c1a24',
+            border: '2px solid #0ea5e9',
+            borderRadius: '6px',
+            padding: '8px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+            pointerEvents: 'none',
+          }}>
+            <span style={{ fontSize: '16px' }}>{activeDrag.icon}</span>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#7dd3fc' }}>{activeDrag.label}</span>
           </div>
-        </DragOverlay>
-      </DndContext>
-    </>
+        )}
+      </DragOverlay>
+    </DndContext>
   );
 }
 
@@ -233,10 +319,10 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
   const [pageId, setResolvedPageId] = useState(params?.id ?? params?.segments?.[0] ?? '');
 
   const setPageId = useEditorStore((s) => s.setPageId);
-  const setBlocks = useEditorStore((s) => s.setBlocks);
+  const setSections = useEditorStore((s) => s.setSections);
   const setLoading = useEditorStore((s) => s.setLoading);
   const isLoading = useEditorStore((s) => s.isLoading);
-  const blocks = useEditorStore((s) => s.blocks);
+  const sections = useEditorStore((s) => s.sections);
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const setSaveStatus = useEditorStore((s) => s.setSaveStatus);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -271,7 +357,7 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
       .then((doc: Record<string, unknown>) => {
         if (typeof doc.title === 'string') setPageTitle(doc.title);
         if (Array.isArray(doc.blocks) && doc.blocks.length > 0) {
-          setBlocks(deserializeBlocksFromPayload(doc.blocks as Record<string, unknown>[]));
+          setSections(deserializeSectionsFromPayload(doc.blocks as Record<string, unknown>[]));
         }
       })
       .catch(() => {
@@ -308,7 +394,7 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
           credentials: 'include',
           body: JSON.stringify({
             title: pageTitle.trim() || 'Untitled Page',
-            blocks: serializeBlocksForPayload(blocks),
+            blocks: serializeSectionsForPayload(sections),
             _status: 'draft',
           }),
         });
@@ -320,7 +406,7 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
-  }, [saveStatus, blocks, pageId, setSaveStatus, pageTitle]);
+  }, [saveStatus, sections, pageId, setSaveStatus, pageTitle]);
 
   const saveDraft = useCallback(async () => {
     if (!pageId || saveStatus === 'saving') return;
@@ -332,7 +418,7 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
         credentials: 'include',
         body: JSON.stringify({
           title: pageTitle.trim() || 'Untitled Page',
-          blocks: serializeBlocksForPayload(blocks),
+          blocks: serializeSectionsForPayload(sections),
           _status: 'draft',
         }),
       });
@@ -347,7 +433,7 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
       setSaveStatus('error');
       showToast('Save failed — network error', 'error');
     }
-  }, [pageId, blocks, pageTitle, saveStatus, setSaveStatus, showToast]);
+  }, [pageId, sections, pageTitle, saveStatus, setSaveStatus, showToast]);
 
   const publish = useCallback(async () => {
     if (!pageId || saveStatus === 'saving') return;
@@ -359,7 +445,7 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
         credentials: 'include',
         body: JSON.stringify({
           title: pageTitle.trim() || 'Untitled Page',
-          blocks: serializeBlocksForPayload(blocks),
+          blocks: serializeSectionsForPayload(sections),
           _status: 'published',
         }),
       });
@@ -374,7 +460,7 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
       setSaveStatus('error');
       showToast('Publish failed — network error', 'error');
     }
-  }, [pageId, blocks, pageTitle, saveStatus, setSaveStatus, showToast]);
+  }, [pageId, sections, pageTitle, saveStatus, setSaveStatus, showToast]);
 
   if (!pageId) {
     return (
@@ -417,7 +503,7 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
           <EditorSkeleton />
         ) : (
           <ErrorBoundary label="Editor failed to load">
-            <PageEditorCore pageId={pageId} onSaveDraft={saveDraft} onPublish={publish} />
+            <PageEditorCore onSaveDraft={saveDraft} onPublish={publish} />
           </ErrorBoundary>
         )}
       </div>

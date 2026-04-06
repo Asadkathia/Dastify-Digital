@@ -115,6 +115,12 @@ const REQUIRED_CHECKS: SchemaCheck[] = [
   },
   { table: 'menus' },
   { table: 'redirects' },
+  { table: 'pages_blocks_section_block' },
+  { table: 'pages_blocks_section_block_columns' },
+  { table: 'pages_blocks_two_col_block' },
+  { table: 'pages_blocks_three_col_block' },
+  { table: '_pages_v_blocks_section_block' },
+  { table: '_pages_v_blocks_section_block_columns' },
 ];
 
 const filename = fileURLToPath(import.meta.url);
