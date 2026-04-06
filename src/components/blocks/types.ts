@@ -49,14 +49,40 @@ export type PageBuilderBlock =
       type: 'testimonials';
       title?: string;
       items: Array<{ quote: string; name: string; role?: string }>;
+    }
+  | {
+      type: 'two_col';
+      leftTitle?: string;
+      leftText?: string;
+      rightTitle?: string;
+      rightText?: string;
+      gap?: 'small' | 'medium' | 'large';
+    }
+  | {
+      type: 'three_col';
+      col1Title?: string;
+      col1Text?: string;
+      col2Title?: string;
+      col2Text?: string;
+      col3Title?: string;
+      col3Text?: string;
+      gap?: 'small' | 'medium' | 'large';
     };
 
-function mediaToImage(media: number | Media | null | undefined, alt?: string | null): BuilderImage | undefined {
+function mediaToImage(
+  media: number | Media | string | { url?: string; alt?: string; filename?: string } | null | undefined,
+  alt?: string | null,
+): BuilderImage | undefined {
   if (!media || typeof media === 'number') {
     return undefined;
   }
 
-  const src = media.url?.trim();
+  if (typeof media === 'string') {
+    const src = media.trim();
+    return src ? { src, alt: alt?.trim() || undefined } : undefined;
+  }
+
+  const src = media.url?.trim() || (media.filename?.trim() ? `/media/${media.filename.trim()}` : undefined);
   if (!src) {
     return undefined;
   }
@@ -72,7 +98,38 @@ export function mapPayloadBlocksToPageBuilderBlocks(blocks: Page['blocks'] | nul
     return [];
   }
 
-  return blocks.flatMap((block): PageBuilderBlock[] => {
+  return blocks.flatMap((rawBlock): PageBuilderBlock[] => {
+    // Handle new block types not yet in generated Payload types
+    const looseBt = (rawBlock as unknown as Record<string, unknown>).blockType as string;
+    if (looseBt === 'two-col-block' || looseBt === 'three-col-block') {
+      const b = rawBlock as unknown as Record<string, unknown>;
+      if (looseBt === 'two-col-block') {
+        return [
+          {
+            type: 'two_col',
+            leftTitle: b.leftTitle as string | undefined,
+            leftText: b.leftText as string | undefined,
+            rightTitle: b.rightTitle as string | undefined,
+            rightText: b.rightText as string | undefined,
+            gap: (b.gap as 'small' | 'medium' | 'large') || 'medium',
+          },
+        ];
+      }
+      return [
+        {
+          type: 'three_col',
+          col1Title: b.col1Title as string | undefined,
+          col1Text: b.col1Text as string | undefined,
+          col2Title: b.col2Title as string | undefined,
+          col2Text: b.col2Text as string | undefined,
+          col3Title: b.col3Title as string | undefined,
+          col3Text: b.col3Text as string | undefined,
+          gap: (b.gap as 'small' | 'medium' | 'large') || 'medium',
+        },
+      ];
+    }
+
+    const block = rawBlock;
     switch (block.blockType) {
       case 'hero-block':
         return [

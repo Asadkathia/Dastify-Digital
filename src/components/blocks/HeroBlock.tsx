@@ -11,22 +11,22 @@ export function HeroBlock(props: HeroBlockProps) {
         <div>
           {props.eyebrow ? (
             <p style={{ marginBottom: '10px' }}>
-              <span className="chip">
+              <span className="chip" data-field="eyebrow">
                 <span className="chip-dot" />
                 {props.eyebrow}
               </span>
             </p>
           ) : null}
-          <h1 style={{ marginBottom: '12px' }}>{props.title}</h1>
-          {props.subtitle ? <p style={{ marginBottom: '20px' }}>{props.subtitle}</p> : null}
+          <h1 data-field="title" style={{ marginBottom: '12px' }}>{props.title}</h1>
+          {props.subtitle ? <p data-field="subtitle" style={{ marginBottom: '20px' }}>{props.subtitle}</p> : null}
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             {props.primaryCtaLabel && props.primaryCtaHref ? (
-              <Link className="btn-dk" href={props.primaryCtaHref}>
+              <Link className="btn-dk" href={props.primaryCtaHref} data-field="primaryCtaLabel">
                 {props.primaryCtaLabel}
               </Link>
             ) : null}
             {props.secondaryCtaLabel && props.secondaryCtaHref ? (
-              <Link className="btn-ol" href={props.secondaryCtaHref}>
+              <Link className="btn-ol" href={props.secondaryCtaHref} data-field="secondaryCtaLabel">
                 {props.secondaryCtaLabel}
               </Link>
             ) : null}

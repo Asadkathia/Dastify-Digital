@@ -11,6 +11,12 @@ export const Pages: CollectionConfig = {
     livePreview: {
       url: ({ data }) => getPreviewURL('/', data?.slug),
     },
+    components: {
+      afterList: ['/src/payload/components/VisualEditorButton#VisualEditorButton'],
+      edit: {
+        beforeDocumentControls: ['/src/payload/components/VisualEditorDocButton#VisualEditorDocButton'],
+      },
+    },
   },
   access: collectionAccess,
   versions: withDrafts,

@@ -8,10 +8,10 @@ export function CtaBlock(props: CtaBlockProps) {
     <section className="cta-section sp">
       <div className="wrap">
         <div className="cta-inner">
-          <h2 className="cta-h2">{props.title}</h2>
-          {props.subtitle ? <p className="cta-sub">{props.subtitle}</p> : null}
+          <h2 className="cta-h2" data-field="title">{props.title}</h2>
+          {props.subtitle ? <p className="cta-sub" data-field="subtitle">{props.subtitle}</p> : null}
           <div style={{ marginTop: '16px' }}>
-            <Link className="btn-pu" href={props.buttonHref}>
+            <Link className="btn-pu" href={props.buttonHref} data-field="buttonLabel">
               {props.buttonLabel}
             </Link>
           </div>

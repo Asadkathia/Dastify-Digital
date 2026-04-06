@@ -16,8 +16,8 @@ export function TextImageBlock(props: TextImageBlockProps) {
         ) : null}
 
         <div>
-          {props.title ? <h2 style={{ marginBottom: '12px' }}>{props.title}</h2> : null}
-          {props.text ? <p style={{ whiteSpace: 'pre-wrap' }}>{props.text}</p> : null}
+          {props.title ? <h2 data-field="title" style={{ marginBottom: '12px' }}>{props.title}</h2> : null}
+          {props.text ? <p data-field="text" style={{ whiteSpace: 'pre-wrap' }}>{props.text}</p> : null}
         </div>
 
         {!imageFirst ? (

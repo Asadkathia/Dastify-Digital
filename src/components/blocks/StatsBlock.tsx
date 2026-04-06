@@ -6,7 +6,7 @@ export function StatsBlock(props: StatsBlockProps) {
   return (
     <section className="sp">
       <div className="wrap">
-        {props.title ? <h2 style={{ marginBottom: '20px' }}>{props.title}</h2> : null}
+        {props.title ? <h2 data-field="title" style={{ marginBottom: '20px' }}>{props.title}</h2> : null}
         <div className="hero-stats" style={{ borderTop: '1px solid rgba(255,255,255,.08)', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
           {props.items.map((item) => (
             <div key={`${item.label}-${item.value}`} className="hero-stat">

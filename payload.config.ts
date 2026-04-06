@@ -120,6 +120,14 @@ const createConfig = async () => {
         || process.env.SERVER_URL
         || 'http://localhost:3000',
     },
+    components: {
+      views: {
+        visualEditor: {
+          Component: '/src/payload/views/PageEditor/index#default',
+          path: '/visual-editor/:id',
+        },
+      },
+    },
   },
   collections: [
     Users,

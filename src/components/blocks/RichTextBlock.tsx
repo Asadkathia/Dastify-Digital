@@ -6,7 +6,7 @@ export function RichTextBlock(props: RichTextBlockProps) {
   return (
     <section className="sp">
       <div className="wrap" style={{ maxWidth: '860px' }}>
-        <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.75 }}>{props.content}</div>
+        <div data-field="content" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.75 }}>{props.content}</div>
       </div>
     </section>
   );
