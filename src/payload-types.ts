@@ -76,6 +76,7 @@ export interface Config {
     tags: Tag;
     'blog-posts': BlogPost;
     menus: Menu;
+    'import-reports': ImportReport;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -97,6 +98,7 @@ export interface Config {
     tags: TagsSelect<false> | TagsSelect<true>;
     'blog-posts': BlogPostsSelect<false> | BlogPostsSelect<true>;
     menus: MenusSelect<false> | MenusSelect<true>;
+    'import-reports': ImportReportsSelect<false> | ImportReportsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -895,6 +897,49 @@ export interface Menu {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "import-reports".
+ */
+export interface ImportReport {
+  id: number;
+  slug: string;
+  title?: string | null;
+  provider: 'anthropic' | 'openai' | 'google' | 'openrouter' | 'ollama';
+  model: string;
+  totalSections?: number | null;
+  mappedSections?: number | null;
+  fallbackSections?: number | null;
+  warnings?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  externalImages?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    keywords?: string | null;
+    canonicalURL?: string | null;
+    noindex?: boolean | null;
+  };
+  createdPageId?: string | null;
+  importedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -1296,6 +1341,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'menus';
         value: number | Menu;
+      } | null)
+    | ({
+        relationTo: 'import-reports';
+        value: number | ImportReport;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1990,6 +2039,34 @@ export interface MenusSelect<T extends boolean = true> {
         href?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "import-reports_select".
+ */
+export interface ImportReportsSelect<T extends boolean = true> {
+  slug?: T;
+  title?: T;
+  provider?: T;
+  model?: T;
+  totalSections?: T;
+  mappedSections?: T;
+  fallbackSections?: T;
+  warnings?: T;
+  externalImages?: T;
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        keywords?: T;
+        canonicalURL?: T;
+        noindex?: T;
+      };
+  createdPageId?: T;
+  importedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

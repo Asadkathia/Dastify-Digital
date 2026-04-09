@@ -43,7 +43,10 @@ export const withDrafts = {
 
 export function getPreviewURL(prefix: string, slug: unknown): string {
   const cleanSlug = typeof slug === 'string' && slug.length > 0 ? slug : '';
-  const path = cleanSlug ? `${prefix}/${cleanSlug}` : prefix;
+  const base = `/${String(prefix || '').replace(/^\/+|\/+$/g, '')}`;
+  const path = cleanSlug
+    ? `${base}/${cleanSlug}`.replace(/\/+/g, '/')
+    : base || '/';
   const secret = process.env.PREVIEW_SECRET || process.env.PAYLOAD_SECRET;
   const params = new URLSearchParams({
     slug: path.startsWith('/') ? path : `/${path}`,

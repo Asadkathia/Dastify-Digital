@@ -12,6 +12,8 @@ import { migration as canonicalUrlColumnNameFix } from './20260403_0010_canonica
 import { migration as sectionBlockTables } from './20260406_0011_section_block_tables.ts';
 import { migration as newBlockTables } from './20260407_0012_new_block_tables.ts';
 import { migration as newBlockTables2 } from './20260407_0013_new_block_tables_2.ts';
+import { migration as lockedDocumentsImportReportsRelColumn } from './20260408_0014_locked_documents_import_reports_rel_column.ts';
+import { migration as importReportsTable } from './20260408_0015_import_reports_table.ts';
 
 export const migrations: Migration[] = [
   usersRole,
@@ -27,4 +29,6 @@ export const migrations: Migration[] = [
   sectionBlockTables,
   newBlockTables,
   newBlockTables2,
+  lockedDocumentsImportReportsRelColumn,
+  importReportsTable,
 ];

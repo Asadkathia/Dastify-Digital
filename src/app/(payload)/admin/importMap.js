@@ -30,9 +30,14 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
+import { default as default_abff1975502f04a3537de680adc785e6 } from '@/payload/components/HomepageEditorButton'
 import { HomepagePreviewLink as HomepagePreviewLink_c22968159d877655ae3946f37bb84bca } from '@/payload/components/HomepagePreviewLink'
+import { PageConverterNavLink as PageConverterNavLink_63aa4182d7c6dfe4e5f78b77f5bd1a6b } from '../../../../src/payload/components/PageConverterNavLink'
 import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
 import { default as default_87bf4d9912588902c85023dc7fe42f98 } from '../../../../src/payload/views/PageEditor/index'
+import { default as default_f1cee72be9374458b6663634fde4c704 } from '../../../../src/payload/views/HomepageEditor/index'
+import { default as default_294c4d2a7e8d7cb269d00b0260abbb21 } from '../../../../src/payload/views/PageConverter/index'
+import { default as default_79e64ebb1e0f20b3f7f6563054d09a1e } from '../../../../src/payload/views/ConvertedPages/index'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 export const importMap = {
@@ -68,8 +73,13 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
+  "@/payload/components/HomepageEditorButton#default": default_abff1975502f04a3537de680adc785e6,
   "@/payload/components/HomepagePreviewLink#HomepagePreviewLink": HomepagePreviewLink_c22968159d877655ae3946f37bb84bca,
+  "/src/payload/components/PageConverterNavLink#PageConverterNavLink": PageConverterNavLink_63aa4182d7c6dfe4e5f78b77f5bd1a6b,
   "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e,
   "/src/payload/views/PageEditor/index#default": default_87bf4d9912588902c85023dc7fe42f98,
+  "/src/payload/views/HomepageEditor/index#default": default_f1cee72be9374458b6663634fde4c704,
+  "/src/payload/views/PageConverter/index#default": default_294c4d2a7e8d7cb269d00b0260abbb21,
+  "/src/payload/views/ConvertedPages/index#default": default_79e64ebb1e0f20b3f7f6563054d09a1e,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

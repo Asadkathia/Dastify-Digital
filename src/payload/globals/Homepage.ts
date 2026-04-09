@@ -347,6 +347,9 @@ export const Homepage: GlobalConfig = {
     components: {
       elements: {
         beforeDocumentControls: [
+          // Primary: opens full Homepage Visual Editor
+          '@/payload/components/HomepageEditorButton#default',
+          // Secondary: original live preview link still available
           '@/payload/components/HomepagePreviewLink#HomepagePreviewLink',
         ],
       },

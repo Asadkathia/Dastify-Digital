@@ -22,7 +22,7 @@ export type BlockDefinition = {
   blockType: string;
   label: string;
   icon: string;
-  category: 'Layout' | 'Content' | 'Conversion' | 'Media';
+  category: 'Layout' | 'Content' | 'Conversion' | 'Media' | 'Homepage';
   fields: EditorField[];
   defaultData: Record<string, unknown>;
 };

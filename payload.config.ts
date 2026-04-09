@@ -18,6 +18,7 @@ import { Menus } from './src/payload/collections/Menus.ts';
 import { Pages } from './src/payload/collections/Pages.ts';
 import { Services } from './src/payload/collections/Services.ts';
 import { Tags } from './src/payload/collections/Tags.ts';
+import { ImportReports } from './src/payload/collections/ImportReports.ts';
 import { Homepage } from './src/payload/globals/Homepage.ts';
 import { SiteSettings } from './src/payload/globals/SiteSettings.ts';
 
@@ -121,10 +122,25 @@ const createConfig = async () => {
         || 'http://localhost:3000',
     },
     components: {
+      beforeNavLinks: [
+        '/src/payload/components/PageConverterNavLink#PageConverterNavLink',
+      ],
       views: {
         visualEditor: {
           Component: '/src/payload/views/PageEditor/index#default',
           path: '/visual-editor/:id',
+        },
+        homepageEditor: {
+          Component: '/src/payload/views/HomepageEditor/index#default',
+          path: '/homepage-editor',
+        },
+        pageConverter: {
+          Component: '/src/payload/views/PageConverter/index#default',
+          path: '/convert-page',
+        },
+        convertedPages: {
+          Component: '/src/payload/views/ConvertedPages/index#default',
+          path: '/converted-pages',
         },
       },
     },
@@ -139,6 +155,7 @@ const createConfig = async () => {
     Tags,
     BlogPosts,
     Menus,
+    ImportReports,
   ],
   globals: [Homepage, SiteSettings],
   plugins: [

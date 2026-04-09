@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { CmsImage } from '@/components/CmsImage';
 import type { PageBuilderBlock } from './types';

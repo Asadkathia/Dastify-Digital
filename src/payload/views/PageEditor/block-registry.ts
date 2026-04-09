@@ -1,4 +1,5 @@
 import type { BlockDefinition } from './types';
+import { homepageBlockRegistry } from '../HomepageEditor/homepage-block-registry';
 
 export const blockRegistry: Record<string, BlockDefinition> = {
   'hero-block': {
@@ -800,7 +801,15 @@ export const blockRegistry: Record<string, BlockDefinition> = {
   },
 };
 
+// ─── Merge homepage blocks ────────────────────────────────────────────────────
+// Static import above — no require() needed. Both registries are in the same
+// build so this is a clean, ESM-safe merge.
+
 export const blockCategories: Array<{ name: string; blocks: BlockDefinition[] }> = [
+  {
+    name: 'Homepage',
+    blocks: Object.values(homepageBlockRegistry),
+  },
   {
     name: 'Layout',
     blocks: Object.values(blockRegistry).filter((b) => b.category === 'Layout'),
@@ -820,11 +829,12 @@ export const blockCategories: Array<{ name: string; blocks: BlockDefinition[] }>
 ].filter((cat) => cat.blocks.length > 0);
 
 export function getBlockDefinition(blockType: string): BlockDefinition | undefined {
-  return blockRegistry[blockType];
+  // Check standard registry first, then homepage registry
+  return blockRegistry[blockType] ?? homepageBlockRegistry[blockType];
 }
 
 export function createBlockInstance(blockType: string): import('./types').BlockInstance | null {
-  const def = blockRegistry[blockType];
+  const def = getBlockDefinition(blockType);
   if (!def) return null;
   return {
     id: `${blockType}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -832,3 +842,4 @@ export function createBlockInstance(blockType: string): import('./types').BlockI
     data: structuredClone(def.defaultData),
   };
 }
+
