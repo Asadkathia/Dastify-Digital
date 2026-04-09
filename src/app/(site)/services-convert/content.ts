@@ -74,7 +74,7 @@ export type PageContent = {
   };
 };
 
-export const defaultContent: ServicesConvertContent = {
+export const defaultContent: PageContent = {
   "meta": {
     "title": "Services — Dastify Digital | Healthcare Marketing That Fills Schedules",
     "description": "Six HIPAA-compliant marketing services built for healthcare. SEO, PPC, content, social, web design, and reputation management — all measured in patients, not pageviews."

@@ -65,7 +65,7 @@ export type PageContent = {
   };
 };
 
-export const defaultContent: AboutContent = {
+export const defaultContent: PageContent = {
   "meta": {
     "title": "About Us — Dastify Digital | The Creative Authority for Healthcare Growth",
     "description": "Meet the healthcare marketing agency that refuses to look like a hospital. We're strategists who've worked inside health systems, now building growth engines for practices that demand more."
