@@ -12,6 +12,10 @@ export default function ConvertedPagesView() {
   const [pages, setPages] = useState<ConvertedPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const [results, setResults] = useState<
+    Record<string, { type: 'success' | 'error' | 'conflict'; message: string; adminUrl?: string }>
+  >({});
 
   useEffect(() => {
     fetch('/api/admin/converted-pages')
@@ -25,6 +29,71 @@ export default function ConvertedPagesView() {
         setLoading(false);
       });
   }, []);
+
+  async function uploadToCMS(pageName: string) {
+    setUploading((prev) => ({ ...prev, [pageName]: true }));
+    setResults((prev) => {
+      const next = { ...prev };
+      delete next[pageName];
+      return next;
+    });
+
+    try {
+      const res = await fetch('/api/admin/upload-converted-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageName }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        pageId?: string;
+        adminUrl?: string | null;
+      };
+
+      if (res.ok && data.ok) {
+        setResults((prev) => ({
+          ...prev,
+          [pageName]: {
+            type: 'success',
+            message: 'Uploaded to CMS as draft.',
+            adminUrl: data.adminUrl ?? undefined,
+          },
+        }));
+        return;
+      }
+
+      if (res.status === 409) {
+        setResults((prev) => ({
+          ...prev,
+          [pageName]: {
+            type: 'conflict',
+            message: data.error || 'Already exists in CMS.',
+            adminUrl: data.adminUrl ?? undefined,
+          },
+        }));
+        return;
+      }
+
+      setResults((prev) => ({
+        ...prev,
+        [pageName]: {
+          type: 'error',
+          message: data.error || 'Upload failed.',
+        },
+      }));
+    } catch (err) {
+      setResults((prev) => ({
+        ...prev,
+        [pageName]: {
+          type: 'error',
+          message: err instanceof Error ? err.message : 'Upload failed.',
+        },
+      }));
+    } finally {
+      setUploading((prev) => ({ ...prev, [pageName]: false }));
+    }
+  }
 
   return (
     <div style={{ padding: 24, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', minHeight: '100vh', color: '#ddd' }}>
@@ -53,41 +122,116 @@ export default function ConvertedPagesView() {
 
       {!loading && pages.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-          {pages.map((page) => (
-            <div
-              key={page.name}
-              style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 8, padding: 20 }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: 700, color: '#e2e8f0' }}>
-                  /{page.name}
-                </span>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <a
-                    href={`http://localhost:3000${page.route}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ fontSize: 11, padding: '4px 10px', background: '#1e293b', color: '#93c5fd', borderRadius: 4, textDecoration: 'none', fontWeight: 500 }}
+          {pages.map((page) => {
+            const canEdit = page.files.some((f) => f.endsWith('/content.ts'));
+            return (
+              <div key={page.name} style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 8, padding: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: 700, color: '#e2e8f0' }}>
+                    /{page.name}
+                  </span>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => uploadToCMS(page.name)}
+                      disabled={uploading[page.name] === true}
+                      style={{
+                        fontSize: 11,
+                        padding: '4px 10px',
+                        background: '#7C3AED',
+                        color: '#fff',
+                        borderRadius: 4,
+                        border: 'none',
+                        cursor: uploading[page.name] ? 'default' : 'pointer',
+                        fontWeight: 600,
+                        opacity: uploading[page.name] ? 0.7 : 1,
+                      }}
+                    >
+                      {uploading[page.name] ? 'Uploading…' : 'Upload to CMS'}
+                    </button>
+                    {canEdit ? (
+                      <a
+                        href={`/admin/edit-converted-page/${page.name}`}
+                        style={{ fontSize: 11, padding: '4px 10px', background: '#134e4a', color: '#99f6e4', borderRadius: 4, textDecoration: 'none', fontWeight: 600 }}
+                      >
+                        Edit ✦
+                      </a>
+                    ) : (
+                      <span
+                        style={{ fontSize: 11, padding: '4px 10px', background: '#1e293b', color: '#64748b', borderRadius: 4, fontWeight: 600 }}
+                        title="Visual editor is available for converted pages with a content.ts file."
+                      >
+                        No Editor
+                      </span>
+                    )}
+                    <a
+                      href={`http://localhost:3000${page.route}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ fontSize: 11, padding: '4px 10px', background: '#1e293b', color: '#93c5fd', borderRadius: 4, textDecoration: 'none', fontWeight: 500 }}
+                    >
+                      View ↗
+                    </a>
+                    <a
+                      href="/admin/convert-page"
+                      style={{ fontSize: 11, padding: '4px 10px', background: '#1e293b', color: '#6b7280', borderRadius: 4, textDecoration: 'none', fontWeight: 500 }}
+                    >
+                      Re-convert
+                    </a>
+                  </div>
+                </div>
+                {results[page.name] ? (
+                  <div
+                    style={{
+                      marginBottom: 10,
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      border: `1px solid ${
+                        results[page.name]?.type === 'success'
+                          ? '#14532d'
+                          : results[page.name]?.type === 'conflict'
+                            ? '#78350f'
+                            : '#7f1d1d'
+                      }`,
+                      background:
+                        results[page.name]?.type === 'success'
+                          ? '#052e16'
+                          : results[page.name]?.type === 'conflict'
+                            ? '#3f2206'
+                            : '#450a0a',
+                      color:
+                        results[page.name]?.type === 'success'
+                          ? '#86efac'
+                          : results[page.name]?.type === 'conflict'
+                            ? '#fcd34d'
+                            : '#fca5a5',
+                    }}
                   >
-                    View ↗
-                  </a>
-                  <a
-                    href="/admin/convert-page"
-                    style={{ fontSize: 11, padding: '4px 10px', background: '#1e293b', color: '#6b7280', borderRadius: 4, textDecoration: 'none', fontWeight: 500 }}
-                  >
-                    Re-convert
-                  </a>
+                    {results[page.name]?.message}
+                    {results[page.name]?.adminUrl ? (
+                      <>
+                        {' '}
+                        <a
+                          href={results[page.name]?.adminUrl}
+                          style={{ color: '#93c5fd', textDecoration: 'underline' }}
+                        >
+                          Open
+                        </a>
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {page.files.map((f) => (
+                    <span key={f} style={{ fontSize: 11, color: '#475569', fontFamily: 'monospace' }}>
+                      {f}
+                    </span>
+                  ))}
                 </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {page.files.map((f) => (
-                  <span key={f} style={{ fontSize: 11, color: '#475569', fontFamily: 'monospace' }}>
-                    {f}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

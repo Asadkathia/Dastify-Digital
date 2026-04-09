@@ -22,6 +22,20 @@ export async function runImportAgent(request: ImportRequest): Promise<ImportResp
 
     const validation = validateBlocks(mapping, mapping._pageStyles);
 
+    // Flatten section-block wrappers to leaf blocks before payload.create().
+    // Payload's SQLite adapter double-inserts leaf blocks when they are nested
+    // inside section-block, causing duplicate key errors on subsequent saves.
+    // The visual editor's deserializeSectionsFromPayload auto-wraps flat blocks
+    // in single-column sections on read, so this round-trips correctly.
+    const flatBlocks = validation.blocks.flatMap((b) => {
+      if (b.blockType === 'section-block' && Array.isArray(b.columns)) {
+        return b.columns.flatMap((col: { blocks?: unknown[] }) =>
+          Array.isArray(col.blocks) ? col.blocks : [],
+        );
+      }
+      return [b];
+    });
+
     const payload = await getPayload({ config: await payloadConfig });
     const createdPage = await payload.create({
       collection: 'pages',
@@ -29,7 +43,7 @@ export async function runImportAgent(request: ImportRequest): Promise<ImportResp
         title: request.title,
         slug: request.slug,
         _status: 'draft',
-        blocks: validation.blocks as never,
+        blocks: flatBlocks as never,
         meta: {
           title: mapping.seo?.title || seo.title,
           description: mapping.seo?.description || seo.description,

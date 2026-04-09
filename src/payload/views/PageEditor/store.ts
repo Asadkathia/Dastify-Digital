@@ -32,6 +32,8 @@ function makeSingleColSection(overrides?: Partial<SectionInstance>): SectionInst
 
 type EditorState = {
   pageId: string | null;
+  editorMode: 'pages' | 'homepage' | 'converted';
+  convertedPageName: string | null;
   sections: SectionInstance[];
   selection: SelectionTarget;
   saveStatus: SaveStatus;
@@ -42,6 +44,8 @@ type EditorState = {
 
   // ── Page-level ────────────────────────────────────────────────────────────
   setPageId: (id: string) => void;
+  setEditorMode: (mode: 'pages' | 'homepage' | 'converted') => void;
+  setConvertedPageName: (name: string | null) => void;
   setLoading: (loading: boolean) => void;
   setSections: (sections: SectionInstance[]) => void;
   setSaveStatus: (status: SaveStatus) => void;
@@ -120,6 +124,8 @@ export const useEditorStore = create<EditorState>()(
   temporal(
     (set, get) => ({
       pageId: null,
+      editorMode: 'pages',
+      convertedPageName: null,
       sections: [],
       selection: null,
       saveStatus: 'saved',
@@ -130,6 +136,8 @@ export const useEditorStore = create<EditorState>()(
 
       // ── Page-level ──────────────────────────────────────────────────────
       setPageId: (id) => set({ pageId: id }),
+      setEditorMode: (editorMode) => set({ editorMode }),
+      setConvertedPageName: (convertedPageName) => set({ convertedPageName }),
       setLoading: (isLoading) => set({ isLoading }),
       setSections: (sections) => set({ sections, saveStatus: 'saved' }),
       setSaveStatus: (saveStatus) => set({ saveStatus }),
@@ -559,9 +567,28 @@ function deserializeLeafBlock(raw: PayloadBlock): BlockInstance {
 }
 
 export function deserializeSectionsFromPayload(payloadBlocks: PayloadBlock[]): SectionInstance[] {
+  // Normalize duplicate rows that can appear after legacy imports/reimports.
+  const deduped = Array.from(
+    new Map(
+      payloadBlocks.map((block, index) => {
+        const idPart = typeof block.id === 'string' || typeof block.id === 'number' ? String(block.id) : `idx-${index}`;
+        const key = `${String(block.blockType ?? 'unknown')}::${idPart}`;
+        return [key, block] as const;
+      }),
+    ).values(),
+  );
+
+  // If an imported live iframe block exists, prioritize those over stale snapshots.
+  const liveIframeBlocks = deduped.filter((block) => {
+    if (block.blockType !== 'custom-html-block') return false;
+    const html = block.html;
+    return typeof html === 'string' && /<iframe\b/i.test(html);
+  });
+
+  const normalizedBlocks = liveIframeBlocks.length > 0 ? liveIframeBlocks : deduped;
   const sections: SectionInstance[] = [];
 
-  for (const raw of payloadBlocks) {
+  for (const raw of normalizedBlocks) {
     if (!raw.blockType) continue;
 
     if (raw.blockType === 'section-block') {
@@ -593,5 +620,15 @@ export function deserializeSectionsFromPayload(payloadBlocks: PayloadBlock[]): S
     }
   }
 
-  return sections;
+  const hasRenderableSections = sections.some((section) =>
+    section.columns.some((column) => column.blocks.length > 0),
+  );
+
+  if (!hasRenderableSections) return sections;
+
+  // Some legacy imported records can leave empty section shells in storage.
+  // When renderable blocks exist, hide those shells in the visual editor.
+  return sections.filter((section) =>
+    section.columns.some((column) => column.blocks.length > 0),
+  );
 }

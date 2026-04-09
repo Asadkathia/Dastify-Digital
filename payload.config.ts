@@ -95,6 +95,13 @@ const db = isPostgres
     // Keep schema changes migration-driven by default.
     // Set PAYLOAD_SCHEMA_PUSH=true only for one-off local schema sync.
     push: enableSchemaPush && isLocalSqlite,
+    // Store block arrays as a single JSON column instead of per-block side tables.
+    // The per-block-table code path in @payloadcms/drizzle accumulates duplicate
+    // rows for our `pages.blocks` field when the doc is updated (edit title, publish,
+    // re-upload). Storing blocks as JSON sidesteps the entire delete/insert mismatch,
+    // which was the root cause of the duplicate "custom-html-block" rows and the
+    // blank canvas after slug rename.
+    blocksAsJSON: true,
     client: {
       // Use absolute local path to avoid CWD-dependent SQLite file mismatches.
       url: databaseURI,
@@ -142,6 +149,10 @@ const createConfig = async () => {
           Component: '/src/payload/views/ConvertedPages/index#default',
           path: '/converted-pages',
         },
+        convertedPageEditor: {
+          Component: '/src/payload/views/ConvertedPageEditor/index#default',
+          path: '/edit-converted-page/:pageName',
+        },
       },
     },
   },
@@ -188,8 +199,12 @@ const createConfig = async () => {
         },
       ],
     }),
+    // nestedDocsPlugin disabled for pages: its resaveSelfAfterCreate hook calls
+    // payload.update() after every create, which triggers a second saveVersion()
+    // and doubles block rows in _pages_v_blocks_custom_html_block. Breadcrumbs
+    // are not used in this project.
     nestedDocsPlugin({
-      collections: ['pages'],
+      collections: [],
     }),
     redirectsPlugin({
       collections: ['pages', 'services', 'case-studies', 'blog-posts'],

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -10,8 +10,16 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { useEditorStore, serializeSectionsForPayload, deserializeSectionsFromPayload } from './store';
-import { getBlockDefinition } from './block-registry';
+import {
+  useEditorStore,
+  serializeSectionsForPayload,
+  deserializeSectionsFromPayload,
+} from './store';
+import {
+  getBlockDefinition,
+  registerRuntimeBlockDefinitions,
+  clearRuntimeBlockDefinitions,
+} from './block-registry';
 import { BlockPalette } from './BlockPalette';
 import { Canvas } from './Canvas';
 import { ConfigPanel } from './ConfigPanel';
@@ -21,18 +29,60 @@ import { ToastContainer, useToast } from './Toast';
 import { EditorSkeleton } from './Skeleton';
 import { ErrorBoundary } from './ErrorBoundary';
 import { RevisionHistory } from './RevisionHistory';
+import { homepageDocToSections, sectionsToHomepagePatch } from '../HomepageEditor/homepage-adapter';
+import { buildConvertedBlockDefinition, convertedPageContentToSections, sectionsToConvertedPageContent } from '@/lib/converted-pages/editor-adapter';
+import type { BlockDefinition } from './types';
+
+type EditorMode = 'pages' | 'homepage' | 'converted';
+
+type ConvertedSectionSpec = {
+  key: string;
+  label: string;
+  icon?: string;
+};
+
+type ConvertedContentResponse = {
+  page: string;
+  sections: ConvertedSectionSpec[];
+  content: Record<string, unknown>;
+};
+
+function inferConvertedPageNameFromPathname(pathname: string): string | null {
+  const match = pathname.match(/\/admin\/edit-converted-page\/([^/?#]+)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
+
+function formatPageName(pageName: string): string {
+  return pageName
+    .split('-')
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() + part.slice(1))
+    .join(' ');
+}
 
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
 
 type ToolbarProps = {
+  mode: EditorMode;
   pageTitle: string;
+  convertedPageName: string | null;
+  canShowHistory: boolean;
   onPageTitleChange: (title: string) => void;
   onSaveDraft: () => void;
   onPublish: () => void;
   onShowHistory: () => void;
 };
 
-function Toolbar({ pageTitle, onPageTitleChange, onSaveDraft, onPublish, onShowHistory }: ToolbarProps) {
+function Toolbar({
+  mode,
+  pageTitle,
+  convertedPageName,
+  canShowHistory,
+  onPageTitleChange,
+  onSaveDraft,
+  onPublish,
+  onShowHistory,
+}: ToolbarProps) {
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const responsiveMode = useEditorStore((s) => s.responsiveMode);
   const setResponsiveMode = useEditorStore((s) => s.setResponsiveMode);
@@ -41,12 +91,33 @@ function Toolbar({ pageTitle, onPageTitleChange, onSaveDraft, onPublish, onShowH
   const canRedo = futureStates.length > 0;
 
   const statusLabel: Record<string, { text: string; color: string }> = {
-    saved:  { text: 'Saved',            color: '#4ade80' },
-    saving: { text: 'Saving…',          color: '#facc15' },
-    dirty:  { text: 'Unsaved changes',  color: '#fb923c' },
-    error:  { text: 'Save failed',      color: '#f87171' },
+    saved: { text: 'Saved', color: '#4ade80' },
+    saving: { text: 'Saving…', color: '#facc15' },
+    dirty: { text: 'Unsaved changes', color: '#fb923c' },
+    error: { text: 'Save failed', color: '#f87171' },
   };
   const { text: statusText, color: statusColor } = statusLabel[saveStatus] ?? statusLabel.saved;
+
+  const backHref =
+    mode === 'homepage'
+      ? '/admin/globals/homepage'
+      : mode === 'converted'
+        ? '/admin/converted-pages'
+        : '/admin/collections/pages';
+
+  const backLabel =
+    mode === 'homepage'
+      ? '← Homepage'
+      : mode === 'converted'
+        ? '← Converted Pages'
+        : '← Pages';
+
+  const titleLabel =
+    mode === 'homepage'
+      ? '🏠 Homepage Visual Editor'
+      : mode === 'converted'
+        ? `✦ ${formatPageName(convertedPageName ?? 'Converted Page')} Visual Editor`
+        : '';
 
   return (
     <header
@@ -63,51 +134,68 @@ function Toolbar({ pageTitle, onPageTitleChange, onSaveDraft, onPublish, onShowH
       }}
     >
       <a
-        href="/admin/collections/pages"
-        style={{ color: '#555', textDecoration: 'none', fontSize: '12px', padding: '4px 8px', borderRadius: '6px', border: '1px solid #222' }}
+        href={backHref}
+        style={{
+          color: '#555',
+          textDecoration: 'none',
+          fontSize: '12px',
+          padding: '4px 8px',
+          borderRadius: '6px',
+          border: '1px solid #222',
+        }}
       >
-        ← Pages
+        {backLabel}
       </a>
 
       <div style={{ width: '1px', height: '20px', background: '#222', margin: '0 2px' }} />
 
-      <button onClick={() => undo()} disabled={!canUndo} style={tbBtn(!canUndo)} title="Undo (Ctrl+Z)">↩</button>
-      <button onClick={() => redo()} disabled={!canRedo} style={tbBtn(!canRedo)} title="Redo (Ctrl+Shift+Z)">↪</button>
+      <button onClick={() => undo()} disabled={!canUndo} style={tbBtn(!canUndo)} title="Undo (Ctrl+Z)">
+        ↩
+      </button>
+      <button onClick={() => redo()} disabled={!canRedo} style={tbBtn(!canRedo)} title="Redo (Ctrl+Shift+Z)">
+        ↪
+      </button>
 
       <div style={{ width: '1px', height: '20px', background: '#222', margin: '0 2px' }} />
 
-      {(['desktop', 'tablet', 'mobile'] as const).map((mode) => (
+      {(['desktop', 'tablet', 'mobile'] as const).map((responsive) => (
         <button
-          key={mode}
-          onClick={() => setResponsiveMode(mode)}
-          title={`${mode.charAt(0).toUpperCase() + mode.slice(1)} preview`}
+          key={responsive}
+          onClick={() => setResponsiveMode(responsive)}
+          title={`${responsive.charAt(0).toUpperCase() + responsive.slice(1)} preview`}
           style={{
             ...tbBtn(false),
-            background: responsiveMode === mode ? '#1e3a4c' : 'transparent',
-            borderColor: responsiveMode === mode ? '#0ea5e9' : '#222',
-            color: responsiveMode === mode ? '#7dd3fc' : '#666',
+            background: responsiveMode === responsive ? '#1e3a4c' : 'transparent',
+            borderColor: responsiveMode === responsive ? '#0ea5e9' : '#222',
+            color: responsiveMode === responsive ? '#7dd3fc' : '#666',
           }}
         >
-          {mode === 'desktop' ? '🖥' : mode === 'tablet' ? '📱' : '📲'}
+          {responsive === 'desktop' ? '🖥' : responsive === 'tablet' ? '📱' : '📲'}
         </button>
       ))}
 
-      <input
-        value={pageTitle}
-        onChange={(e) => onPageTitleChange(e.target.value)}
-        placeholder="Page title"
-        style={{
-          minWidth: '240px',
-          maxWidth: '360px',
-          background: '#111',
-          border: '1px solid #222',
-          borderRadius: '6px',
-          color: '#ddd',
-          fontSize: '12px',
-          padding: '6px 8px',
-          outline: 'none',
-        }}
-      />
+      {mode === 'pages' ? (
+        <input
+          value={pageTitle}
+          onChange={(e) => onPageTitleChange(e.target.value)}
+          placeholder="Page title"
+          style={{
+            minWidth: '240px',
+            maxWidth: '360px',
+            background: '#111',
+            border: '1px solid #222',
+            borderRadius: '6px',
+            color: '#ddd',
+            fontSize: '12px',
+            padding: '6px 8px',
+            outline: 'none',
+          }}
+        />
+      ) : (
+        <span style={{ fontSize: '12px', fontWeight: 600, color: '#888', letterSpacing: '0.03em' }}>
+          {titleLabel}
+        </span>
+      )}
 
       <div style={{ flex: 1 }} />
 
@@ -117,7 +205,8 @@ function Toolbar({ pageTitle, onPageTitleChange, onSaveDraft, onPublish, onShowH
 
       <button
         onClick={onShowHistory}
-        style={{ ...tbBtn(false), padding: '6px 10px', fontSize: '12px' }}
+        disabled={!canShowHistory}
+        style={{ ...tbBtn(!canShowHistory), padding: '6px 10px', fontSize: '12px' }}
         title="Revision History"
       >
         🕓
@@ -169,18 +258,19 @@ const tbBtn = (disabled: boolean): React.CSSProperties => ({
 // ─── Core editor (inside DnD context) ────────────────────────────────────────
 
 type PageEditorCoreProps = {
-  pageId: string;
   onSaveDraft: () => void;
   onPublish: () => void;
 };
 
-function PageEditorCore({ onSaveDraft, onPublish }: Omit<PageEditorCoreProps, 'pageId'>) {
+function PageEditorCore({ onSaveDraft, onPublish }: PageEditorCoreProps) {
   const sections = useEditorStore((s) => s.sections);
   const addBlock = useEditorStore((s) => s.addBlock);
   const moveSection = useEditorStore((s) => s.moveSection);
   const moveBlockWithinColumn = useEditorStore((s) => s.moveBlockWithinColumn);
   const moveBlockBetweenColumns = useEditorStore((s) => s.moveBlockBetweenColumns);
   const moveColumn = useEditorStore((s) => s.moveColumn);
+  const editorMode = useEditorStore((s) => s.editorMode);
+  const convertedPageName = useEditorStore((s) => s.convertedPageName);
 
   const [activeDrag, setActiveDrag] = useState<{ type: string; label: string; icon: string } | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -198,7 +288,11 @@ function PageEditorCore({ onSaveDraft, onPublish }: Omit<PageEditorCoreProps, 'p
         ?.columns.find((c) => c.id === data.columnId)
         ?.blocks.find((b) => b.id === data.blockId);
       const def = block ? getBlockDefinition(block.blockType) : undefined;
-      setActiveDrag({ type: 'block', label: (block?.data?.title as string) || def?.label || 'Block', icon: def?.icon || '📦' });
+      setActiveDrag({
+        type: 'block',
+        label: (block?.data?.title as string) || def?.label || 'Block',
+        icon: def?.icon || '📦',
+      });
     } else if (data.type === 'section') {
       setActiveDrag({ type: 'section', label: 'Section', icon: '▦' });
     } else if (data.type === 'column') {
@@ -213,7 +307,6 @@ function PageEditorCore({ onSaveDraft, onPublish }: Omit<PageEditorCoreProps, 'p
 
     const activeData = active.data.current as Record<string, unknown> | undefined;
 
-    // ── Palette block dropped onto canvas ──────────────────────────────────
     if (activeData?.type === 'palette-block' && activeData.blockType) {
       const overId = String(over.id);
       if (overId.startsWith('col-drop:')) {
@@ -226,7 +319,6 @@ function PageEditorCore({ onSaveDraft, onPublish }: Omit<PageEditorCoreProps, 'p
       return;
     }
 
-    // ── Section reorder ────────────────────────────────────────────────────
     if (activeData?.type === 'section') {
       const fromIndex = sections.findIndex((s) => s.id === activeData.sectionId);
       const toIndex = sections.findIndex((s) => s.id === String(over.id).replace('section:', ''));
@@ -234,7 +326,6 @@ function PageEditorCore({ onSaveDraft, onPublish }: Omit<PageEditorCoreProps, 'p
       return;
     }
 
-    // ── Column reorder ─────────────────────────────────────────────────────
     if (activeData?.type === 'column') {
       const sectionId = String(activeData.sectionId);
       const section = sections.find((s) => s.id === sectionId);
@@ -242,25 +333,34 @@ function PageEditorCore({ onSaveDraft, onPublish }: Omit<PageEditorCoreProps, 'p
       const fromIndex = section.columns.findIndex((c) => c.id === activeData.columnId);
       const toColId = String(over.id).replace(`column:${sectionId}:`, '');
       const toIndex = section.columns.findIndex((c) => c.id === toColId);
-      if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) moveColumn(sectionId, fromIndex, toIndex);
+      if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+        moveColumn(sectionId, fromIndex, toIndex);
+      }
       return;
     }
 
-    // ── Block reorder / move ───────────────────────────────────────────────
     if (activeData?.type === 'block') {
-      const { sectionId: fromSec, columnId: fromCol, blockId } = activeData as { sectionId: string; columnId: string; blockId: string };
+      const { sectionId: fromSec, columnId: fromCol, blockId } = activeData as {
+        sectionId: string;
+        columnId: string;
+        blockId: string;
+      };
       const overId = String(over.id);
-      let toSec: string, toCol: string, toIndex: number;
+      let toSec: string;
+      let toCol: string;
+      let toIndex: number;
 
       if (overId.startsWith('col-drop:')) {
         const [, s, c] = overId.split(':');
-        toSec = s; toCol = c;
-        const col = sections.find((sec) => sec.id === s)?.columns.find((col) => col.id === c);
+        toSec = s;
+        toCol = c;
+        const col = sections.find((sec) => sec.id === s)?.columns.find((colItem) => colItem.id === c);
         toIndex = col?.blocks.length ?? 0;
       } else if (overId.startsWith('block:')) {
         const [, s, c, targetBlockId] = overId.split(':');
-        toSec = s; toCol = c;
-        const col = sections.find((sec) => sec.id === s)?.columns.find((col) => col.id === c);
+        toSec = s;
+        toCol = c;
+        const col = sections.find((sec) => sec.id === s)?.columns.find((colItem) => colItem.id === c);
         toIndex = col?.blocks.findIndex((b) => b.id === targetBlockId) ?? 0;
       } else {
         return;
@@ -269,37 +369,55 @@ function PageEditorCore({ onSaveDraft, onPublish }: Omit<PageEditorCoreProps, 'p
       if (fromSec === toSec && fromCol === toCol) {
         const col = sections.find((s) => s.id === fromSec)?.columns.find((c) => c.id === fromCol);
         const fromIndex = col?.blocks.findIndex((b) => b.id === blockId) ?? -1;
-        if (fromIndex !== -1 && fromIndex !== toIndex) moveBlockWithinColumn(fromSec, fromCol, fromIndex, toIndex);
+        if (fromIndex !== -1 && fromIndex !== toIndex) {
+          moveBlockWithinColumn(fromSec, fromCol, fromIndex, toIndex);
+        }
       } else {
         const col = sections.find((s) => s.id === fromSec)?.columns.find((c) => c.id === fromCol);
         const fromIndex = col?.blocks.findIndex((b) => b.id === blockId) ?? -1;
-        if (fromIndex !== -1) moveBlockBetweenColumns(fromSec, fromCol, fromIndex, toSec, toCol, toIndex);
+        if (fromIndex !== -1) {
+          moveBlockBetweenColumns(fromSec, fromCol, fromIndex, toSec, toCol, toIndex);
+        }
       }
     }
   }
 
+  const previewSrc =
+    editorMode === 'homepage'
+      ? '/page-editor-preview?mode=homepage'
+      : (editorMode === 'converted' || (editorMode === 'pages' && Boolean(convertedPageName)))
+        ? `/page-editor-preview?mode=converted-page&page=${encodeURIComponent(convertedPageName ?? '')}`
+        : '/page-editor-preview';
+
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={() => setActiveDrag(null)}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveDrag(null)}
+    >
       <KeyboardShortcuts onSaveDraft={onSaveDraft} onPublish={onPublish} />
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <BlockPalette />
         <Canvas activeDrag={activeDrag} />
-        <PreviewIframe />
+        <PreviewIframe src={previewSrc} />
         <ConfigPanel />
       </div>
       <DragOverlay dropAnimation={{ duration: 120, easing: 'ease' }}>
         {activeDrag && (
-          <div style={{
-            background: '#0c1a24',
-            border: '2px solid #0ea5e9',
-            borderRadius: '6px',
-            padding: '8px 12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-            pointerEvents: 'none',
-          }}>
+          <div
+            style={{
+              background: '#0c1a24',
+              border: '2px solid #0ea5e9',
+              borderRadius: '6px',
+              padding: '8px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+              pointerEvents: 'none',
+            }}
+          >
             <span style={{ fontSize: '16px' }}>{activeDrag.icon}</span>
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#7dd3fc' }}>{activeDrag.label}</span>
           </div>
@@ -313,12 +431,20 @@ function PageEditorCore({ onSaveDraft, onPublish }: Omit<PageEditorCoreProps, 'p
 
 type PageEditorViewProps = {
   params?: { id?: string; segments?: string[] };
+  mode?: EditorMode;
 };
 
-export default function PageEditorView({ params }: PageEditorViewProps) {
+export default function PageEditorView({ params, mode = 'pages' }: PageEditorViewProps) {
   const [pageId, setResolvedPageId] = useState(params?.id ?? params?.segments?.[0] ?? '');
+  const [pageTitle, setPageTitle] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
+  const [convertedBaseContent, setConvertedBaseContent] = useState<Record<string, unknown> | null>(null);
 
   const setPageId = useEditorStore((s) => s.setPageId);
+  const setEditorMode = useEditorStore((s) => s.setEditorMode);
+  const editorMode = useEditorStore((s) => s.editorMode);
+  const convertedPageName = useEditorStore((s) => s.convertedPageName);
+  const setConvertedPageName = useEditorStore((s) => s.setConvertedPageName);
   const setSections = useEditorStore((s) => s.setSections);
   const setLoading = useEditorStore((s) => s.setLoading);
   const isLoading = useEditorStore((s) => s.isLoading);
@@ -326,50 +452,213 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const setSaveStatus = useEditorStore((s) => s.setSaveStatus);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
-  const [pageTitle, setPageTitle] = useState('');
   const { toasts, show: showToast, dismiss } = useToast();
 
-  // Resolve page ID across Payload custom view param shapes
   useEffect(() => {
-    if (pageId) return;
+    setEditorMode(mode);
+  }, [mode, setEditorMode]);
+
+  useEffect(() => {
+    if (editorMode === 'converted' && !convertedPageName && typeof window !== 'undefined') {
+      const inferred = inferConvertedPageNameFromPathname(window.location.pathname);
+      if (inferred) setConvertedPageName(inferred);
+    }
+  }, [editorMode, convertedPageName, setConvertedPageName]);
+
+  useEffect(() => {
+    if (editorMode !== 'pages' || pageId) return;
+
     const fromParams = params?.id ?? params?.segments?.[0];
     if (fromParams) {
       setResolvedPageId(fromParams);
       return;
     }
+
     if (typeof window !== 'undefined') {
       const match = window.location.pathname.match(/\/admin\/visual-editor\/([^/?#]+)/);
       if (match?.[1]) {
         setResolvedPageId(decodeURIComponent(match[1]));
       }
     }
-  }, [pageId, params?.id, params?.segments]);
+  }, [editorMode, pageId, params?.id, params?.segments]);
 
-  // Load existing page blocks from Payload on mount
   useEffect(() => {
-    if (!pageId) return;
-    setPageId(pageId);
-    setLoading(true);
+    let cancelled = false;
 
-    fetch(`/api/pages/${pageId}?draft=true`, { credentials: 'include' })
-      .then((r) => r.json())
-      .then((doc: Record<string, unknown>) => {
+    async function loadPagesMode() {
+      if (!pageId) return;
+      setPageId(pageId);
+      setLoading(true);
+      clearRuntimeBlockDefinitions('cp-');
+      try {
+        // NOTE: do not request draft overlays here; historical versions can
+        // duplicate stale block rows in the API response for legacy records.
+        const res = await fetch(`/api/pages/${pageId}`, { credentials: 'include' });
+        const doc = (await res.json()) as Record<string, unknown>;
+        if (cancelled) return;
         if (typeof doc.title === 'string') setPageTitle(doc.title);
-        if (Array.isArray(doc.blocks) && doc.blocks.length > 0) {
-          setSections(deserializeSectionsFromPayload(doc.blocks as Record<string, unknown>[]));
-        }
-      })
-      .catch(() => {
-        // page may have no blocks yet — that's fine
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageId]);
 
-  // Navigation guard — warn on unsaved changes
+        const convertedName =
+          typeof doc.convertedPageName === 'string' && doc.convertedPageName
+            ? doc.convertedPageName
+            : null;
+        const convertedContent =
+          doc.convertedContent && typeof doc.convertedContent === 'object'
+            ? (doc.convertedContent as Record<string, unknown>)
+            : null;
+
+        if (convertedName) {
+          const convertedRes = await fetch(
+            `/api/admin/converted-page-content?page=${encodeURIComponent(convertedName)}`,
+            { credentials: 'include' },
+          );
+
+          if (convertedRes.ok) {
+            const convertedPayload = (await convertedRes.json()) as ConvertedContentResponse;
+            const effectiveContent = convertedContent ?? convertedPayload.content;
+            const nextSections = convertedPageContentToSections(
+              convertedName,
+              effectiveContent,
+              convertedPayload.sections,
+            );
+
+            const specByKey = new Map(convertedPayload.sections.map((spec) => [spec.key, spec]));
+            const runtimeDefinitions: Record<string, BlockDefinition> = {};
+
+            for (const section of nextSections) {
+              for (const column of section.columns) {
+                for (const block of column.blocks) {
+                  const keyPart = block.blockType.replace(`cp-${convertedName}-`, '');
+                  const spec = specByKey.get(keyPart);
+                  runtimeDefinitions[block.blockType] = buildConvertedBlockDefinition(
+                    block.blockType,
+                    spec?.label ?? section.label ?? keyPart,
+                    spec?.icon ?? '🧩',
+                    block.data as Record<string, unknown>,
+                  );
+                }
+              }
+            }
+
+            registerRuntimeBlockDefinitions(runtimeDefinitions);
+            setConvertedPageName(convertedName);
+            setConvertedBaseContent(effectiveContent);
+            setSections(nextSections);
+            return;
+          }
+        }
+
+        setConvertedPageName(null);
+        setConvertedBaseContent(null);
+
+        if (Array.isArray(doc.blocks) && doc.blocks.length > 0) {
+          const parsedSections = deserializeSectionsFromPayload(doc.blocks as Record<string, unknown>[]);
+          setSections(parsedSections);
+        } else {
+          setSections([]);
+        }
+      } catch {
+        if (!cancelled) setSections([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    async function loadHomepageMode() {
+      setLoading(true);
+      setPageId('homepage-global');
+      try {
+        const res = await fetch('/api/globals/homepage?draft=true', { credentials: 'include' });
+        const doc = (await res.json()) as Record<string, unknown>;
+        if (cancelled) return;
+        setSections(homepageDocToSections(doc));
+      } catch {
+        if (!cancelled) setSections([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    async function loadConvertedMode() {
+      if (!convertedPageName) return;
+      setLoading(true);
+      setPageId(`converted-${convertedPageName}`);
+      clearRuntimeBlockDefinitions(`cp-${convertedPageName}-`);
+
+      try {
+        const res = await fetch(
+          `/api/admin/converted-page-content?page=${encodeURIComponent(convertedPageName)}`,
+          { credentials: 'include' },
+        );
+        if (!res.ok) {
+          throw new Error('Failed to load converted page content');
+        }
+        const payload = (await res.json()) as ConvertedContentResponse;
+        if (cancelled) return;
+
+        const nextSections = convertedPageContentToSections(
+          convertedPageName,
+          payload.content,
+          payload.sections,
+        );
+
+        const specByKey = new Map(payload.sections.map((spec) => [spec.key, spec]));
+        const runtimeDefinitions: Record<string, BlockDefinition> = {};
+
+        for (const section of nextSections) {
+          for (const column of section.columns) {
+            for (const block of column.blocks) {
+              const keyPart = block.blockType.replace(`cp-${convertedPageName}-`, '');
+              const spec = specByKey.get(keyPart);
+              runtimeDefinitions[block.blockType] = buildConvertedBlockDefinition(
+                block.blockType,
+                spec?.label ?? section.label ?? keyPart,
+                spec?.icon ?? '🧩',
+                block.data as Record<string, unknown>,
+              );
+            }
+          }
+        }
+
+        registerRuntimeBlockDefinitions(runtimeDefinitions);
+        setConvertedBaseContent(payload.content);
+        setSections(nextSections);
+      } catch {
+        if (!cancelled) {
+          setSections([]);
+          setConvertedBaseContent(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    if (editorMode === 'pages') {
+      void loadPagesMode();
+    } else if (editorMode === 'homepage') {
+      void loadHomepageMode();
+    } else {
+      void loadConvertedMode();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    editorMode,
+    pageId,
+    convertedPageName,
+    setLoading,
+    setPageId,
+    setSections,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      clearRuntimeBlockDefinitions('cp-');
+    };
+  }, []);
+
   useEffect(() => {
     function handleBeforeUnload(e: BeforeUnloadEvent) {
       if (saveStatus === 'dirty') {
@@ -381,94 +670,160 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [saveStatus]);
 
-  // Auto-save draft every 30s while dirty
-  useEffect(() => {
-    if (saveStatus !== 'dirty' || !pageId) return;
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSaveTimer.current = setTimeout(async () => {
+  const persist = useCallback(
+    async ({ status, notify }: { status: 'draft' | 'published'; notify: boolean }) => {
+      if (saveStatus === 'saving') return false;
+
+      if (editorMode === 'pages' && !pageId) return false;
+      if ((editorMode === 'converted' || (editorMode === 'pages' && convertedPageName)) && !convertedPageName) {
+        return false;
+      }
+
       setSaveStatus('saving');
+
       try {
-        const res = await fetch(`/api/pages/${pageId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            title: pageTitle.trim() || 'Untitled Page',
-            blocks: serializeSectionsForPayload(sections),
-            _status: 'draft',
-          }),
-        });
-        setSaveStatus(res.ok ? 'saved' : 'error');
+        let res: Response;
+
+        if (editorMode === 'homepage') {
+          const patch = sectionsToHomepagePatch(sections);
+          res = await fetch('/api/globals/homepage', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              ...patch,
+              _status: status,
+            }),
+          });
+        } else if (editorMode === 'converted' || (editorMode === 'pages' && convertedPageName)) {
+          const base = convertedBaseContent ?? {};
+          const nextContent = sectionsToConvertedPageContent(base, sections);
+          res = await fetch(`/api/pages/${pageId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              title: pageTitle.trim() || 'Untitled Page',
+              convertedPageName,
+              convertedContent: nextContent,
+              blocks: [],
+              _status: status,
+            }),
+          });
+        } else {
+          res = await fetch(`/api/pages/${pageId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              title: pageTitle.trim() || 'Untitled Page',
+              blocks: serializeSectionsForPayload(sections),
+              _status: status,
+            }),
+          });
+        }
+
+        if (!res.ok) {
+          setSaveStatus('error');
+          if (notify) {
+            showToast(
+              status === 'published' ? 'Publish failed — please try again' : 'Save failed — please try again',
+              'error',
+            );
+          }
+          return false;
+        }
+
+        setSaveStatus('saved');
+        if (notify) {
+          if (editorMode === 'converted') {
+            showToast('Converted page content updated', 'success');
+          } else if (editorMode === 'pages' && convertedPageName) {
+            showToast(
+              status === 'published' ? 'Converted CMS page published successfully' : 'Converted CMS page saved',
+              'success',
+            );
+          } else {
+            showToast(
+              status === 'published' ? 'Page published successfully' : 'Draft saved',
+              'success',
+              status === 'published' ? 4000 : 2500,
+            );
+          }
+        }
+        return true;
       } catch {
         setSaveStatus('error');
+        if (notify) {
+          showToast(
+            status === 'published' ? 'Publish failed — network error' : 'Save failed — network error',
+            'error',
+          );
+        }
+        return false;
       }
+    },
+    [
+      saveStatus,
+      editorMode,
+      pageId,
+      convertedPageName,
+      convertedBaseContent,
+      sections,
+      pageTitle,
+      setSaveStatus,
+      showToast,
+    ],
+  );
+
+  useEffect(() => {
+    if (saveStatus !== 'dirty') return;
+
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      void persist({ status: 'draft', notify: false });
     }, 30_000);
+
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
-  }, [saveStatus, sections, pageId, setSaveStatus, pageTitle]);
+  }, [saveStatus, persist]);
 
   const saveDraft = useCallback(async () => {
-    if (!pageId || saveStatus === 'saving') return;
-    setSaveStatus('saving');
-    try {
-      const res = await fetch(`/api/pages/${pageId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          title: pageTitle.trim() || 'Untitled Page',
-          blocks: serializeSectionsForPayload(sections),
-          _status: 'draft',
-        }),
-      });
-      if (res.ok) {
-        setSaveStatus('saved');
-        showToast('Draft saved', 'success');
-      } else {
-        setSaveStatus('error');
-        showToast('Save failed — please try again', 'error');
-      }
-    } catch {
-      setSaveStatus('error');
-      showToast('Save failed — network error', 'error');
-    }
-  }, [pageId, sections, pageTitle, saveStatus, setSaveStatus, showToast]);
+    await persist({ status: 'draft', notify: true });
+  }, [persist]);
 
   const publish = useCallback(async () => {
-    if (!pageId || saveStatus === 'saving') return;
-    setSaveStatus('saving');
-    try {
-      const res = await fetch(`/api/pages/${pageId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          title: pageTitle.trim() || 'Untitled Page',
-          blocks: serializeSectionsForPayload(sections),
-          _status: 'published',
-        }),
-      });
-      if (res.ok) {
-        setSaveStatus('saved');
-        showToast('Page published successfully', 'success', 4000);
-      } else {
-        setSaveStatus('error');
-        showToast('Publish failed — please try again', 'error');
-      }
-    } catch {
-      setSaveStatus('error');
-      showToast('Publish failed — network error', 'error');
-    }
-  }, [pageId, sections, pageTitle, saveStatus, setSaveStatus, showToast]);
+    await persist({ status: 'published', notify: true });
+  }, [persist]);
 
-  if (!pageId) {
+  const showMissingPageId = editorMode === 'pages' && !pageId;
+
+  const historyPageId = useMemo(() => {
+    if (editorMode === 'pages') return pageId;
+    if (editorMode === 'homepage') return 'homepage-global';
+    return null;
+  }, [editorMode, pageId]);
+
+  if (showMissingPageId) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0f0f0f', color: '#555', fontFamily: 'sans-serif' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          background: '#0f0f0f',
+          color: '#555',
+          fontFamily: 'sans-serif',
+        }}
+      >
         <div style={{ textAlign: 'center' }}>
           <p style={{ fontSize: '48px', margin: '0 0 16px' }}>⚠️</p>
           <p style={{ fontSize: '16px', margin: '0 0 8px', color: '#ccc' }}>No page ID provided</p>
-          <a href="/admin/collections/pages" style={{ color: '#0ea5e9', fontSize: '13px' }}>← Back to Pages</a>
+          <a href="/admin/collections/pages" style={{ color: '#0ea5e9', fontSize: '13px' }}>
+            ← Back to Pages
+          </a>
         </div>
       </div>
     );
@@ -487,7 +842,10 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
       }}
     >
       <Toolbar
+        mode={editorMode}
         pageTitle={pageTitle}
+        convertedPageName={convertedPageName}
+        canShowHistory={Boolean(historyPageId)}
         onPageTitleChange={(nextTitle) => {
           setPageTitle(nextTitle);
           if (saveStatus !== 'saving') {
@@ -496,8 +854,11 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
         }}
         onSaveDraft={saveDraft}
         onPublish={publish}
-        onShowHistory={() => setShowHistory(true)}
+        onShowHistory={() => {
+          if (historyPageId) setShowHistory(true);
+        }}
       />
+
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {isLoading ? (
           <EditorSkeleton />
@@ -507,8 +868,11 @@ export default function PageEditorView({ params }: PageEditorViewProps) {
           </ErrorBoundary>
         )}
       </div>
+
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
-      {showHistory && <RevisionHistory pageId={pageId} onClose={() => setShowHistory(false)} />}
+      {showHistory && historyPageId && (
+        <RevisionHistory pageId={historyPageId} onClose={() => setShowHistory(false)} />
+      )}
     </div>
   );
 }

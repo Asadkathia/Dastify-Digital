@@ -5,7 +5,15 @@ import path from 'path';
 const SITE_DIR = path.resolve(process.cwd(), 'src/app/(site)');
 
 // Directories that are part of the framework, not converted pages
-const EXCLUDED = new Set(['[...slug]', 'page-editor-preview']);
+const EXCLUDED = new Set([
+  '[...slug]',
+  'page-editor-preview',
+  'converted-preview',
+  'legacy-preview',
+  'services',
+  'blog',
+  'case-studies',
+]);
 
 export async function GET() {
   try {
@@ -34,7 +42,7 @@ export async function GET() {
 
         return {
           name: e.name,
-          route: `/${e.name}`,
+          route: `/converted-preview/${e.name}`,
           files,
         };
       });

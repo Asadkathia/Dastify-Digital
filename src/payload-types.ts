@@ -209,34 +209,49 @@ export interface Page {
   title: string;
   slug: string;
   excerpt?: string | null;
-  blocks: (
-    | SectionBlock
-    | HeroBlock
-    | RichTextBlock
-    | TextImageBlock
-    | CtaBlock
-    | FaqBlock
-    | StatsBlock
-    | TestimonialsBlock
-    | TwoColBlock
-    | ThreeColBlock
-    | PricingBlock
-    | LogoCarouselBlock
-    | VideoEmbedBlock
-    | SpacerBlock
-    | AccordionBlock
-    | CardGridBlock
-    | ButtonBlock
-    | HeadingBlock
-    | ImageBlock
-    | AlertBlock
-    | TabsBlock
-    | SocialIconsBlock
-    | CustomHtmlBlock
-    | CounterBlock
-    | ProgressBarBlock
-    | ImageGalleryBlock
-  )[];
+  /**
+   * Set automatically when a converted page is uploaded to CMS.
+   */
+  convertedPageName?: string | null;
+  convertedContent?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  blocks?:
+    | (
+        | SectionBlock
+        | HeroBlock
+        | RichTextBlock
+        | TextImageBlock
+        | CtaBlock
+        | FaqBlock
+        | StatsBlock
+        | TestimonialsBlock
+        | TwoColBlock
+        | ThreeColBlock
+        | PricingBlock
+        | LogoCarouselBlock
+        | VideoEmbedBlock
+        | SpacerBlock
+        | AccordionBlock
+        | CardGridBlock
+        | ButtonBlock
+        | HeadingBlock
+        | ImageBlock
+        | AlertBlock
+        | TabsBlock
+        | SocialIconsBlock
+        | CustomHtmlBlock
+        | CounterBlock
+        | ProgressBarBlock
+        | ImageGalleryBlock
+      )[]
+    | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -254,15 +269,6 @@ export interface Page {
      */
     keywords?: string | null;
   };
-  parent?: (number | null) | Page;
-  breadcrumbs?:
-    | {
-        doc?: (number | null) | Page;
-        url?: string | null;
-        label?: string | null;
-        id?: string | null;
-      }[]
-    | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -295,6 +301,16 @@ export interface SectionBlock {
           | SpacerBlock
           | AccordionBlock
           | CardGridBlock
+          | ButtonBlock
+          | HeadingBlock
+          | ImageBlock
+          | AlertBlock
+          | TabsBlock
+          | SocialIconsBlock
+          | CustomHtmlBlock
+          | CounterBlock
+          | ProgressBarBlock
+          | ImageGalleryBlock
         )[]
       | null;
     id?: string | null;
@@ -1453,6 +1469,8 @@ export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   excerpt?: T;
+  convertedPageName?: T;
+  convertedContent?: T;
   blocks?:
     | T
     | {
@@ -1493,15 +1511,6 @@ export interface PagesSelect<T extends boolean = true> {
         noindex?: T;
         keywords?: T;
       };
-  parent?: T;
-  breadcrumbs?:
-    | T
-    | {
-        doc?: T;
-        url?: T;
-        label?: T;
-        id?: T;
-      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -1537,6 +1546,16 @@ export interface SectionBlockSelect<T extends boolean = true> {
               'spacer-block'?: T | SpacerBlockSelect<T>;
               'accordion-block'?: T | AccordionBlockSelect<T>;
               'card-grid-block'?: T | CardGridBlockSelect<T>;
+              'button-block'?: T | ButtonBlockSelect<T>;
+              'heading-block'?: T | HeadingBlockSelect<T>;
+              'image-block'?: T | ImageBlockSelect<T>;
+              'alert-block'?: T | AlertBlockSelect<T>;
+              'tabs-block'?: T | TabsBlockSelect<T>;
+              'social-icons-block'?: T | SocialIconsBlockSelect<T>;
+              'custom-html-block'?: T | CustomHtmlBlockSelect<T>;
+              'counter-block'?: T | CounterBlockSelect<T>;
+              'progress-bar-block'?: T | ProgressBarBlockSelect<T>;
+              'image-gallery-block'?: T | ImageGalleryBlockSelect<T>;
             };
         id?: T;
       };

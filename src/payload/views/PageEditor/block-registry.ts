@@ -828,9 +828,27 @@ export const blockCategories: Array<{ name: string; blocks: BlockDefinition[] }>
   },
 ].filter((cat) => cat.blocks.length > 0);
 
+const runtimeBlockRegistry: Record<string, BlockDefinition> = {};
+
+export function registerRuntimeBlockDefinitions(definitions: Record<string, BlockDefinition>) {
+  for (const [key, value] of Object.entries(definitions)) {
+    runtimeBlockRegistry[key] = value;
+  }
+}
+
+export function clearRuntimeBlockDefinitions(prefix?: string) {
+  if (!prefix) {
+    for (const key of Object.keys(runtimeBlockRegistry)) delete runtimeBlockRegistry[key];
+    return;
+  }
+  for (const key of Object.keys(runtimeBlockRegistry)) {
+    if (key.startsWith(prefix)) delete runtimeBlockRegistry[key];
+  }
+}
+
 export function getBlockDefinition(blockType: string): BlockDefinition | undefined {
   // Check standard registry first, then homepage registry
-  return blockRegistry[blockType] ?? homepageBlockRegistry[blockType];
+  return blockRegistry[blockType] ?? homepageBlockRegistry[blockType] ?? runtimeBlockRegistry[blockType];
 }
 
 export function createBlockInstance(blockType: string): import('./types').BlockInstance | null {
@@ -842,4 +860,3 @@ export function createBlockInstance(blockType: string): import('./types').BlockI
     data: structuredClone(def.defaultData),
   };
 }
-

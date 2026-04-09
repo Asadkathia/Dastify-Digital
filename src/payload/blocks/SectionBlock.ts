@@ -14,6 +14,16 @@ import { VideoEmbedBlock } from './VideoEmbedBlock.ts';
 import { SpacerBlock } from './SpacerBlock.ts';
 import { AccordionBlock } from './AccordionBlock.ts';
 import { CardGridBlock } from './CardGridBlock.ts';
+import { ButtonBlock } from './ButtonBlock.ts';
+import { HeadingBlock } from './HeadingBlock.ts';
+import { ImageBlock } from './ImageBlock.ts';
+import { AlertBlock } from './AlertBlock.ts';
+import { TabsBlock } from './TabsBlock.ts';
+import { SocialIconsBlock } from './SocialIconsBlock.ts';
+import { CustomHtmlBlock } from './CustomHtmlBlock.ts';
+import { CounterBlock } from './CounterBlock.ts';
+import { ProgressBarBlock } from './ProgressBarBlock.ts';
+import { ImageGalleryBlock } from './ImageGalleryBlock.ts';
 
 export const SectionBlock: Block = {
   slug: 'section-block',
@@ -61,6 +71,16 @@ export const SectionBlock: Block = {
             SpacerBlock,
             AccordionBlock,
             CardGridBlock,
+            ButtonBlock,
+            HeadingBlock,
+            ImageBlock,
+            AlertBlock,
+            TabsBlock,
+            SocialIconsBlock,
+            CustomHtmlBlock,
+            CounterBlock,
+            ProgressBarBlock,
+            ImageGalleryBlock,
           ],
         },
       ],

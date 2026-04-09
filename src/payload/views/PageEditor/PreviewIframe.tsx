@@ -12,7 +12,11 @@ const RESPONSIVE_WIDTHS: Record<ResponsiveMode, string> = {
 
 const DEBOUNCE_MS = 120;
 
-export function PreviewIframe() {
+type PreviewIframeProps = {
+  src?: string;
+};
+
+export function PreviewIframe({ src = '/page-editor-preview' }: PreviewIframeProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [frameLoaded, setFrameLoaded] = useState(false);
@@ -139,7 +143,7 @@ export function PreviewIframe() {
         )}
         <iframe
           ref={iframeRef}
-          src="/page-editor-preview"
+          src={src}
           onLoad={handleLoad}
           style={{ width: '100%', height: '100%', border: 'none', display: 'block', minHeight: isConstrained ? '80vh' : '100%' }}
           title="Page preview"

@@ -38,6 +38,7 @@ import { default as default_87bf4d9912588902c85023dc7fe42f98 } from '../../../..
 import { default as default_f1cee72be9374458b6663634fde4c704 } from '../../../../src/payload/views/HomepageEditor/index'
 import { default as default_294c4d2a7e8d7cb269d00b0260abbb21 } from '../../../../src/payload/views/PageConverter/index'
 import { default as default_79e64ebb1e0f20b3f7f6563054d09a1e } from '../../../../src/payload/views/ConvertedPages/index'
+import { default as default_45c089981ac87348c2572e7cd7f58016 } from '../../../../src/payload/views/ConvertedPageEditor/index'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 export const importMap = {
@@ -81,5 +82,6 @@ export const importMap = {
   "/src/payload/views/HomepageEditor/index#default": default_f1cee72be9374458b6663634fde4c704,
   "/src/payload/views/PageConverter/index#default": default_294c4d2a7e8d7cb269d00b0260abbb21,
   "/src/payload/views/ConvertedPages/index#default": default_79e64ebb1e0f20b3f7f6563054d09a1e,
+  "/src/payload/views/ConvertedPageEditor/index#default": default_45c089981ac87348c2572e7cd7f58016,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

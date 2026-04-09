@@ -110,7 +110,7 @@ export const defaultContent: PageContent = {
   },
   "hero": {
     "chip": "About Dastify Digital",
-    "title": "Built By Marketers\nWho've Been Inside\nThe Health System.",
+    "title": "Built By MarketersWho've Been InsideThe Health Systemm.",
     "lead": "We didn't learn healthcare from a textbook. We learned it from 12-hour days inside hospital marketing departments, fighting for budget, navigating compliance, and proving ROI to skeptical CMOs.",
     "ctas": [
       {

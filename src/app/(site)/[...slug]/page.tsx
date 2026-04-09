@@ -1,8 +1,13 @@
 import type { Metadata } from 'next';
+import type { ComponentType } from 'react';
 import { notFound } from 'next/navigation';
 import { JsonLd } from '@/components/JsonLd';
 import { PageBlocksRenderer } from '@/components/blocks/PageBlocksRenderer';
 import { mapPayloadBlocksToPageBuilderBlocks } from '@/components/blocks/types';
+import { NavbarScrollState } from '@/app/components/home/NavbarScrollState';
+import { ScrollRevealController } from '@/app/components/home/ScrollRevealController';
+import { loadConvertedPageContent } from '@/lib/converted-pages/content-map';
+import { loadConvertedPageRegistry } from '@/lib/converted-pages/preview-registry';
 import { asPathnameFromSegments } from '@/lib/cms/slug';
 import { extractSeoMeta, findOneBySlug, isDraftEnabled } from '@/lib/cms/queries';
 import { buildMetadata } from '@/lib/seo/metadata';
@@ -60,11 +65,48 @@ export default async function GenericPage({ params }: Props) {
 
   const title = String(doc.title || 'Page');
   const description = String(doc.excerpt || '');
+  const docRecord = doc as unknown as Record<string, unknown>;
+  const convertedPageName =
+    typeof docRecord.convertedPageName === 'string'
+      ? String(docRecord.convertedPageName)
+      : '';
+  const convertedContent =
+    docRecord.convertedContent &&
+    typeof docRecord.convertedContent === 'object'
+      ? (docRecord.convertedContent as Record<string, unknown>)
+      : null;
   const blocks = mapPayloadBlocksToPageBuilderBlocks(doc.blocks);
+  const convertedRegistry =
+    convertedPageName
+      ? await loadConvertedPageRegistry(convertedPageName)
+      : null;
+  const fallbackConvertedContent =
+    convertedPageName && !convertedContent
+      ? await loadConvertedPageContent(convertedPageName)
+      : null;
+  const effectiveConvertedContent = convertedContent ?? fallbackConvertedContent;
+  const navSection = convertedRegistry?.sections.find((section) => section.key === 'nav');
+  const footerSection = convertedRegistry?.sections.find((section) => section.key === 'footer');
+  const contentSections = convertedRegistry?.sections.filter((section) => section.key !== 'nav' && section.key !== 'footer') ?? [];
+  const NavComponent = navSection?.Component as ComponentType<{ data: unknown }> | undefined;
+  const FooterComponent = footerSection?.Component as ComponentType<{ data: unknown }> | undefined;
 
   return (
     <>
-      {blocks.length > 0 ? (
+      {convertedRegistry && effectiveConvertedContent ? (
+        <>
+          <NavbarScrollState selector=".nav" solidClass="scrolled" offset={80} />
+          <ScrollRevealController />
+          {NavComponent ? <NavComponent data={effectiveConvertedContent.nav} /> : null}
+          <main>
+            {contentSections.map((section) => {
+              const Component = section.Component as ComponentType<{ data: unknown }>;
+                return <Component key={section.key} data={effectiveConvertedContent[section.key]} />;
+              })}
+          </main>
+          {FooterComponent ? <FooterComponent data={effectiveConvertedContent.footer} /> : null}
+        </>
+      ) : blocks.length > 0 ? (
         <PageBlocksRenderer blocks={blocks} />
       ) : (
         <section className="sp">
