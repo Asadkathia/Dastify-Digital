@@ -1,8 +1,30 @@
+import { ConvertedPlaceholderImage } from "@/components/ConvertedPlaceholderImage";
+
 type ProcessData = {
   chip: string;
   title: string;
   intro: string;
   steps: { number: string; title: string; description: string }[];
+  image?: string | { url?: string; alt?: string; filename?: string } | null;
+  imageAlt?: string;
+  imageFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+  imagePosition?: string;
+  imageRadius?: string;
+  preservePlaceholderChrome?: boolean;
+  placeholderBackground?: string;
+  placeholderBorderColor?: string;
+  placeholderBorderWidth?: string;
+  placeholderBorderStyle?: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
+  placeholderPadding?: string;
+  placeholderGap?: string;
+  placeholderRadius?: string;
+  placeholderShowOverlay?: boolean;
+  placeholderOverlay?: string;
+  placeholderLabelColor?: string;
+  placeholderLabelSize?: string;
+  placeholderDimColor?: string;
+  placeholderDimSize?: string;
+  placeholderIconSize?: string;
   placeholderIcon: string;
   placeholderLabel: string;
   placeholderDimensions: string;
@@ -36,10 +58,34 @@ export default function Process({ data }: { data: ProcessData }) {
               ))}
             </div>
           </div>
-          <div className="iph svc-convert-process-iph" data-r data-delay="2">
-            <div className="iph-ic">{data.placeholderIcon}</div>
-            <span className="iph-lbl">{data.placeholderLabel}</span>
-            <span className="iph-dim">{data.placeholderDimensions}</span>
+          <div className="svc-convert-process-iph" data-r data-delay="2">
+            <ConvertedPlaceholderImage
+              className="iph"
+              style={{ height: '100%' }}
+              image={data.image}
+              imageAlt={data.imageAlt}
+              imageFit={data.imageFit}
+              imagePosition={data.imagePosition}
+              imageRadius={data.imageRadius}
+              preservePlaceholderChrome={data.preservePlaceholderChrome}
+              placeholderBackground={data.placeholderBackground}
+              placeholderBorderColor={data.placeholderBorderColor}
+              placeholderBorderWidth={data.placeholderBorderWidth}
+              placeholderBorderStyle={data.placeholderBorderStyle}
+              placeholderPadding={data.placeholderPadding}
+              placeholderGap={data.placeholderGap}
+              placeholderRadius={data.placeholderRadius}
+              placeholderShowOverlay={data.placeholderShowOverlay}
+              placeholderOverlay={data.placeholderOverlay}
+              placeholderLabelColor={data.placeholderLabelColor}
+              placeholderLabelSize={data.placeholderLabelSize}
+              placeholderDimColor={data.placeholderDimColor}
+              placeholderDimSize={data.placeholderDimSize}
+              placeholderIconSize={data.placeholderIconSize}
+              placeholderIcon={data.placeholderIcon}
+              placeholderLabel={data.placeholderLabel}
+              placeholderDimensions={data.placeholderDimensions}
+            />
           </div>
         </div>
       </div>

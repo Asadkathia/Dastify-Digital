@@ -16,6 +16,26 @@ export type PageContent = {
     lead: string;
     primaryCta: { label: string; href: string };
     secondaryCta: { label: string; href: string };
+    image?: string | { url?: string; alt?: string; filename?: string } | null;
+    imageAlt?: string;
+    imageFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+    imagePosition?: string;
+    imageRadius?: string;
+    preservePlaceholderChrome?: boolean;
+    placeholderBackground?: string;
+    placeholderBorderColor?: string;
+    placeholderBorderWidth?: string;
+    placeholderBorderStyle?: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
+    placeholderPadding?: string;
+    placeholderGap?: string;
+    placeholderRadius?: string;
+    placeholderShowOverlay?: boolean;
+    placeholderOverlay?: string;
+    placeholderLabelColor?: string;
+    placeholderLabelSize?: string;
+    placeholderDimColor?: string;
+    placeholderDimSize?: string;
+    placeholderIconSize?: string;
     placeholderIcon: string;
     placeholderLabel: string;
     placeholderDimensions: string;
@@ -51,6 +71,26 @@ export type PageContent = {
     title: string;
     intro: string;
     steps: { number: string; title: string; description: string }[];
+    image?: string | { url?: string; alt?: string; filename?: string } | null;
+    imageAlt?: string;
+    imageFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+    imagePosition?: string;
+    imageRadius?: string;
+    preservePlaceholderChrome?: boolean;
+    placeholderBackground?: string;
+    placeholderBorderColor?: string;
+    placeholderBorderWidth?: string;
+    placeholderBorderStyle?: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
+    placeholderPadding?: string;
+    placeholderGap?: string;
+    placeholderRadius?: string;
+    placeholderShowOverlay?: boolean;
+    placeholderOverlay?: string;
+    placeholderLabelColor?: string;
+    placeholderLabelSize?: string;
+    placeholderDimColor?: string;
+    placeholderDimSize?: string;
+    placeholderIconSize?: string;
     placeholderIcon: string;
     placeholderLabel: string;
     placeholderDimensions: string;
@@ -124,6 +164,26 @@ export const defaultContent: PageContent = {
       "label": "Book a Strategy Call",
       "href": "/contact"
     },
+    "image": null,
+    "imageAlt": "",
+    "imageFit": "cover",
+    "imagePosition": "center",
+    "imageRadius": "0",
+    "preservePlaceholderChrome": false,
+    "placeholderBackground": "",
+    "placeholderBorderColor": "",
+    "placeholderBorderWidth": "",
+    "placeholderBorderStyle": "dashed",
+    "placeholderPadding": "",
+    "placeholderGap": "",
+    "placeholderRadius": "4",
+    "placeholderShowOverlay": true,
+    "placeholderOverlay": "",
+    "placeholderLabelColor": "",
+    "placeholderLabelSize": "",
+    "placeholderDimColor": "",
+    "placeholderDimSize": "",
+    "placeholderIconSize": "",
     "placeholderIcon": "📊",
     "placeholderLabel": "Hero Visual",
     "placeholderDimensions": "520 × 480px",
@@ -344,6 +404,26 @@ export const defaultContent: PageContent = {
         "description": "Monthly reviews, data-driven iteration, and continuous improvement."
       }
     ],
+    "image": null,
+    "imageAlt": "",
+    "imageFit": "cover",
+    "imagePosition": "center",
+    "imageRadius": "0",
+    "preservePlaceholderChrome": false,
+    "placeholderBackground": "",
+    "placeholderBorderColor": "",
+    "placeholderBorderWidth": "",
+    "placeholderBorderStyle": "dashed",
+    "placeholderPadding": "",
+    "placeholderGap": "",
+    "placeholderRadius": "4",
+    "placeholderShowOverlay": true,
+    "placeholderOverlay": "",
+    "placeholderLabelColor": "",
+    "placeholderLabelSize": "",
+    "placeholderDimColor": "",
+    "placeholderDimSize": "",
+    "placeholderIconSize": "",
     "placeholderIcon": "🎯",
     "placeholderLabel": "Process Visual",
     "placeholderDimensions": "480 × 520px"

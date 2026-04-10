@@ -6,7 +6,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useEditorStore } from './store';
+import { deserializeSectionsFromPayload, useEditorStore } from './store';
 import { getBlockDefinition } from './block-registry';
 import { blockTemplates } from './block-templates';
 import type { BlockInstance, ColumnInstance, ColumnWidth, SectionInstance } from './types';
@@ -349,7 +349,6 @@ function EmptyState() {
     const tpl = blockTemplates.find((t) => t.id === templateId);
     if (!tpl) return;
     const blocks = tpl.blocks();
-    const { deserializeSectionsFromPayload } = require('./store') as typeof import('./store');
     const fakePayload = blocks.map((b) => ({ blockType: b.blockType, ...b.data }));
     setSections(deserializeSectionsFromPayload(fakePayload));
   }
@@ -400,9 +399,11 @@ function EmptyState() {
 
 type CanvasProps = {
   activeDrag: { type: string; label: string; icon: string } | null;
+  embedded?: boolean;
 };
 
-export function Canvas({ activeDrag: _activeDrag }: CanvasProps) {
+export function Canvas({ activeDrag: _activeDrag, embedded = false }: CanvasProps) {
+  void _activeDrag;
   const sections = useEditorStore((s) => s.sections);
   const selection = useEditorStore((s) => s.selection);
   const addSection = useEditorStore((s) => s.addSection);
@@ -446,13 +447,16 @@ export function Canvas({ activeDrag: _activeDrag }: CanvasProps) {
   return (
     <div
       style={{
-        width: '300px',
+        width: embedded ? '100%' : '300px',
+        flex: embedded ? 1 : undefined,
         flexShrink: 0,
         background: '#0f0f0f',
-        borderRight: '1px solid #222',
+        borderRight: embedded ? 'none' : '1px solid #222',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
+        height: '100%',
+        minHeight: 0,
       }}
     >
       {/* Header */}

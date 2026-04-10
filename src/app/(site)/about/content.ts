@@ -14,7 +14,31 @@ export type PageContent = {
     lead: string;
     ctas: { label: string; href: string; variant: "dark" | "outline" }[];
     stats: { value: string; label: string }[];
-    visual: { icon: string; label: string; dimensions: string };
+    visual: {
+      image?: string | { url?: string; alt?: string; filename?: string } | null;
+      imageAlt?: string;
+      imageFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+      imagePosition?: string;
+      imageRadius?: string;
+      preservePlaceholderChrome?: boolean;
+      placeholderBackground?: string;
+      placeholderBorderColor?: string;
+      placeholderBorderWidth?: string;
+      placeholderBorderStyle?: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
+      placeholderPadding?: string;
+      placeholderGap?: string;
+      placeholderRadius?: string;
+      placeholderShowOverlay?: boolean;
+      placeholderOverlay?: string;
+      placeholderLabelColor?: string;
+      placeholderLabelSize?: string;
+      placeholderDimColor?: string;
+      placeholderDimSize?: string;
+      placeholderIconSize?: string;
+      icon: string;
+      label: string;
+      dimensions: string;
+    };
     marquee: string[];
   };
   manifesto: {
@@ -44,7 +68,33 @@ export type PageContent = {
     description: string;
     stats: { value: string; label: string }[];
     cta: { label: string; href: string };
-    visuals: { icon: string; label: string; dimensions: string; height: string; className: string }[];
+    visuals: {
+      image?: string | { url?: string; alt?: string; filename?: string } | null;
+      imageAlt?: string;
+      imageFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+      imagePosition?: string;
+      imageRadius?: string;
+      preservePlaceholderChrome?: boolean;
+      placeholderBackground?: string;
+      placeholderBorderColor?: string;
+      placeholderBorderWidth?: string;
+      placeholderBorderStyle?: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
+      placeholderPadding?: string;
+      placeholderGap?: string;
+      placeholderRadius?: string;
+      placeholderShowOverlay?: boolean;
+      placeholderOverlay?: string;
+      placeholderLabelColor?: string;
+      placeholderLabelSize?: string;
+      placeholderDimColor?: string;
+      placeholderDimSize?: string;
+      placeholderIconSize?: string;
+      icon: string;
+      label: string;
+      dimensions: string;
+      height: string;
+      className: string;
+    }[];
   };
   values: {
     chip: string;
@@ -135,6 +185,26 @@ export const defaultContent: PageContent = {
       }
     ],
     "visual": {
+      "image": null,
+      "imageAlt": "",
+      "imageFit": "cover",
+      "imagePosition": "center",
+      "imageRadius": "0",
+      "preservePlaceholderChrome": false,
+      "placeholderBackground": "",
+      "placeholderBorderColor": "",
+      "placeholderBorderWidth": "",
+      "placeholderBorderStyle": "dashed",
+      "placeholderPadding": "",
+      "placeholderGap": "",
+      "placeholderRadius": "4",
+      "placeholderShowOverlay": true,
+      "placeholderOverlay": "",
+      "placeholderLabelColor": "",
+      "placeholderLabelSize": "",
+      "placeholderDimColor": "",
+      "placeholderDimSize": "",
+      "placeholderIconSize": "",
       "icon": "🏥",
       "label": "Hero Visual",
       "dimensions": "580 × 520px"
@@ -244,6 +314,26 @@ export const defaultContent: PageContent = {
     },
     "visuals": [
       {
+        "image": null,
+        "imageAlt": "",
+        "imageFit": "cover",
+        "imagePosition": "center",
+        "imageRadius": "0",
+        "preservePlaceholderChrome": false,
+        "placeholderBackground": "",
+        "placeholderBorderColor": "",
+        "placeholderBorderWidth": "",
+        "placeholderBorderStyle": "dashed",
+        "placeholderPadding": "",
+        "placeholderGap": "",
+        "placeholderRadius": "4",
+        "placeholderShowOverlay": true,
+        "placeholderOverlay": "",
+        "placeholderLabelColor": "",
+        "placeholderLabelSize": "",
+        "placeholderDimColor": "",
+        "placeholderDimSize": "",
+        "placeholderIconSize": "",
         "icon": "👥",
         "label": "Team Photo 1",
         "dimensions": "320 × 400px",
@@ -251,6 +341,26 @@ export const defaultContent: PageContent = {
         "className": "about-team-img-1"
       },
       {
+        "image": null,
+        "imageAlt": "",
+        "imageFit": "cover",
+        "imagePosition": "center",
+        "imageRadius": "0",
+        "preservePlaceholderChrome": false,
+        "placeholderBackground": "",
+        "placeholderBorderColor": "",
+        "placeholderBorderWidth": "",
+        "placeholderBorderStyle": "dashed",
+        "placeholderPadding": "",
+        "placeholderGap": "",
+        "placeholderRadius": "4",
+        "placeholderShowOverlay": true,
+        "placeholderOverlay": "",
+        "placeholderLabelColor": "",
+        "placeholderLabelSize": "",
+        "placeholderDimColor": "",
+        "placeholderDimSize": "",
+        "placeholderIconSize": "",
         "icon": "💼",
         "label": "Team Photo 2",
         "dimensions": "280 × 188px",
@@ -258,6 +368,26 @@ export const defaultContent: PageContent = {
         "className": "about-team-img-2"
       },
       {
+        "image": null,
+        "imageAlt": "",
+        "imageFit": "cover",
+        "imagePosition": "center",
+        "imageRadius": "0",
+        "preservePlaceholderChrome": false,
+        "placeholderBackground": "",
+        "placeholderBorderColor": "",
+        "placeholderBorderWidth": "",
+        "placeholderBorderStyle": "dashed",
+        "placeholderPadding": "",
+        "placeholderGap": "",
+        "placeholderRadius": "4",
+        "placeholderShowOverlay": true,
+        "placeholderOverlay": "",
+        "placeholderLabelColor": "",
+        "placeholderLabelSize": "",
+        "placeholderDimColor": "",
+        "placeholderDimSize": "",
+        "placeholderIconSize": "",
         "icon": "🎯",
         "label": "Team Photo 3",
         "dimensions": "280 × 188px",

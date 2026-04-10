@@ -156,12 +156,14 @@ img {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--iph-gap, 10px);
   text-align: center;
-  padding: 40px 24px;
-  background: var(--bg3);
-  border: 1.5px dashed var(--bd-md);
-  border-radius: 4px;
+  padding: var(--iph-padding, 40px 24px);
+  background: var(--iph-bg, var(--bg3));
+  border-width: var(--iph-border-width, 1.5px);
+  border-style: var(--iph-border-style, dashed);
+  border-color: var(--iph-border-color, var(--bd-md));
+  border-radius: var(--iph-radius, 4px);
   position: relative;
   overflow: hidden;
 }
@@ -170,29 +172,30 @@ img {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, var(--blue-lt), transparent 60%);
+  display: var(--iph-overlay-display, block);
+  background: var(--iph-overlay, linear-gradient(135deg, var(--blue-lt), transparent 60%));
 }
 
 .iph-ic {
-  font-size: 28px;
+  font-size: var(--iph-icon-size, 28px);
   position: relative;
   z-index: 1;
 }
 
 .iph-lbl {
-  font-size: 10px;
+  font-size: var(--iph-label-size, 10px);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .16em;
-  color: var(--blue);
+  color: var(--iph-label-color, var(--blue));
   position: relative;
   z-index: 1;
 }
 
 .iph-dim {
   font-family: monospace;
-  font-size: 11px;
-  color: var(--t3);
+  font-size: var(--iph-dim-size, 11px);
+  color: var(--iph-dim-color, var(--t3));
   position: relative;
   z-index: 1;
 }

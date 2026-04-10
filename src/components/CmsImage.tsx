@@ -3,7 +3,8 @@ import Image from 'next/image';
 type CmsImageProps = {
   src: string;
   alt: string;
-  objectFit?: 'cover' | 'contain';
+  objectFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+  objectPosition?: string;
   priority?: boolean;
   sizes?: string;
   fill?: boolean;
@@ -15,6 +16,7 @@ export function CmsImage({
   src,
   alt,
   objectFit = 'cover',
+  objectPosition = 'center',
   priority = false,
   sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw',
   fill = true,
@@ -36,6 +38,7 @@ export function CmsImage({
           width: '100%',
           height: 'auto',
           objectFit,
+          objectPosition,
           display: 'block',
         }}
       />
@@ -51,6 +54,7 @@ export function CmsImage({
       src={safeSrc}
       style={{
         objectFit,
+        objectPosition,
         display: 'block',
       }}
     />

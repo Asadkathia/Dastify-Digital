@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ConvertedPlaceholderImage } from "@/components/ConvertedPlaceholderImage";
 
 export type AboutTeamData = {
   watermark: string;
@@ -7,7 +8,33 @@ export type AboutTeamData = {
   description: string;
   stats: { value: string; label: string }[];
   cta: { label: string; href: string };
-  visuals: { icon: string; label: string; dimensions: string; height: string; className: string }[];
+  visuals: {
+    image?: string | { url?: string; alt?: string; filename?: string } | null;
+    imageAlt?: string;
+    imageFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+    imagePosition?: string;
+    imageRadius?: string;
+    preservePlaceholderChrome?: boolean;
+    placeholderBackground?: string;
+    placeholderBorderColor?: string;
+    placeholderBorderWidth?: string;
+    placeholderBorderStyle?: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
+    placeholderPadding?: string;
+    placeholderGap?: string;
+    placeholderRadius?: string;
+    placeholderShowOverlay?: boolean;
+    placeholderOverlay?: string;
+    placeholderLabelColor?: string;
+    placeholderLabelSize?: string;
+    placeholderDimColor?: string;
+    placeholderDimSize?: string;
+    placeholderIconSize?: string;
+    icon: string;
+    label: string;
+    dimensions: string;
+    height: string;
+    className: string;
+  }[];
 };
 
 export default function AboutTeam({ data }: { data: AboutTeamData }) {
@@ -41,10 +68,40 @@ export default function AboutTeam({ data }: { data: AboutTeamData }) {
           </div>
           <div className="about-team-visual">
             {data.visuals.map((item, index) => (
-              <div className={`iph ${item.className}`} style={{ height: item.height }} data-r data-delay={index === 0 ? undefined : `${index}`} key={`about-team-visual-${item.label}-${index}`}>
-                <div className="iph-ic">{item.icon}</div>
-                <span className="iph-lbl">{item.label}</span>
-                <span className="iph-dim">{item.dimensions}</span>
+              <div
+                className={item.className}
+                data-r
+                data-delay={index === 0 ? undefined : `${index}`}
+                key={`about-team-visual-${item.label}-${index}`}
+                style={{ height: item.height }}
+              >
+                <ConvertedPlaceholderImage
+                  className="iph"
+                  style={{ height: '100%' }}
+                  image={item.image}
+                  imageAlt={item.imageAlt}
+                  imageFit={item.imageFit}
+                  imagePosition={item.imagePosition}
+                  imageRadius={item.imageRadius}
+                  preservePlaceholderChrome={item.preservePlaceholderChrome}
+                  placeholderBackground={item.placeholderBackground}
+                  placeholderBorderColor={item.placeholderBorderColor}
+                  placeholderBorderWidth={item.placeholderBorderWidth}
+                  placeholderBorderStyle={item.placeholderBorderStyle}
+                  placeholderPadding={item.placeholderPadding}
+                  placeholderGap={item.placeholderGap}
+                  placeholderRadius={item.placeholderRadius}
+                  placeholderShowOverlay={item.placeholderShowOverlay}
+                  placeholderOverlay={item.placeholderOverlay}
+                  placeholderLabelColor={item.placeholderLabelColor}
+                  placeholderLabelSize={item.placeholderLabelSize}
+                  placeholderDimColor={item.placeholderDimColor}
+                  placeholderDimSize={item.placeholderDimSize}
+                  placeholderIconSize={item.placeholderIconSize}
+                  placeholderIcon={item.icon}
+                  placeholderLabel={item.label}
+                  placeholderDimensions={item.dimensions}
+                />
               </div>
             ))}
           </div>

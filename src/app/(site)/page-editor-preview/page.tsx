@@ -456,6 +456,20 @@ function PreviewInner() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      document.querySelectorAll<HTMLElement>('[data-r]').forEach((el) => {
+        el.classList.add('revealed');
+      });
+
+      document.querySelectorAll<HTMLElement>('.img-reveal').forEach((el) => {
+        el.classList.add('revealed');
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [sections, responsiveMode, isHomepageMode, isConvertedMode, convertedPage, convertedRegistry]);
+
   return (
     <SectionsLayout
       sections={sections}

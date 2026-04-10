@@ -51,7 +51,11 @@ const DraggablePaletteItem = memo(function DraggablePaletteItem({ block }: Dragg
   );
 });
 
-export function BlockPalette() {
+type BlockPaletteProps = {
+  embedded?: boolean;
+};
+
+export function BlockPalette({ embedded = false }: BlockPaletteProps) {
   const [search, setSearch] = useState('');
   const normalized = search.trim().toLowerCase();
   const filteredCategories = useMemo(() => {
@@ -67,13 +71,16 @@ export function BlockPalette() {
   return (
     <aside
       style={{
-        width: '220px',
+        width: embedded ? '100%' : '220px',
+        flex: embedded ? 1 : undefined,
         flexShrink: 0,
         background: '#111',
-        borderRight: '1px solid #222',
+        borderRight: embedded ? 'none' : '1px solid #222',
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
+        height: '100%',
+        minHeight: 0,
       }}
     >
       <div style={{ padding: '16px 14px 8px', borderBottom: '1px solid #222' }}>

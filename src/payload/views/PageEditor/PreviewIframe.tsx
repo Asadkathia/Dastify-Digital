@@ -25,7 +25,6 @@ export function PreviewIframe({ src = '/page-editor-preview' }: PreviewIframePro
   const responsiveMode = useEditorStore((s) => s.responsiveMode);
   const selectBlock = useEditorStore((s) => s.selectBlock);
   const setIframeReady = useEditorStore((s) => s.setIframeReady);
-  const iframeReady = useEditorStore((s) => s.iframeReady);
   const updateBlockData = useEditorStore((s) => s.updateBlockData);
 
   const selectedBlockId = selection?.kind === 'block' ? selection.blockId : null;

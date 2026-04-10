@@ -1,4 +1,4 @@
-import type { BlockDefinition, SectionInstance } from '@/payload/views/PageEditor/types';
+import type { BlockDefinition, EditorField, SectionInstance } from '@/payload/views/PageEditor/types';
 import type { ConvertedSectionSpec } from './types';
 
 type FlatRecord = Record<string, unknown>;
@@ -13,6 +13,23 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
+function isMediaObject(value: unknown): value is Record<string, unknown> {
+  if (!isPlainObject(value)) return false;
+  const keys = Object.keys(value);
+  if (keys.length === 0) return false;
+  const allowedKeys = new Set([
+    'id',
+    'url',
+    'alt',
+    'filename',
+    'width',
+    'height',
+    'mimeType',
+    'filesize',
+  ]);
+  return keys.every((key) => allowedKeys.has(key));
+}
+
 function isScalar(value: unknown): boolean {
   return ['string', 'number', 'boolean'].includes(typeof value) || value == null;
 }
@@ -21,7 +38,11 @@ function canRepresentArray(value: unknown): value is unknown[] {
   if (!Array.isArray(value)) return false;
   if (value.length === 0) return true;
   if (value.every(isScalar)) return true;
-  return value.every((item) => isPlainObject(item) && Object.values(item).every(isScalar));
+  return value.every(
+    (item) =>
+      isPlainObject(item) &&
+      Object.values(item).every((subValue) => isScalar(subValue) || isMediaObject(subValue)),
+  );
 }
 
 function flattenObject(
@@ -39,6 +60,10 @@ function flattenObject(
         out[path] = JSON.stringify(value, null, 2);
         jsonFields.push(path);
       }
+      continue;
+    }
+    if (isMediaObject(value)) {
+      out[path] = value;
       continue;
     }
     if (isPlainObject(value)) {
@@ -84,6 +109,96 @@ function fieldTypeForValue(value: unknown): 'text' | 'textarea' | 'checkbox' {
   if (typeof value === 'boolean') return 'checkbox';
   if (typeof value === 'string' && value.length > 140) return 'textarea';
   return 'text';
+}
+
+function isUploadFieldName(name: string): boolean {
+  const tail = name.split('.').pop()?.toLowerCase() ?? '';
+  return tail === 'image';
+}
+
+function buildSelectField(
+  name: string,
+  label: string,
+  options: Array<{ label: string; value: string }>,
+): EditorField {
+  return {
+    name,
+    type: 'select',
+    label,
+    options,
+  };
+}
+
+function fieldForName(name: string, value: unknown): EditorField {
+  const tail = name.split('.').pop()?.toLowerCase() ?? '';
+  const label = prettifyLabel(name);
+
+  if (isUploadFieldName(name)) {
+    return { name, type: 'upload', label };
+  }
+
+  if (tail === 'imagefit') {
+    return buildSelectField(name, label, [
+      { label: 'Cover', value: 'cover' },
+      { label: 'Contain', value: 'contain' },
+      { label: 'Fill', value: 'fill' },
+      { label: 'None', value: 'none' },
+      { label: 'Scale Down', value: 'scale-down' },
+    ]);
+  }
+
+  if (tail === 'imageposition') {
+    return buildSelectField(name, label, [
+      { label: 'Center', value: 'center' },
+      { label: 'Top', value: 'top' },
+      { label: 'Bottom', value: 'bottom' },
+      { label: 'Left', value: 'left' },
+      { label: 'Right', value: 'right' },
+      { label: 'Top Left', value: 'top left' },
+      { label: 'Top Right', value: 'top right' },
+      { label: 'Bottom Left', value: 'bottom left' },
+      { label: 'Bottom Right', value: 'bottom right' },
+    ]);
+  }
+
+  if (tail === 'placeholderborderstyle') {
+    return buildSelectField(name, label, [
+      { label: 'None', value: 'none' },
+      { label: 'Solid', value: 'solid' },
+      { label: 'Dashed', value: 'dashed' },
+      { label: 'Dotted', value: 'dotted' },
+      { label: 'Double', value: 'double' },
+    ]);
+  }
+
+  if (tail === 'preserveplaceholderchrome' || tail === 'placeholdershowoverlay') {
+    return {
+      name,
+      type: 'checkbox',
+      label,
+    };
+  }
+
+  return {
+    name,
+    type: fieldTypeForValue(value),
+    label,
+  };
+}
+
+function subFieldForName(
+  name: string,
+  value: unknown,
+): Exclude<EditorField, { type: 'array' }> {
+  const field = fieldForName(name, value);
+  if (field.type === 'array') {
+    return {
+      name,
+      type: 'text',
+      label: prettifyLabel(name),
+    };
+  }
+  return field;
 }
 
 export function convertedPageContentToSections(
@@ -174,11 +289,7 @@ export function buildConvertedBlockDefinition(
           name: key,
           type: 'array',
           label: prettifyLabel(key),
-          subFields: Object.keys(sample).map((sampleKey) => ({
-            name: sampleKey,
-            type: 'text',
-            label: prettifyLabel(sampleKey),
-          })),
+          subFields: Object.keys(sample).map((sampleKey) => subFieldForName(sampleKey, sample[sampleKey])),
         });
       } else {
         fields.push({
@@ -200,11 +311,7 @@ export function buildConvertedBlockDefinition(
       continue;
     }
 
-    fields.push({
-      name: key,
-      type: fieldTypeForValue(value),
-      label: prettifyLabel(key),
-    });
+    fields.push(fieldForName(key, value));
   }
 
   return {

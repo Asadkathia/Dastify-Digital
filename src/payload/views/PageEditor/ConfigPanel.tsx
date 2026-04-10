@@ -82,6 +82,13 @@ function UploadFieldEditor({
           ? value
           : '';
 
+  const companionAltField =
+    fieldName.endsWith('.image')
+      ? `${fieldName.slice(0, -'.image'.length)}.imageAlt`
+      : fieldName === 'image'
+        ? 'imageAlt'
+        : null;
+
   function normalizeMediaResponse(raw: unknown): { id?: string | number; url?: string; alt?: string; filename?: string } {
     if (!raw || typeof raw !== 'object') return {};
     const direct = raw as Record<string, unknown>;
@@ -153,8 +160,12 @@ function UploadFieldEditor({
         updateBlockData(blockId, fieldName, resolvedMedia.id);
       }
 
-      if (typeof block?.data.imageAlt === 'string' && (!block.data.imageAlt || block.data.imageAlt === '')) {
-        updateBlockData(blockId, 'imageAlt', resolvedMedia?.alt || fallbackAlt);
+      if (
+        companionAltField &&
+        typeof block?.data[companionAltField] === 'string' &&
+        (!block.data[companionAltField] || block.data[companionAltField] === '')
+      ) {
+        updateBlockData(blockId, companionAltField, resolvedMedia?.alt || fallbackAlt);
       }
     } catch (error) {
       console.error('[VisualEditor] image upload failed', error);
@@ -766,7 +777,11 @@ function BlockStylesPanel({ blockId, styles }: { blockId: string; styles?: Block
   );
 }
 
-export function ConfigPanel() {
+type ConfigPanelProps = {
+  embedded?: boolean;
+};
+
+export function ConfigPanel({ embedded = false }: ConfigPanelProps) {
   const selectedBlock = useEditorStore(selectSelectedBlock);
   const selection = useEditorStore((s) => s.selection);
   const removeBlock = useEditorStore((s) => s.removeBlock);
@@ -784,13 +799,16 @@ export function ConfigPanel() {
   return (
     <aside
       style={{
-        width: '280px',
+        width: embedded ? '100%' : '280px',
+        flex: embedded ? 1 : undefined,
         flexShrink: 0,
         background: '#111',
-        borderLeft: '1px solid #222',
+        borderLeft: embedded ? 'none' : '1px solid #222',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
+        height: '100%',
+        minHeight: 0,
       }}
     >
       {/* Header */}
@@ -807,7 +825,7 @@ export function ConfigPanel() {
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: (selectedBlock || selectedSection) ? '16px 14px' : 0 }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: (selectedBlock || selectedSection) ? '16px 14px' : 0 }}>
         {selectedSection ? (
           <SectionPanel section={selectedSection} />
         ) : !selectedBlock || !def ? (

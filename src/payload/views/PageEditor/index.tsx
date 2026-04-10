@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
@@ -45,6 +46,10 @@ type ConvertedContentResponse = {
   page: string;
   sections: ConvertedSectionSpec[];
   content: Record<string, unknown>;
+};
+
+type PagesFindResponse = {
+  docs?: Array<Record<string, unknown>>;
 };
 
 function inferConvertedPageNameFromPathname(pathname: string): string | null {
@@ -133,7 +138,7 @@ function Toolbar({
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
     >
-      <a
+      <Link
         href={backHref}
         style={{
           color: '#555',
@@ -145,7 +150,7 @@ function Toolbar({
         }}
       >
         {backLabel}
-      </a>
+      </Link>
 
       <div style={{ width: '1px', height: '20px', background: '#222', margin: '0 2px' }} />
 
@@ -262,6 +267,22 @@ type PageEditorCoreProps = {
   onPublish: () => void;
 };
 
+type LeftPanelTab = 'blocks' | 'structure' | 'inspector';
+
+const leftPanelBtnBase: React.CSSProperties = {
+  flex: 1,
+  background: 'transparent',
+  border: '1px solid #222',
+  borderRadius: '8px',
+  color: '#666',
+  cursor: 'pointer',
+  fontSize: '11px',
+  fontWeight: 600,
+  letterSpacing: '0.06em',
+  padding: '8px 10px',
+  textTransform: 'uppercase',
+};
+
 function PageEditorCore({ onSaveDraft, onPublish }: PageEditorCoreProps) {
   const sections = useEditorStore((s) => s.sections);
   const addBlock = useEditorStore((s) => s.addBlock);
@@ -271,6 +292,8 @@ function PageEditorCore({ onSaveDraft, onPublish }: PageEditorCoreProps) {
   const moveColumn = useEditorStore((s) => s.moveColumn);
   const editorMode = useEditorStore((s) => s.editorMode);
   const convertedPageName = useEditorStore((s) => s.convertedPageName);
+
+  const [leftPanelTab, setLeftPanelTab] = useState<LeftPanelTab>('structure');
 
   const [activeDrag, setActiveDrag] = useState<{ type: string; label: string; icon: string } | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -398,10 +421,56 @@ function PageEditorCore({ onSaveDraft, onPublish }: PageEditorCoreProps) {
     >
       <KeyboardShortcuts onSaveDraft={onSaveDraft} onPublish={onPublish} />
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <BlockPalette />
-        <Canvas activeDrag={activeDrag} />
+        <aside
+          style={{
+            width: '380px',
+            flexShrink: 0,
+            background: '#0b0b0b',
+            borderRight: '1px solid #222',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            minWidth: 0,
+            minHeight: 0,
+          }}
+        >
+          <div style={{ padding: '10px', borderBottom: '1px solid #1a1a1a', background: '#0a0a0a' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {([
+                ['blocks', 'Blocks'],
+                ['structure', 'Structure'],
+                ['inspector', 'Inspector'],
+              ] as const).map(([tab, label]) => {
+                const active = leftPanelTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setLeftPanelTab(tab)}
+                    style={{
+                      ...leftPanelBtnBase,
+                      background: active ? '#111827' : 'transparent',
+                      borderColor: active ? '#0ea5e9' : '#222',
+                      color: active ? '#7dd3fc' : '#666',
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            {leftPanelTab === 'blocks' ? (
+              <BlockPalette embedded />
+            ) : leftPanelTab === 'structure' ? (
+              <Canvas activeDrag={activeDrag} embedded />
+            ) : (
+              <ConfigPanel embedded />
+            )}
+          </div>
+        </aside>
         <PreviewIframe src={previewSrc} />
-        <ConfigPanel />
       </div>
       <DragOverlay dropAnimation={{ duration: 120, easing: 'ease' }}>
         {activeDrag && (
@@ -586,19 +655,43 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
       clearRuntimeBlockDefinitions(`cp-${convertedPageName}-`);
 
       try {
-        const res = await fetch(
-          `/api/admin/converted-page-content?page=${encodeURIComponent(convertedPageName)}`,
-          { credentials: 'include' },
-        );
-        if (!res.ok) {
+        const [convertedRes, pageRes] = await Promise.all([
+          fetch(
+            `/api/admin/converted-page-content?page=${encodeURIComponent(convertedPageName)}`,
+            { credentials: 'include' },
+          ),
+          fetch(
+            `/api/pages?where[convertedPageName][equals]=${encodeURIComponent(convertedPageName)}&limit=1&depth=0`,
+            { credentials: 'include' },
+          ),
+        ]);
+
+        if (!convertedRes.ok) {
           throw new Error('Failed to load converted page content');
         }
-        const payload = (await res.json()) as ConvertedContentResponse;
+        const payload = (await convertedRes.json()) as ConvertedContentResponse;
+        const pagePayload = pageRes.ok
+          ? (await pageRes.json()) as PagesFindResponse
+          : null;
+
+        const pageDoc = pagePayload?.docs?.[0];
+        const convertedContent =
+          pageDoc?.convertedContent && typeof pageDoc.convertedContent === 'object'
+            ? (pageDoc.convertedContent as Record<string, unknown>)
+            : null;
+
         if (cancelled) return;
+
+        if (pageDoc?.id != null) {
+          setResolvedPageId(String(pageDoc.id));
+        }
+        if (typeof pageDoc?.title === 'string') {
+          setPageTitle(pageDoc.title);
+        }
 
         const nextSections = convertedPageContentToSections(
           convertedPageName,
-          payload.content,
+          convertedContent ?? payload.content,
           payload.sections,
         );
 
@@ -621,7 +714,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         }
 
         registerRuntimeBlockDefinitions(runtimeDefinitions);
-        setConvertedBaseContent(payload.content);
+        setConvertedBaseContent(convertedContent ?? payload.content);
         setSections(nextSections);
       } catch {
         if (!cancelled) {
@@ -651,6 +744,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
     setLoading,
     setPageId,
     setSections,
+    setConvertedPageName,
   ]);
 
   useEffect(() => {
@@ -821,9 +915,9 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         <div style={{ textAlign: 'center' }}>
           <p style={{ fontSize: '48px', margin: '0 0 16px' }}>⚠️</p>
           <p style={{ fontSize: '16px', margin: '0 0 8px', color: '#ccc' }}>No page ID provided</p>
-          <a href="/admin/collections/pages" style={{ color: '#0ea5e9', fontSize: '13px' }}>
+          <Link href="/admin/collections/pages" style={{ color: '#0ea5e9', fontSize: '13px' }}>
             ← Back to Pages
-          </a>
+          </Link>
         </div>
       </div>
     );

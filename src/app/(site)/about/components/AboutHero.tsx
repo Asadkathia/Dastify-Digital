@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ConvertedPlaceholderImage } from "@/components/ConvertedPlaceholderImage";
 
 export type AboutHeroData = {
   chip: string;
@@ -6,7 +7,31 @@ export type AboutHeroData = {
   lead: string;
   ctas: { label: string; href: string; variant: "dark" | "outline" }[];
   stats: { value: string; label: string }[];
-  visual: { icon: string; label: string; dimensions: string };
+  visual: {
+    image?: string | { url?: string; alt?: string; filename?: string } | null;
+    imageAlt?: string;
+    imageFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+    imagePosition?: string;
+    imageRadius?: string;
+    preservePlaceholderChrome?: boolean;
+    placeholderBackground?: string;
+    placeholderBorderColor?: string;
+    placeholderBorderWidth?: string;
+    placeholderBorderStyle?: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
+    placeholderPadding?: string;
+    placeholderGap?: string;
+    placeholderRadius?: string;
+    placeholderShowOverlay?: boolean;
+    placeholderOverlay?: string;
+    placeholderLabelColor?: string;
+    placeholderLabelSize?: string;
+    placeholderDimColor?: string;
+    placeholderDimSize?: string;
+    placeholderIconSize?: string;
+    icon: string;
+    label: string;
+    dimensions: string;
+  };
   marquee: string[];
 };
 
@@ -49,11 +74,33 @@ export default function AboutHero({ data }: { data: AboutHeroData }) {
         </div>
       </div>
       <div className="about-hero-visual" data-r="R" data-delay="2">
-        <div className="iph" style={{ width: "100%", height: 520 }}>
-          <div className="iph-ic">{data.visual.icon}</div>
-          <span className="iph-lbl">{data.visual.label}</span>
-          <span className="iph-dim">{data.visual.dimensions}</span>
-        </div>
+        <ConvertedPlaceholderImage
+          className="iph"
+          style={{ width: "100%", height: 520 }}
+          image={data.visual.image}
+          imageAlt={data.visual.imageAlt}
+          imageFit={data.visual.imageFit}
+          imagePosition={data.visual.imagePosition}
+          imageRadius={data.visual.imageRadius}
+          preservePlaceholderChrome={data.visual.preservePlaceholderChrome}
+          placeholderBackground={data.visual.placeholderBackground}
+          placeholderBorderColor={data.visual.placeholderBorderColor}
+          placeholderBorderWidth={data.visual.placeholderBorderWidth}
+          placeholderBorderStyle={data.visual.placeholderBorderStyle}
+          placeholderPadding={data.visual.placeholderPadding}
+          placeholderGap={data.visual.placeholderGap}
+          placeholderRadius={data.visual.placeholderRadius}
+          placeholderShowOverlay={data.visual.placeholderShowOverlay}
+          placeholderOverlay={data.visual.placeholderOverlay}
+          placeholderLabelColor={data.visual.placeholderLabelColor}
+          placeholderLabelSize={data.visual.placeholderLabelSize}
+          placeholderDimColor={data.visual.placeholderDimColor}
+          placeholderDimSize={data.visual.placeholderDimSize}
+          placeholderIconSize={data.visual.placeholderIconSize}
+          placeholderIcon={data.visual.icon}
+          placeholderLabel={data.visual.label}
+          placeholderDimensions={data.visual.dimensions}
+        />
       </div>
       <div className="about-marquee-strip">
         <div className="about-marquee-track">
