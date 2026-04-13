@@ -34,6 +34,8 @@
     "seed:homepage:safe": "npm run db:backup -- --label pre-seed && npm run seed:homepage",
     "seed:cms-baseline:safe": "npm run db:backup -- --label pre-seed-cms-baseline && npm run seed:cms-baseline",
     "sync:homepage-media:safe": "npm run db:backup -- --label pre-sync-media && npm run sync:homepage-media",
+    "sync:media:to:neon": "node ./scripts/sync-media-to-neon.mjs",
+    "sync:pages:to:neon": "node --import tsx ./scripts/sync-pages-to-neon.ts",
     "smoke": "npx -y node@22 --import tsx ./scripts/smoke.ts",
     "deploy:vercel": "bash ./scripts/deploy-vercel.sh",
     "sync:homepage-media": "node --import tsx ./scripts/sync-homepage-media.ts"
