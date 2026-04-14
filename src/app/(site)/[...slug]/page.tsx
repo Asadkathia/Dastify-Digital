@@ -7,6 +7,7 @@ import { mapPayloadBlocksToPageBuilderBlocks } from '@/components/blocks/types';
 import { NavbarScrollState } from '@/app/components/home/NavbarScrollState';
 import { ScrollRevealController } from '@/app/components/home/ScrollRevealController';
 import { loadConvertedPageContent } from '@/lib/converted-pages/content-map';
+import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
 import { loadConvertedPageRegistry } from '@/lib/converted-pages/preview-registry';
 import { asPathnameFromSegments } from '@/lib/cms/slug';
 import { extractSeoMeta, findOneBySlug, isDraftEnabled } from '@/lib/cms/queries';
@@ -84,7 +85,10 @@ export default async function GenericPage({ params }: Props) {
     convertedPageName && !convertedContent
       ? await loadConvertedPageContent(convertedPageName)
       : null;
-  const effectiveConvertedContent = convertedContent ?? fallbackConvertedContent;
+  const effectiveConvertedContent =
+    fallbackConvertedContent && convertedContent
+      ? mergeConvertedContent(fallbackConvertedContent, convertedContent)
+      : (convertedContent ?? fallbackConvertedContent);
   const navSection = convertedRegistry?.sections.find((section) => section.key === 'nav');
   const footerSection = convertedRegistry?.sections.find((section) => section.key === 'footer');
   const contentSections = convertedRegistry?.sections.filter((section) => section.key !== 'nav' && section.key !== 'footer') ?? [];

@@ -76,7 +76,7 @@ export default async function Home() {
 
   const organizationJsonLd = buildOrganizationJsonLd(settings);
   const websiteJsonLd = buildWebsiteJsonLd(settings);
-  const faqJsonLd = buildFAQJsonLd(homepageContent.faq.items);
+  const faqJsonLd = buildFAQJsonLd(homepageContent.faq?.items ?? []);
 
   return (
     <>
@@ -93,7 +93,7 @@ export default async function Home() {
       <Services data={homepageContent.services} />
       <Mission data={homepageContent.mission} />
       <Insights data={homepageContent.insights} />
-      <Faq data={homepageContent.faq} />
+      <Faq data={homepageContent.faq ?? { items: [] }} />
       <Cta data={homepageContent.cta} />
       <Footer data={homepageContent.footer} />
       <JsonLd data={organizationJsonLd} />

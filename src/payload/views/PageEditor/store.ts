@@ -13,11 +13,52 @@ import type {
   SelectionTarget,
 } from './types';
 import { createBlockInstance } from './block-registry';
+import { setValueAtPath } from '@/lib/converted-pages/object-path';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function uid(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function getJsonFieldSet(data: Record<string, unknown>) {
+  const fields = data.__jsonFields;
+  return new Set(Array.isArray(fields) ? fields.filter((value): value is string => typeof value === 'string') : []);
+}
+
+function parseJsonValue(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function updateNestedBlockData(data: Record<string, unknown>, field: string, value: unknown) {
+  const next = structuredClone(data);
+  const [root, ...rest] = field.split('.');
+
+  if (!root || rest.length === 0) {
+    next[field] = value;
+    return next;
+  }
+
+  const jsonFields = getJsonFieldSet(next);
+  if (jsonFields.has(root)) {
+    const parsed = parseJsonValue(next[root]);
+    const container =
+      parsed && typeof parsed === 'object'
+        ? structuredClone(parsed as Record<string, unknown>)
+        : (/^\d+$/.test(rest[0] ?? '') ? [] : {});
+
+    setValueAtPath(container as Record<string, unknown>, rest.join('.'), value);
+    next[root] = JSON.stringify(container, null, 2);
+    return next;
+  }
+
+  setValueAtPath(next, field, value);
+  return next;
 }
 
 function makeSingleColSection(overrides?: Partial<SectionInstance>): SectionInstance {
@@ -41,6 +82,19 @@ type EditorState = {
   iframeReady: boolean;
   isLoading: boolean;
   clipboard: BlockInstance | null;
+  selectedNode:
+    | {
+        blockId: string;
+        fieldName: string;
+        styleField?: string;
+        tagField?: string;
+        allowedTags?: string[];
+        tagName: string;
+        className: string;
+        textValue: string;
+        computedStyles: Record<string, string>;
+      }
+    | null;
 
   // ── Page-level ────────────────────────────────────────────────────────────
   setPageId: (id: string) => void;
@@ -51,6 +105,7 @@ type EditorState = {
   setSaveStatus: (status: SaveStatus) => void;
   setResponsiveMode: (mode: ResponsiveMode) => void;
   setIframeReady: (ready: boolean) => void;
+  setSelectedNode: (node: EditorState['selectedNode']) => void;
 
   // ── Selection ─────────────────────────────────────────────────────────────
   selectBlock: (sectionId: string, columnId: string, blockId: string) => void;
@@ -82,6 +137,8 @@ type EditorState = {
   pasteBlock: (sectionId: string, columnId: string) => void;
   updateBlockData: (blockId: string, field: string, value: unknown) => void;
   updateBlockStyles: (blockId: string, styles: Partial<BlockStyles>) => void;
+  toggleBlockLocked: (blockId: string) => void;
+  toggleBlockHidden: (blockId: string) => void;
   updateArrayItem: (blockId: string, arrayField: string, index: number, subField: string, value: unknown) => void;
   addArrayItem: (blockId: string, arrayField: string, newItem: Record<string, unknown>) => void;
   removeArrayItem: (blockId: string, arrayField: string, index: number) => void;
@@ -133,6 +190,7 @@ export const useEditorStore = create<EditorState>()(
       iframeReady: false,
       isLoading: false,
       clipboard: null,
+      selectedNode: null,
 
       // ── Page-level ──────────────────────────────────────────────────────
       setPageId: (id) => set({ pageId: id }),
@@ -143,13 +201,14 @@ export const useEditorStore = create<EditorState>()(
       setSaveStatus: (saveStatus) => set({ saveStatus }),
       setResponsiveMode: (responsiveMode) => set({ responsiveMode }),
       setIframeReady: (iframeReady) => set({ iframeReady }),
+      setSelectedNode: (selectedNode) => set({ selectedNode }),
 
       // ── Selection ────────────────────────────────────────────────────────
       selectBlock: (sectionId, columnId, blockId) =>
         set({ selection: { kind: 'block', sectionId, columnId, blockId } }),
       selectSection: (sectionId) =>
         set({ selection: { kind: 'section', sectionId } }),
-      clearSelection: () => set({ selection: null }),
+      clearSelection: () => set({ selection: null, selectedNode: null }),
 
       // ── Section actions ──────────────────────────────────────────────────
       addSection: (atIndex) =>
@@ -446,7 +505,9 @@ export const useEditorStore = create<EditorState>()(
         set((state) => ({
           sections: mapBlock(state.sections, blockId, (b) => ({
             ...b,
-            data: { ...b.data, [field]: value },
+            data: !field.includes('.')
+              ? { ...b.data, [field]: value }
+              : updateNestedBlockData(b.data, field, value),
           })),
           saveStatus: 'dirty',
         })),
@@ -456,6 +517,24 @@ export const useEditorStore = create<EditorState>()(
           sections: mapBlock(state.sections, blockId, (b) => ({
             ...b,
             styles: { ...b.styles, ...styles },
+          })),
+          saveStatus: 'dirty',
+        })),
+
+      toggleBlockLocked: (blockId) =>
+        set((state) => ({
+          sections: mapBlock(state.sections, blockId, (b) => ({
+            ...b,
+            isLocked: !b.isLocked,
+          })),
+          saveStatus: 'dirty',
+        })),
+
+      toggleBlockHidden: (blockId) =>
+        set((state) => ({
+          sections: mapBlock(state.sections, blockId, (b) => ({
+            ...b,
+            isHidden: !b.isHidden,
           })),
           saveStatus: 'dirty',
         })),
@@ -547,6 +626,8 @@ export function serializeSectionsForPayload(sections: SectionInstance[]): Record
         blockType: b.blockType,
         ...b.data,
         ...(b.styles ? { _styles: b.styles } : {}),
+        ...(b.isLocked ? { _isLocked: true } : {}),
+        ...(b.isHidden ? { _isHidden: true } : {}),
       })),
     })),
   }));
@@ -557,12 +638,14 @@ export function serializeSectionsForPayload(sections: SectionInstance[]): Record
 type PayloadBlock = Record<string, unknown>;
 
 function deserializeLeafBlock(raw: PayloadBlock): BlockInstance {
-  const { blockType, id: _id, _styles, ...data } = raw;
+  const { blockType, id: _id, _styles, _isLocked, _isHidden, ...data } = raw;
   return {
     id: uid(String(blockType)),
     blockType: String(blockType),
     data,
     styles: _styles && typeof _styles === 'object' ? (_styles as BlockStyles) : undefined,
+    isLocked: _isLocked === true ? true : undefined,
+    isHidden: _isHidden === true ? true : undefined,
   };
 }
 

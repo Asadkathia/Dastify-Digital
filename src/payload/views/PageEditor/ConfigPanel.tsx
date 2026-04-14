@@ -4,7 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useEditorStore, selectSelectedBlock } from './store';
 import { getBlockDefinition } from './block-registry';
 import { ArrayFieldEditor } from './ArrayFieldEditor';
-import type { EditorField, BlockStyles, SectionInstance } from './types';
+import { LinkFieldEditor } from './LinkFieldEditor';
+import { MediaLibraryModal } from './MediaLibraryModal';
+import type { EditorField, BlockStyles, BreakpointOverrides, SectionInstance } from './types';
+import { getValueAtPath } from '@/lib/converted-pages/object-path';
 
 // Local state mirrors the prop; debounces writes to the store by `delay` ms.
 function useDebouncedField(
@@ -72,6 +75,7 @@ function UploadFieldEditor({
     return undefined;
   });
   const [isUploading, setIsUploading] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgSrc =
     value && typeof value === 'object' && 'url' in (value as object)
@@ -88,6 +92,18 @@ function UploadFieldEditor({
       : fieldName === 'image'
         ? 'imageAlt'
         : null;
+
+  // Focal point: stored as `objectPosition` CSS string (e.g. "60% 30%") so
+  // it maps directly to the objectPosition prop every block renderer expects.
+  const focalPointField =
+    fieldName === 'image' ? 'objectPosition'
+    : fieldName.endsWith('Image') ? 'objectPosition'
+    : null;
+
+  const currentObjectPosition = focalPointField ? (block?.data[focalPointField] as string | undefined) : undefined;
+  const focalParts = currentObjectPosition?.match(/^(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/);
+  const focalX = focalParts ? Number(focalParts[1]) / 100 : 0.5;
+  const focalY = focalParts ? Number(focalParts[2]) / 100 : 0.5;
 
   function normalizeMediaResponse(raw: unknown): { id?: string | number; url?: string; alt?: string; filename?: string } {
     if (!raw || typeof raw !== 'object') return {};
@@ -179,11 +195,62 @@ function UploadFieldEditor({
     <div style={{ marginBottom: '16px' }}>
       <label style={labelStyle}>{fieldLabel}</label>
       {imgSrc ? (
-        <div style={{ marginBottom: '8px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #2a2a2a' }}>
+        <div
+          style={{ marginBottom: '8px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #2a2a2a', position: 'relative', cursor: focalPointField ? 'crosshair' : 'default', height: '100px' }}
+          title={focalPointField ? 'Click to set focal point' : undefined}
+          onClick={focalPointField ? (e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+            const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+            updateBlockData(blockId, focalPointField, `${x}% ${y}%`);
+          } : undefined}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imgSrc} alt={fieldLabel} style={{ width: '100%', height: '80px', objectFit: 'cover', display: 'block' }} />
+          <img
+            src={imgSrc}
+            alt={fieldLabel}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: focalPointField ? `${focalX * 100}% ${focalY * 100}%` : 'center',
+              display: 'block',
+              pointerEvents: 'none',
+            }}
+          />
+          {focalPointField && currentObjectPosition && (
+            <div
+              style={{
+                position: 'absolute',
+                left: `${focalX * 100}%`,
+                top: `${focalY * 100}%`,
+                transform: 'translate(-50%, -50%)',
+                width: '14px',
+                height: '14px',
+                borderRadius: '50%',
+                background: '#0ea5e9',
+                border: '2px solid #fff',
+                boxShadow: '0 0 0 1px #0ea5e9',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
         </div>
       ) : null}
+      {focalPointField && imgSrc && (
+        <p style={{ fontSize: '10px', color: '#444', margin: '-4px 0 6px', lineHeight: 1.3 }}>
+          Click image to set focal point · {Math.round(focalX * 100)}%, {Math.round(focalY * 100)}%
+          {currentObjectPosition && (
+            <button
+              type="button"
+              onClick={() => updateBlockData(blockId, focalPointField, null)}
+              style={{ marginLeft: '8px', background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: '10px', padding: 0 }}
+            >
+              Reset
+            </button>
+          )}
+        </p>
+      )}
       <input
         type="text"
         value={imgSrc}
@@ -191,7 +258,7 @@ function UploadFieldEditor({
         style={inputStyle}
         placeholder="Enter image URL or upload below…"
       />
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
         <input
           ref={fileInputRef}
           type="file"
@@ -211,12 +278,75 @@ function UploadFieldEditor({
             cursor: isUploading ? 'default' : 'pointer',
           }}
         >
-          {isUploading ? 'Uploading…' : 'Upload Image'}
+          {isUploading ? 'Uploading…' : 'Upload'}
         </button>
-        <span style={{ fontSize: '10px', color: '#444', lineHeight: 1.3 }}>
-          Uses Payload Media library
-        </span>
+        <button
+          type="button"
+          onClick={() => setShowLibrary(true)}
+          style={{
+            ...actionBtnStyle,
+            borderRadius: '6px',
+            padding: '7px 10px',
+            color: '#0ea5e9',
+            cursor: 'pointer',
+            border: '1px solid #0ea5e9',
+          }}
+        >
+          Browse Library
+        </button>
+        {imgSrc && (
+          <button
+            type="button"
+            onClick={() => updateBlockData(blockId, fieldName, null)}
+            style={{ ...actionBtnStyle, borderRadius: '6px', padding: '7px 10px', color: '#f87171', cursor: 'pointer' }}
+          >
+            Remove
+          </button>
+        )}
       </div>
+
+      {showLibrary && (
+        <MediaLibraryModal
+          onSelect={(media) => {
+            const url = media.url || (media.filename ? `/media/${media.filename}` : '');
+            updateBlockData(blockId, fieldName, { id: media.id, url, alt: media.alt || '', filename: media.filename });
+            if (companionAltField && typeof block?.data[companionAltField] === 'string' && !block.data[companionAltField]) {
+              updateBlockData(blockId, companionAltField, media.alt || media.filename.replace(/\.[^.]+$/, '') || '');
+            }
+            setShowLibrary(false);
+          }}
+          onClose={() => setShowLibrary(false)}
+        />
+      )}
+
+      {/* Focal Point — always shown when this field supports it, regardless of thumbnail */}
+      {focalPointField && (
+        <div style={{ marginTop: '8px' }}>
+          <label style={labelStyle}>Image Focal Point</label>
+          <select
+            value={currentObjectPosition ?? 'center'}
+            onChange={(e) => updateBlockData(blockId, focalPointField, e.target.value === 'center' ? null : e.target.value)}
+            style={{ ...inputStyle, cursor: 'pointer' }}
+          >
+            <option value="center">Center (default)</option>
+            <option value="top center">Top</option>
+            <option value="bottom center">Bottom</option>
+            <option value="center left">Left</option>
+            <option value="center right">Right</option>
+            <option value="top left">Top Left</option>
+            <option value="top right">Top Right</option>
+            <option value="bottom left">Bottom Left</option>
+            <option value="bottom right">Bottom Right</option>
+            <option value="20% 30%">Upper Left (20% 30%)</option>
+            <option value="80% 30%">Upper Right (80% 30%)</option>
+            <option value="20% 70%">Lower Left (20% 70%)</option>
+            <option value="80% 70%">Lower Right (80% 70%)</option>
+          </select>
+          <p style={{ fontSize: '10px', color: '#444', margin: '3px 0 0', lineHeight: 1.3 }}>
+            Or click the thumbnail above to set a precise focal point.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -336,6 +466,18 @@ function FieldEditor({ blockId, field, value }: FieldEditorProps) {
     );
   }
 
+  if (field.type === 'link') {
+    return (
+      <LinkFieldEditor
+        blockId={blockId}
+        fieldName={field.name}
+        fieldLabel={field.label}
+        value={value}
+        showLabel={'showLabel' in field ? (field as { showLabel?: boolean }).showLabel : false}
+      />
+    );
+  }
+
   return <TextFieldEditor blockId={blockId} field={field} value={value} />;
 }
 
@@ -351,6 +493,7 @@ type StylePanelProps = {
 function StylesPanel({ styles, onUpdate, label, onLabelChange }: StylePanelProps) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<'spacing' | 'appearance' | 'typography'>('spacing');
+  const [showBgLibrary, setShowBgLibrary] = useState(false);
 
   const tabs: Array<{ id: typeof tab; label: string }> = [
     { id: 'spacing', label: 'Spacing' },
@@ -389,6 +532,7 @@ function StylesPanel({ styles, onUpdate, label, onLabelChange }: StylePanelProps
       </button>
 
       {open && (
+        <>
         <div style={{ marginTop: '12px' }}>
           {/* Label field for sections */}
           {onLabelChange !== undefined && (
@@ -513,10 +657,17 @@ function StylesPanel({ styles, onUpdate, label, onLabelChange }: StylePanelProps
                     <button onClick={() => onUpdate({ backgroundColor: undefined })} style={{ ...actionBtnStyle, flexShrink: 0 }} title="Clear">✕</button>
                   )}
                 </div>
+                <ColorSwatches onSelect={(c) => onUpdate({ backgroundColor: c === 'transparent' ? 'transparent' : c })} />
               </div>
               {/* Background Image */}
               <div>
-                <label style={labelStyle}>Background Image URL</label>
+                <label style={labelStyle}>Background Image</label>
+                {styles?.backgroundImage && (
+                  <div style={{ marginBottom: '6px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #2a2a2a', height: '60px', background: '#0a0a0a' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={styles.backgroundImage} alt="Background preview" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </div>
+                )}
                 <input
                   type="text"
                   value={styles?.backgroundImage ?? ''}
@@ -524,7 +675,60 @@ function StylesPanel({ styles, onUpdate, label, onLabelChange }: StylePanelProps
                   style={inputStyle}
                   placeholder="/media/bg.jpg or https://…"
                 />
+                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowBgLibrary(true)}
+                    style={{ ...actionBtnStyle, flex: 1, borderRadius: '6px', padding: '5px 8px', border: '1px solid #0ea5e9', color: '#0ea5e9' }}
+                  >
+                    Browse Library
+                  </button>
+                  {styles?.backgroundImage && (
+                    <button
+                      type="button"
+                      onClick={() => onUpdate({ backgroundImage: undefined })}
+                      style={{ ...actionBtnStyle, borderRadius: '6px', padding: '5px 8px', color: '#f87171', border: '1px solid #333' }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
               </div>
+              {showBgLibrary && (
+                <MediaLibraryModal
+                  onSelect={(media) => {
+                    const src = media.url || (media.filename ? `/media/${media.filename}` : '');
+                    if (src) onUpdate({ backgroundImage: src });
+                    setShowBgLibrary(false);
+                  }}
+                  onClose={() => setShowBgLibrary(false)}
+                />
+              )}
+              {/* Background Position (focal point) */}
+              {styles?.backgroundImage && (
+                <div>
+                  <label style={labelStyle}>Background Position (Focal Point)</label>
+                  <select
+                    value={styles?.backgroundPosition ?? 'center'}
+                    onChange={(e) => onUpdate({ backgroundPosition: e.target.value === 'center' ? undefined : e.target.value })}
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                  >
+                    <option value="center">Center (default)</option>
+                    <option value="top">Top</option>
+                    <option value="top left">Top Left</option>
+                    <option value="top right">Top Right</option>
+                    <option value="center left">Center Left</option>
+                    <option value="center right">Center Right</option>
+                    <option value="bottom">Bottom</option>
+                    <option value="bottom left">Bottom Left</option>
+                    <option value="bottom right">Bottom Right</option>
+                    <option value="25% 25%">25% 25%</option>
+                    <option value="75% 25%">75% 25%</option>
+                    <option value="25% 75%">25% 75%</option>
+                    <option value="75% 75%">75% 75%</option>
+                  </select>
+                </div>
+              )}
               {/* Opacity */}
               <div>
                 <label style={labelStyle}>Opacity ({styles?.opacity != null ? `${Math.round((styles.opacity ?? 1) * 100)}%` : '100%'})</label>
@@ -582,6 +786,7 @@ function StylesPanel({ styles, onUpdate, label, onLabelChange }: StylePanelProps
                     placeholder="#000000"
                   />
                 </div>
+                <ColorSwatches onSelect={(c) => onUpdate({ borderColor: c === 'transparent' ? undefined : c })} />
               </div>
               {/* Box shadow */}
               <div>
@@ -626,6 +831,7 @@ function StylesPanel({ styles, onUpdate, label, onLabelChange }: StylePanelProps
                     <button onClick={() => onUpdate({ textColor: undefined })} style={{ ...actionBtnStyle, flexShrink: 0 }} title="Clear">✕</button>
                   )}
                 </div>
+                <ColorSwatches onSelect={(c) => onUpdate({ textColor: c === 'transparent' ? undefined : c })} />
               </div>
               {/* Font size */}
               <div>
@@ -681,6 +887,174 @@ function StylesPanel({ styles, onUpdate, label, onLabelChange }: StylePanelProps
                 </div>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* ── Breakpoint Overrides ── */}
+        <BreakpointOverridesSection styles={styles} onUpdate={onUpdate} />
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Breakpoint Overrides ─────────────────────────────────────────────────────
+
+function BreakpointOverridesSection({
+  styles,
+  onUpdate,
+}: {
+  styles?: BlockStyles;
+  onUpdate: (styles: Partial<BlockStyles>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [bp, setBp] = useState<'tablet' | 'mobile'>('mobile');
+
+  const overrides = styles?.[bp] ?? {};
+
+  function patchBreakpoint(partial: Partial<BreakpointOverrides>) {
+    onUpdate({ [bp]: { ...overrides, ...partial } });
+  }
+
+  function clearBreakpoint() {
+    onUpdate({ [bp]: undefined });
+  }
+
+  const hasTabletOverrides = Object.keys(styles?.tablet ?? {}).length > 0;
+  const hasMobileOverrides = Object.keys(styles?.mobile ?? {}).length > 0;
+  const hasAny = hasTabletOverrides || hasMobileOverrides;
+
+  function numOverride(key: keyof BreakpointOverrides, lbl: string) {
+    const val = overrides[key] as number | undefined;
+    return (
+      <div key={key}>
+        <label style={labelStyle}>{lbl}</label>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <input
+            type="number"
+            min={0}
+            max={200}
+            value={val ?? ''}
+            onChange={(e) => patchBreakpoint({ [key]: e.target.value === '' ? undefined : Number(e.target.value) })}
+            style={{ ...inputStyle, flex: 1 }}
+            placeholder="—"
+          />
+          {val != null && (
+            <button onClick={() => patchBreakpoint({ [key]: undefined })} style={{ ...actionBtnStyle, flexShrink: 0 }} title="Clear">✕</button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: '8px', borderTop: '1px solid #1a1a1a', paddingTop: '8px' }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          width: '100%',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '6px 0',
+          color: hasAny ? '#7dd3fc' : '#555',
+          fontSize: '11px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+        }}
+      >
+        <span>
+          📱 Responsive Overrides{hasAny ? ' ●' : ''}
+        </span>
+        <span style={{ fontSize: '10px' }}>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div style={{ paddingTop: '8px' }}>
+          {/* Breakpoint selector */}
+          <div style={{ display: 'flex', gap: '4px', marginBottom: '12px' }}>
+            {(['tablet', 'mobile'] as const).map((b) => {
+              const hasOvr = Object.keys(styles?.[b] ?? {}).length > 0;
+              const active = bp === b;
+              return (
+                <button
+                  key={b}
+                  onClick={() => setBp(b)}
+                  style={{
+                    flex: 1,
+                    background: active ? '#111827' : 'transparent',
+                    border: `1px solid ${active ? '#0ea5e9' : '#222'}`,
+                    borderRadius: '6px',
+                    color: active ? '#7dd3fc' : hasOvr ? '#fbbf24' : '#555',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    padding: '5px 8px',
+                  }}
+                >
+                  {b === 'tablet' ? '📱 Tablet' : '📲 Mobile'}
+                  {hasOvr ? ' ●' : ''}
+                </button>
+              );
+            })}
+          </div>
+
+          <p style={{ fontSize: '10px', color: '#444', margin: '0 0 10px', lineHeight: 1.4 }}>
+            These values override the base styles for {bp} screens only.
+            Leave blank to inherit from base.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+            {numOverride('paddingTop', 'Pad Top')}
+            {numOverride('paddingBottom', 'Pad Bottom')}
+            {numOverride('paddingLeft', 'Pad Left')}
+            {numOverride('paddingRight', 'Pad Right')}
+            {numOverride('marginTop', 'Margin Top')}
+            {numOverride('marginBottom', 'Margin Bottom')}
+            {numOverride('fontSize', 'Font Size')}
+            {numOverride('maxWidth', 'Max Width')}
+          </div>
+
+          {/* Text align override */}
+          <div style={{ marginBottom: '10px' }}>
+            <label style={labelStyle}>Text Align</label>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {(['left', 'center', 'right'] as const).map((align) => (
+                <button
+                  key={align}
+                  onClick={() => patchBreakpoint({ textAlign: overrides.textAlign === align ? undefined : align })}
+                  style={{
+                    flex: 1,
+                    background: overrides.textAlign === align ? '#0ea5e9' : '#1a1a1a',
+                    border: `1px solid ${overrides.textAlign === align ? '#0ea5e9' : '#2a2a2a'}`,
+                    borderRadius: '5px',
+                    color: overrides.textAlign === align ? '#fff' : '#555',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    padding: '6px 4px',
+                  }}
+                  title={align}
+                >
+                  {align === 'left' ? '⬅' : align === 'center' ? '⬛' : '➡'}
+                </button>
+              ))}
+              {overrides.textAlign && (
+                <button onClick={() => patchBreakpoint({ textAlign: undefined })} style={{ ...actionBtnStyle, fontSize: '11px' }} title="Clear">✕</button>
+              )}
+            </div>
+          </div>
+
+          {Object.keys(overrides).length > 0 && (
+            <button
+              onClick={clearBreakpoint}
+              style={{ ...actionBtnStyle, width: '100%', borderRadius: '6px', padding: '6px', color: '#f87171', fontSize: '11px', border: '1px solid #333' }}
+            >
+              Clear {bp} overrides
+            </button>
           )}
         </div>
       )}
@@ -767,6 +1141,141 @@ function SectionPanel({ section }: { section: SectionInstance }) {
 
 // ─── Block styles panel (wrapper around StylesPanel for blocks) ───────────────
 
+function ConvertedNodeInspector({
+  blockId,
+  blockData,
+  node,
+}: {
+  blockId: string;
+  blockData: Record<string, unknown>;
+  node: {
+    blockId: string;
+    fieldName: string;
+    styleField?: string;
+    tagField?: string;
+    allowedTags?: string[];
+    tagName: string;
+    className: string;
+    textValue: string;
+    computedStyles: Record<string, string>;
+  };
+}) {
+  const updateBlockData = useEditorStore((s) => s.updateBlockData);
+  const contentValue = getValueAtPath(blockData, node.fieldName);
+  const tagValue = node.tagField ? getValueAtPath(blockData, node.tagField) : undefined;
+
+  const styleValue = node.styleField
+    ? ((getValueAtPath(blockData, node.styleField) as Record<string, unknown> | undefined) ?? {})
+    : {};
+
+  function updateStyle(name: string, value: string) {
+    if (!node.styleField) return;
+    updateBlockData(blockId, `${node.styleField}.${name}`, value || undefined);
+  }
+
+  return (
+    <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #1e1e1e' }}>
+      <p style={{ fontSize: '11px', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 12px' }}>
+        Selected Element
+      </p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+        <div>
+          <label style={labelStyle}>Tag</label>
+          <input value={node.tagName} readOnly style={{ ...inputStyle, color: '#888' }} />
+        </div>
+        <div>
+          <label style={labelStyle}>Classes</label>
+          <input value={node.className || '(none)'} readOnly style={{ ...inputStyle, color: '#888' }} />
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <label style={labelStyle}>Bound Field</label>
+        <input value={node.fieldName} readOnly style={{ ...inputStyle, color: '#888' }} />
+      </div>
+
+      {typeof contentValue === 'string' ? (
+        <div style={{ marginBottom: '12px' }}>
+          <label style={labelStyle}>Current Text</label>
+          <textarea value={contentValue} readOnly rows={2} style={{ ...inputStyle, color: '#888', resize: 'vertical' }} />
+        </div>
+      ) : null}
+
+      {node.tagField && node.allowedTags && node.allowedTags.length > 0 ? (
+        <div style={{ marginBottom: '12px' }}>
+          <label style={labelStyle}>Semantic Tag</label>
+          <select
+            value={typeof tagValue === 'string' ? tagValue : node.tagName}
+            onChange={(e) => updateBlockData(blockId, node.tagField!, e.target.value)}
+            style={{ ...inputStyle, cursor: 'pointer' }}
+          >
+            {node.allowedTags.map((tag) => (
+              <option key={tag} value={tag}>{tag.toUpperCase()}</option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+        {[
+          ['color', 'Text Color'],
+          ['backgroundColor', 'Background'],
+          ['fontSize', 'Font Size'],
+          ['fontWeight', 'Font Weight'],
+          ['lineHeight', 'Line Height'],
+          ['letterSpacing', 'Letter Spacing'],
+          ['marginTop', 'Margin Top'],
+          ['marginBottom', 'Margin Bottom'],
+          ['paddingTop', 'Pad Top'],
+          ['paddingBottom', 'Pad Bottom'],
+          ['borderWidth', 'Border Width'],
+          ['borderRadius', 'Radius'],
+        ].map(([key, label]) => (
+          <div key={key}>
+            <label style={labelStyle}>{label}</label>
+            <input
+              value={typeof styleValue[key] === 'string' ? String(styleValue[key]) : ''}
+              placeholder={node.computedStyles[key] || ''}
+              onChange={(e) => updateStyle(key, e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <label style={labelStyle}>Text Transform</label>
+        <select
+          value={typeof styleValue.textTransform === 'string' ? String(styleValue.textTransform) : ''}
+          onChange={(e) => updateStyle('textTransform', e.target.value)}
+          style={{ ...inputStyle, cursor: 'pointer' }}
+        >
+          <option value="">Use computed ({node.computedStyles.textTransform || 'none'})</option>
+          <option value="none">None</option>
+          <option value="uppercase">Uppercase</option>
+          <option value="lowercase">Lowercase</option>
+          <option value="capitalize">Capitalize</option>
+        </select>
+      </div>
+
+      <details>
+        <summary style={{ cursor: 'pointer', fontSize: '11px', color: '#777', marginBottom: '8px' }}>
+          Computed Style Snapshot
+        </summary>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+          {Object.entries(node.computedStyles).map(([key, value]) => (
+            <div key={key} style={{ background: '#0f0f0f', border: '1px solid #1f1f1f', borderRadius: '6px', padding: '8px' }}>
+              <div style={{ fontSize: '10px', color: '#555', marginBottom: '4px' }}>{key}</div>
+              <div style={{ fontSize: '11px', color: '#9ca3af', wordBreak: 'break-word' }}>{value}</div>
+            </div>
+          ))}
+        </div>
+      </details>
+    </div>
+  );
+}
+
 function BlockStylesPanel({ blockId, styles }: { blockId: string; styles?: BlockStyles }) {
   const updateBlockStyles = useEditorStore((s) => s.updateBlockStyles);
   return (
@@ -787,10 +1296,13 @@ export function ConfigPanel({ embedded = false }: ConfigPanelProps) {
   const removeBlock = useEditorStore((s) => s.removeBlock);
   const duplicateBlock = useEditorStore((s) => s.duplicateBlock);
   const sections = useEditorStore((s) => s.sections);
+  const selectedNode = useEditorStore((s) => s.selectedNode);
 
   const blockSelection = selection?.kind === 'block' ? selection : null;
   const sectionSelection = selection?.kind === 'section' ? selection : null;
   const def = selectedBlock ? getBlockDefinition(selectedBlock.blockType) : null;
+  const toggleBlockLocked = useEditorStore((s) => s.toggleBlockLocked);
+  const toggleBlockHidden = useEditorStore((s) => s.toggleBlockHidden);
 
   const selectedSection = sectionSelection
     ? sections.find((s) => s.id === sectionSelection.sectionId)
@@ -818,6 +1330,20 @@ export function ConfigPanel({ embedded = false }: ConfigPanelProps) {
         </p>
         {selectedBlock && def && blockSelection && (
           <div style={{ display: 'flex', gap: '4px' }}>
+            <button
+              onClick={() => toggleBlockHidden(selectedBlock.id)}
+              style={{ ...actionBtnStyle, color: selectedBlock.isHidden ? '#fbbf24' : '#666' }}
+              title={selectedBlock.isHidden ? 'Show block' : 'Hide block'}
+            >
+              {selectedBlock.isHidden ? '👁' : '👁'}
+            </button>
+            <button
+              onClick={() => toggleBlockLocked(selectedBlock.id)}
+              style={{ ...actionBtnStyle, color: selectedBlock.isLocked ? '#0ea5e9' : '#666' }}
+              title={selectedBlock.isLocked ? 'Unlock block' : 'Lock block (prevents editing)'}
+            >
+              {selectedBlock.isLocked ? '🔒' : '🔓'}
+            </button>
             <button onClick={() => duplicateBlock(blockSelection.sectionId, blockSelection.columnId, selectedBlock.id)} style={actionBtnStyle} title="Duplicate">⧉</button>
             <button onClick={() => removeBlock(blockSelection.sectionId, blockSelection.columnId, selectedBlock.id)} style={{ ...actionBtnStyle, color: '#f87171' }} title="Delete">✕</button>
           </div>
@@ -832,25 +1358,49 @@ export function ConfigPanel({ embedded = false }: ConfigPanelProps) {
           <NoSelection />
         ) : (
           <>
-            {def.fields.map((field) => (
-              <FieldEditor
-                key={field.name}
-                blockId={selectedBlock.id}
-                field={field}
-                value={selectedBlock.data[field.name]}
-              />
-            ))}
-            <BlockStylesPanel blockId={selectedBlock.id} styles={selectedBlock.styles} />
+            {selectedBlock.isHidden && (
+              <div style={{ background: '#1c1200', border: '1px solid #854d0e', borderRadius: '6px', padding: '8px 10px', marginBottom: '12px', fontSize: '11px', color: '#fbbf24' }}>
+                This block is hidden from visitors. Toggle visibility in the toolbar above.
+              </div>
+            )}
+            {selectedBlock.isLocked ? (
+              <div style={{ background: '#0c1a24', border: '1px solid #1e3a5f', borderRadius: '6px', padding: '12px', marginBottom: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '20px', marginBottom: '6px' }}>🔒</div>
+                <p style={{ margin: 0, fontSize: '12px', color: '#7dd3fc' }}>Block is locked</p>
+                <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#555' }}>Unlock to edit content and styles.</p>
+              </div>
+            ) : (
+              <>
+                {def.fields.map((field) => (
+                  <FieldEditor
+                    key={field.name}
+                    blockId={selectedBlock.id}
+                    field={field}
+                    value={selectedBlock.data[field.name]}
+                  />
+                ))}
+                {selectedNode && selectedNode.blockId === selectedBlock.id && selectedBlock.blockType.startsWith('cp-') ? (
+                  <ConvertedNodeInspector blockId={selectedBlock.id} blockData={selectedBlock.data} node={selectedNode} />
+                ) : null}
+                <BlockStylesPanel blockId={selectedBlock.id} styles={selectedBlock.styles} />
+              </>
+            )}
           </>
         )}
       </div>
 
       {/* Footer */}
       {selectedBlock && (
-        <div style={{ padding: '10px 14px', borderTop: '1px solid #1a1a1a' }}>
-          <p style={{ fontSize: '10px', color: '#333', margin: 0, lineHeight: 1.4 }}>
-            Block ID: <span style={{ fontFamily: 'monospace', color: '#444' }}>{selectedBlock.id.slice(-8)}</span>
+        <div style={{ padding: '10px 14px', borderTop: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <p style={{ fontSize: '10px', color: '#333', margin: 0, lineHeight: 1.4, flex: 1 }}>
+            ID: <span style={{ fontFamily: 'monospace', color: '#444' }}>{selectedBlock.id.slice(-8)}</span>
           </p>
+          {selectedBlock.isLocked && (
+            <span style={{ fontSize: '10px', background: '#0c1a24', color: '#7dd3fc', border: '1px solid #1e3a5f', borderRadius: '4px', padding: '1px 6px' }}>Locked</span>
+          )}
+          {selectedBlock.isHidden && (
+            <span style={{ fontSize: '10px', background: '#1c1200', color: '#fbbf24', border: '1px solid #854d0e', borderRadius: '4px', padding: '1px 6px' }}>Hidden</span>
+          )}
         </div>
       )}
     </aside>
@@ -888,3 +1438,52 @@ const actionBtnStyle: React.CSSProperties = {
   lineHeight: 1,
   padding: '4px 6px',
 };
+
+// ─── Brand Palette & Color Swatches ──────────────────────────────────────────
+
+const BRAND_PALETTE: Array<{ label: string; value: string }> = [
+  // Primary brand
+  { label: 'Brand Blue', value: '#0ea5e9' },
+  { label: 'Brand Dark', value: '#0369a1' },
+  { label: 'Brand Light', value: '#bae6fd' },
+  // Neutrals
+  { label: 'White', value: '#ffffff' },
+  { label: 'Off White', value: '#f8fafc' },
+  { label: 'Light Gray', value: '#e2e8f0' },
+  { label: 'Mid Gray', value: '#94a3b8' },
+  { label: 'Dark Gray', value: '#334155' },
+  { label: 'Near Black', value: '#0f172a' },
+  { label: 'Black', value: '#000000' },
+  // Status / accent
+  { label: 'Success', value: '#10b981' },
+  { label: 'Warning', value: '#f59e0b' },
+  { label: 'Danger', value: '#ef4444' },
+  { label: 'Transparent', value: 'transparent' },
+];
+
+function ColorSwatches({ onSelect }: { onSelect: (color: string) => void }) {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+      {BRAND_PALETTE.map((swatch) => (
+        <button
+          key={swatch.value}
+          type="button"
+          onClick={() => onSelect(swatch.value)}
+          title={swatch.label}
+          style={{
+            width: '20px',
+            height: '20px',
+            background: swatch.value === 'transparent'
+              ? 'repeating-conic-gradient(#aaa 0% 25%, #fff 0% 50%) 0 / 8px 8px'
+              : swatch.value,
+            border: '1px solid #333',
+            borderRadius: '3px',
+            cursor: 'pointer',
+            padding: 0,
+            flexShrink: 0,
+          }}
+        />
+      ))}
+    </div>
+  );
+}

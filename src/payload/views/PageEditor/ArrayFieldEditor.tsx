@@ -1,8 +1,9 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import type { ArrayField, UploadField } from './types';
+import type { ArrayField, LinkField, UploadField } from './types';
 import { useEditorStore } from './store';
+import { LinkFieldEditor } from './LinkFieldEditor';
 
 type ArrayFieldEditorProps = {
   blockId: string;
@@ -21,6 +22,7 @@ export function ArrayFieldEditor({ blockId, field, value = [] }: ArrayFieldEdito
       if (sf.type === 'checkbox') return [sf.name, false];
       if (sf.type === 'select') return [sf.name, sf.options[0]?.value ?? ''];
       if (sf.type === 'upload') return [sf.name, null];
+      if (sf.type === 'link') return [sf.name, { url: '', type: 'external', openInNewTab: false }];
       return [sf.name, ''];
     }),
   );
@@ -120,6 +122,19 @@ export function ArrayFieldEditor({ blockId, field, value = [] }: ArrayFieldEdito
                     ))}
                   </select>
                 </div>
+              );
+            }
+
+            if (subField.type === 'link') {
+              return (
+                <ArrayLinkSubFieldEditor
+                  key={subField.name}
+                  arrayFieldName={field.name}
+                  blockId={blockId}
+                  field={subField}
+                  index={index}
+                  value={rawSubValue}
+                />
               );
             }
 
@@ -345,6 +360,34 @@ function ArrayUploadSubFieldEditor({
           Uses Payload Media library
         </span>
       </div>
+    </div>
+  );
+}
+
+function ArrayLinkSubFieldEditor({
+  blockId,
+  arrayFieldName,
+  field,
+  index,
+  value,
+}: {
+  blockId: string;
+  arrayFieldName: string;
+  field: LinkField;
+  index: number;
+  value: unknown;
+}) {
+  const updateArrayItem = useEditorStore((s) => s.updateArrayItem);
+  return (
+    <div style={{ marginBottom: '8px' }}>
+      <label style={labelStyle}>{field.label}{field.required ? ' *' : ''}</label>
+      <LinkFieldEditor
+        blockId={blockId}
+        fieldName={field.name}
+        value={value}
+        showLabel={field.showLabel}
+        onCommit={(linkValue) => updateArrayItem(blockId, arrayFieldName, index, field.name, linkValue)}
+      />
     </div>
   );
 }

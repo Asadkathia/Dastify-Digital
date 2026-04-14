@@ -1,4 +1,4 @@
-export type EditorFieldType = 'text' | 'textarea' | 'select' | 'upload' | 'checkbox' | 'array';
+export type EditorFieldType = 'text' | 'textarea' | 'select' | 'upload' | 'checkbox' | 'array' | 'link';
 
 export type EditorFieldBase = {
   name: string;
@@ -13,10 +13,20 @@ export type UploadField = EditorFieldBase & { type: 'upload' };
 export type CheckboxField = EditorFieldBase & { type: 'checkbox' };
 export type ArrayField = EditorFieldBase & {
   type: 'array';
-  subFields: Array<TextField | TextareaField | SelectField | UploadField | CheckboxField>;
+  subFields: Array<TextField | TextareaField | SelectField | UploadField | CheckboxField | LinkField>;
 };
 
-export type EditorField = TextField | TextareaField | SelectField | UploadField | CheckboxField | ArrayField;
+// Structured link value stored in block data
+export type LinkValue = {
+  label?: string;
+  url: string;
+  type: 'external' | 'internal' | 'anchor';
+  openInNewTab?: boolean;
+};
+
+export type LinkField = EditorFieldBase & { type: 'link'; showLabel?: boolean };
+
+export type EditorField = TextField | TextareaField | SelectField | UploadField | CheckboxField | ArrayField | LinkField;
 
 export type BlockDefinition = {
   blockType: string;
@@ -25,6 +35,18 @@ export type BlockDefinition = {
   category: 'Layout' | 'Content' | 'Conversion' | 'Media' | 'Homepage';
   fields: EditorField[];
   defaultData: Record<string, unknown>;
+};
+
+export type BreakpointOverrides = {
+  paddingTop?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+  paddingRight?: number;
+  marginTop?: number;
+  marginBottom?: number;
+  fontSize?: number;
+  textAlign?: 'left' | 'center' | 'right';
+  maxWidth?: number;
 };
 
 export type BlockStyles = {
@@ -54,6 +76,11 @@ export type BlockStyles = {
   hiddenOn?: Array<'desktop' | 'tablet' | 'mobile'>;
   // Max width
   maxWidth?: number;
+  // Background position (focal point for background images)
+  backgroundPosition?: string;
+  // Per-breakpoint overrides (applied on top of base values)
+  tablet?: BreakpointOverrides;
+  mobile?: BreakpointOverrides;
 };
 
 // ─── Hierarchy: Page → Sections → Columns → Blocks ───────────────────────────
@@ -63,6 +90,8 @@ export type BlockInstance = {
   blockType: string;
   data: Record<string, unknown>;
   styles?: BlockStyles;
+  isLocked?: boolean;
+  isHidden?: boolean;
 };
 
 export type ColumnWidth = '1/1' | '1/2' | '1/3' | '2/3' | '1/4' | '3/4';
@@ -99,4 +128,20 @@ export type EditorMessage =
   | { type: 'BLOCK_CLICKED'; blockId: string }
   | { type: 'INLINE_EDIT_START'; blockId: string; fieldName: string }
   | { type: 'INLINE_EDIT_END'; blockId: string; fieldName: string; value: string }
+  | {
+      type: 'CONVERTED_NODE_SELECTED';
+      node:
+        | {
+            blockId: string;
+            fieldName: string;
+            styleField?: string;
+            tagField?: string;
+            allowedTags?: string[];
+            tagName: string;
+            className: string;
+            textValue: string;
+            computedStyles: Record<string, string>;
+          }
+        | null;
+    }
   | { type: 'EDITOR_READY' };

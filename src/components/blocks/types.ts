@@ -12,6 +12,7 @@ export type PageBuilderBlock =
       title: string;
       subtitle?: string;
       image?: BuilderImage;
+      objectPosition?: string;
       primaryCtaLabel?: string;
       primaryCtaHref?: string;
       secondaryCtaLabel?: string;
@@ -26,6 +27,7 @@ export type PageBuilderBlock =
       title?: string;
       text?: string;
       image?: BuilderImage;
+      objectPosition?: string;
       layout?: 'left' | 'right';
     }
   | {
@@ -199,6 +201,127 @@ export type PageBuilderBlock =
       columns?: 2 | 3 | 4;
       images: Array<{ image: BuilderImage; alt?: string; caption?: string }>;
       lightbox?: boolean;
+    }
+  | {
+      type: 'form';
+      formId?: string | number;
+      title?: string;
+      description?: string;
+      layout?: 'centered' | 'left' | 'card';
+      backgroundStyle?: 'none' | 'light' | 'dark' | 'brand';
+    }
+  | {
+      type: 'quote';
+      quote: string;
+      author?: string;
+      role?: string;
+      avatar?: BuilderImage;
+      size?: 'sm' | 'md' | 'lg';
+      align?: 'left' | 'center';
+      accentColor?: string;
+    }
+  | {
+      type: 'divider';
+      style?: 'line' | 'dashed' | 'dotted' | 'none';
+      color?: string;
+      thickness?: number;
+      spacing?: number;
+      width?: 'full' | '75' | '50' | '25';
+    }
+  | {
+      type: 'icon';
+      icon: string;
+      size?: 'sm' | 'md' | 'lg' | 'xl';
+      color?: string;
+      label?: string;
+      align?: 'left' | 'center' | 'right';
+    }
+  | {
+      type: 'feature_list';
+      title?: string;
+      subtitle?: string;
+      layout?: 'grid' | 'list' | '2col';
+      columns?: '2' | '3' | '4';
+      items: Array<{ icon?: string; title: string; description?: string; iconColor?: string }>;
+    }
+  | {
+      type: 'team_grid';
+      title?: string;
+      subtitle?: string;
+      columns?: '2' | '3' | '4';
+      cardStyle?: 'default' | 'minimal' | 'card';
+      members: Array<{ photo?: BuilderImage; name: string; role?: string; bio?: string; linkedinUrl?: string; email?: string }>;
+    }
+  | {
+      type: 'blog_feed';
+      title?: string;
+      subtitle?: string;
+      source?: 'latest' | 'category' | 'tag';
+      category?: string;
+      tag?: string;
+      limit?: number;
+      layout?: 'grid' | 'list' | 'featured';
+      columns?: '2' | '3';
+      showExcerpt?: boolean;
+      showDate?: boolean;
+      showCategory?: boolean;
+      ctaLabel?: string;
+      ctaHref?: string;
+    }
+  | {
+      type: 'map';
+      title?: string;
+      address?: string;
+      embedUrl?: string;
+      height?: number;
+      borderRadius?: number;
+      showAddressCard?: boolean;
+      phone?: string;
+      hours?: string;
+    }
+  | {
+      type: 'countdown';
+      title?: string;
+      targetDate: string;
+      expiredMessage?: string;
+      layout?: 'boxes' | 'inline' | 'minimal';
+      align?: 'left' | 'center' | 'right';
+      accentColor?: string;
+      showLabels?: boolean;
+    }
+  | {
+      type: 'table';
+      title?: string;
+      caption?: string;
+      headers?: Array<{ label: string }>;
+      rows?: Array<{ cells: Array<{ value: string }> }>;
+      striped?: boolean;
+      bordered?: boolean;
+      responsive?: boolean;
+    }
+  | {
+      type: 'timeline';
+      title?: string;
+      subtitle?: string;
+      layout?: 'vertical' | 'horizontal' | 'alternating';
+      items: Array<{ date?: string; title: string; description?: string; icon?: string; accentColor?: string }>;
+    }
+  | {
+      type: 'steps';
+      title?: string;
+      subtitle?: string;
+      layout?: 'horizontal' | 'vertical' | 'cards';
+      accentColor?: string;
+      steps: Array<{ icon?: string; title: string; description?: string }>;
+    }
+  | {
+      type: 'announcement_bar';
+      message: string;
+      ctaLabel?: string;
+      ctaHref?: string;
+      style?: 'brand' | 'dark' | 'warning' | 'success' | 'info';
+      dismissible?: boolean;
+      icon?: string;
     };
 
 function mediaToImage(
@@ -258,6 +381,7 @@ function mapSingleBlock(rawBlock: unknown): PageBuilderBlock[] {
           title: (b.title as string) || '',
           subtitle: (b.subtitle as string) || undefined,
           image: mediaToImage(b.image as Parameters<typeof mediaToImage>[0], b.imageAlt as string | null),
+          objectPosition: (b.objectPosition as string) || undefined,
           primaryCtaLabel: (b.primaryCtaLabel as string) || undefined,
           primaryCtaHref: (b.primaryCtaHref as string) || undefined,
           secondaryCtaLabel: (b.secondaryCtaLabel as string) || undefined,
@@ -275,6 +399,7 @@ function mapSingleBlock(rawBlock: unknown): PageBuilderBlock[] {
           title: (b.title as string) || undefined,
           text: (b.text as string) || undefined,
           image: mediaToImage(b.image as Parameters<typeof mediaToImage>[0]),
+          objectPosition: (b.objectPosition as string) || undefined,
           layout: b.layout === 'left' ? 'left' : 'right',
         },
       ];
@@ -530,6 +655,179 @@ function mapSingleBlock(rawBlock: unknown): PageBuilderBlock[] {
         cards,
       }];
     }
+
+    case 'quote-block':
+      return [{
+        type: 'quote',
+        quote: (b.quote as string) || '',
+        author: (b.author as string) || undefined,
+        role: (b.role as string) || undefined,
+        avatar: mediaToImage(b.avatar as Parameters<typeof mediaToImage>[0]),
+        size: ((b.size as string) || 'md') as 'sm' | 'md' | 'lg',
+        align: ((b.align as string) || 'center') as 'left' | 'center',
+        accentColor: (b.accentColor as string) || undefined,
+      }];
+
+    case 'divider-block':
+      return [{
+        type: 'divider',
+        style: ((b.style as string) || 'line') as 'line' | 'dashed' | 'dotted' | 'none',
+        color: (b.color as string) || undefined,
+        thickness: (b.thickness as number) || 1,
+        spacing: (b.spacing as number) || 32,
+        width: ((b.width as string) || 'full') as 'full' | '75' | '50' | '25',
+      }];
+
+    case 'icon-block':
+      return [{
+        type: 'icon',
+        icon: (b.icon as string) || '★',
+        size: ((b.size as string) || 'md') as 'sm' | 'md' | 'lg' | 'xl',
+        color: (b.color as string) || undefined,
+        label: (b.label as string) || undefined,
+        align: ((b.align as string) || 'center') as 'left' | 'center' | 'right',
+      }];
+
+    case 'feature-list-block': {
+      type FLItem = { icon?: string; title: string; description?: string; iconColor?: string };
+      const items = ((b.items as FLItem[] | undefined) ?? []).filter((i) => i?.title?.trim());
+      return [{
+        type: 'feature_list',
+        title: (b.title as string) || undefined,
+        subtitle: (b.subtitle as string) || undefined,
+        layout: ((b.layout as string) || 'grid') as 'grid' | 'list' | '2col',
+        columns: ((b.columns as string) || '3') as '2' | '3' | '4',
+        items,
+      }];
+    }
+
+    case 'team-grid-block': {
+      type Member = { photo?: Parameters<typeof mediaToImage>[0]; photoAlt?: string; name: string; role?: string; bio?: string; linkedinUrl?: string; email?: string };
+      const members = ((b.members as Member[] | undefined) ?? [])
+        .filter((m) => m?.name?.trim())
+        .map((m) => ({
+          photo: mediaToImage(m.photo, m.photoAlt),
+          name: m.name,
+          role: m.role || undefined,
+          bio: m.bio || undefined,
+          linkedinUrl: m.linkedinUrl || undefined,
+          email: m.email || undefined,
+        }));
+      return [{
+        type: 'team_grid',
+        title: (b.title as string) || undefined,
+        subtitle: (b.subtitle as string) || undefined,
+        columns: ((b.columns as string) || '3') as '2' | '3' | '4',
+        cardStyle: ((b.cardStyle as string) || 'default') as 'default' | 'minimal' | 'card',
+        members,
+      }];
+    }
+
+    case 'blog-feed-block':
+      return [{
+        type: 'blog_feed',
+        title: (b.title as string) || undefined,
+        subtitle: (b.subtitle as string) || undefined,
+        source: ((b.source as string) || 'latest') as 'latest' | 'category' | 'tag',
+        category: (b.category as string) || undefined,
+        tag: (b.tag as string) || undefined,
+        limit: Number(b.limit) || 3,
+        layout: ((b.layout as string) || 'grid') as 'grid' | 'list' | 'featured',
+        columns: ((b.columns as string) || '3') as '2' | '3',
+        showExcerpt: b.showExcerpt !== false,
+        showDate: b.showDate !== false,
+        showCategory: b.showCategory !== false,
+        ctaLabel: (b.ctaLabel as string) || undefined,
+        ctaHref: (b.ctaHref as string) || undefined,
+      }];
+
+    case 'map-block':
+      return [{
+        type: 'map',
+        title: (b.title as string) || undefined,
+        address: (b.address as string) || undefined,
+        embedUrl: (b.embedUrl as string) || undefined,
+        height: Number(b.height) || 400,
+        borderRadius: Number(b.borderRadius) || 12,
+        showAddressCard: b.showAddressCard !== false,
+        phone: (b.phone as string) || undefined,
+        hours: (b.hours as string) || undefined,
+      }];
+
+    case 'countdown-block':
+      return [{
+        type: 'countdown',
+        title: (b.title as string) || undefined,
+        targetDate: (b.targetDate as string) || new Date().toISOString(),
+        expiredMessage: (b.expiredMessage as string) || undefined,
+        layout: ((b.layout as string) || 'boxes') as 'boxes' | 'inline' | 'minimal',
+        align: ((b.align as string) || 'center') as 'left' | 'center' | 'right',
+        accentColor: (b.accentColor as string) || undefined,
+        showLabels: b.showLabels !== false,
+      }];
+
+    case 'table-block': {
+      type Header = { label: string };
+      type Row = { cells: Array<{ value: string }> };
+      return [{
+        type: 'table',
+        title: (b.title as string) || undefined,
+        caption: (b.caption as string) || undefined,
+        headers: ((b.headers as Header[] | undefined) ?? []),
+        rows: ((b.rows as Row[] | undefined) ?? []),
+        striped: b.striped !== false,
+        bordered: Boolean(b.bordered),
+        responsive: b.responsive !== false,
+      }];
+    }
+
+    case 'timeline-block': {
+      type TLItem = { date?: string; title: string; description?: string; icon?: string; accentColor?: string };
+      const items = ((b.items as TLItem[] | undefined) ?? []).filter((i) => i?.title?.trim());
+      return [{
+        type: 'timeline',
+        title: (b.title as string) || undefined,
+        subtitle: (b.subtitle as string) || undefined,
+        layout: ((b.layout as string) || 'vertical') as 'vertical' | 'horizontal' | 'alternating',
+        items,
+      }];
+    }
+
+    case 'steps-block': {
+      type Step = { icon?: string; title: string; description?: string };
+      const steps = ((b.steps as Step[] | undefined) ?? []).filter((s) => s?.title?.trim());
+      return [{
+        type: 'steps',
+        title: (b.title as string) || undefined,
+        subtitle: (b.subtitle as string) || undefined,
+        layout: ((b.layout as string) || 'horizontal') as 'horizontal' | 'vertical' | 'cards',
+        accentColor: (b.accentColor as string) || undefined,
+        steps,
+      }];
+    }
+
+    case 'announcement-bar-block':
+      return [{
+        type: 'announcement_bar',
+        message: (b.message as string) || '',
+        ctaLabel: (b.ctaLabel as string) || undefined,
+        ctaHref: (b.ctaHref as string) || undefined,
+        style: ((b.style as string) || 'brand') as 'brand' | 'dark' | 'warning' | 'success' | 'info',
+        dismissible: b.dismissible !== false,
+        icon: (b.icon as string) || undefined,
+      }];
+
+    case 'form-block':
+      return [{
+        type: 'form',
+        formId: (b.form as string | number | { id?: string | number } | null | undefined)
+          ? (typeof b.form === 'object' && b.form && 'id' in b.form ? (b.form as { id: string | number }).id : b.form as string | number)
+          : undefined,
+        title: (b.title as string) || undefined,
+        description: (b.description as string) || undefined,
+        layout: ((b.layout as string) || 'centered') as 'centered' | 'left' | 'card',
+        backgroundStyle: ((b.backgroundStyle as string) || 'none') as 'none' | 'light' | 'dark' | 'brand',
+      }];
 
     default:
       return [];

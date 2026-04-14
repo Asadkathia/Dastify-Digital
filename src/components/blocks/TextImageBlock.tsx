@@ -11,7 +11,7 @@ export function TextImageBlock(props: TextImageBlockProps) {
       <div className="wrap" style={{ display: 'grid', gap: '28px', alignItems: 'center', gridTemplateColumns: '1fr 1fr' }}>
         {imageFirst ? (
           <div style={{ position: 'relative', minHeight: '280px', borderRadius: '24px', overflow: 'hidden' }}>
-            {props.image?.src ? <CmsImage src={props.image.src} alt={props.image.alt || props.title || 'Image'} objectFit="cover" /> : null}
+            {props.image?.src ? <CmsImage src={props.image.src} alt={props.image.alt || props.title || 'Image'} objectFit="cover" objectPosition={props.objectPosition} /> : null}
           </div>
         ) : null}
 
@@ -22,7 +22,7 @@ export function TextImageBlock(props: TextImageBlockProps) {
 
         {!imageFirst ? (
           <div style={{ position: 'relative', minHeight: '280px', borderRadius: '24px', overflow: 'hidden' }}>
-            {props.image?.src ? <CmsImage src={props.image.src} alt={props.image.alt || props.title || 'Image'} objectFit="cover" /> : null}
+            {props.image?.src ? <CmsImage src={props.image.src} alt={props.image.alt || props.title || 'Image'} objectFit="cover" objectPosition={props.objectPosition} /> : null}
           </div>
         ) : null}
       </div>

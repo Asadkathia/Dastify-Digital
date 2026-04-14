@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ConvertedPlaceholderImage } from "@/components/ConvertedPlaceholderImage";
+import { getConvertedNodeBinding } from "@/components/converted-editor";
 
 export type AboutHeroData = {
   chip: string;
@@ -36,39 +37,49 @@ export type AboutHeroData = {
 };
 
 export default function AboutHero({ data }: { data: AboutHeroData }) {
+  const titleLines = typeof data.title === "string" ? data.title.split("\n") : [];
+  const ctas = Array.isArray(data.ctas) ? data.ctas : [];
+  const stats = Array.isArray(data.stats) ? data.stats : [];
+  const marqueeItems = Array.isArray(data.marquee) ? data.marquee : [];
+  const chipNode = getConvertedNodeBinding(data, { field: 'chip', defaultTag: 'div', nodeKey: 'chip' });
+  const titleNode = getConvertedNodeBinding(data, { field: 'title', defaultTag: 'h1', nodeKey: 'title', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const leadNode = getConvertedNodeBinding(data, { field: 'lead', defaultTag: 'p', nodeKey: 'lead' });
+  const TitleTag = titleNode.Tag;
   return (
     <section className="about-hero">
       <div className="about-hero-content">
-        <div className="chip about-hero-chip" data-r>
+        <div className="chip about-hero-chip" data-r {...chipNode.props}>
           <span className="chip-dot" />
           {data.chip}
         </div>
-        <h1 className="masthead about-hero-title" data-r data-delay="1">
-          {data.title.split("\n").map((line, index) => (
+        <TitleTag className="masthead about-hero-title" data-r data-delay="1" {...titleNode.props}>
+          {titleLines.map((line, index) => (
             <span key={`about-hero-title-${line}-${index}`}>
               {line}
-              {index < data.title.split("\n").length - 1 ? <br /> : null}
+              {index < titleLines.length - 1 ? <br /> : null}
             </span>
           ))}
-        </h1>
-        <p className="lead about-hero-lead" data-r data-delay="2">
+        </TitleTag>
+        <p className="lead about-hero-lead" data-r data-delay="2" {...leadNode.props}>
           {data.lead}
         </p>
         <div className="about-hero-ctas" data-r data-delay="3">
-          {data.ctas.map((item, index) => (
+          {ctas.map((item, index) => (
             <Link
               key={`about-hero-cta-${item.href ?? item.label}-${index}`}
-              href={item.href}
+              href={typeof item.href === "string" && item.href.length > 0 ? item.href : "#"}
               className={item.variant === "dark" ? "btn-dk" : "btn-ol"}
+              {...getConvertedNodeBinding(data, { field: `ctas.${index}.label`, defaultTag: 'a', nodeKey: `ctas_${index}_label` }).props}
             >
               {item.label}
             </Link>
           ))}
         </div>
         <div className="about-hero-stats" data-r data-delay="4">
-          {data.stats.map((item, index) => (
+          {stats.map((item, index) => (
             <div className="about-hero-stat-pill" key={`about-hero-stat-${item.label}-${index}`}>
-              <strong>{item.value}</strong> {item.label}
+              <strong {...getConvertedNodeBinding(data, { field: `stats.${index}.value`, defaultTag: 'strong', nodeKey: `stats_${index}_value` }).props}>{item.value}</strong>{' '}
+              <span {...getConvertedNodeBinding(data, { field: `stats.${index}.label`, defaultTag: 'span', nodeKey: `stats_${index}_label` }).props}>{item.label}</span>
             </div>
           ))}
         </div>
@@ -104,8 +115,12 @@ export default function AboutHero({ data }: { data: AboutHeroData }) {
       </div>
       <div className="about-marquee-strip">
         <div className="about-marquee-track">
-          {[...data.marquee, ...data.marquee].map((item, index) => (
-            <span className="about-marquee-item" key={`about-marquee-${item}-${index}`}>
+          {[...marqueeItems, ...marqueeItems].map((item, index) => (
+            <span
+              className="about-marquee-item"
+              key={`about-marquee-${item}-${index}`}
+              {...getConvertedNodeBinding(data, { field: `marquee.${marqueeItems.length === 0 ? 0 : index % marqueeItems.length}`, defaultTag: 'span', nodeKey: `marquee_${marqueeItems.length === 0 ? 0 : index % marqueeItems.length}` }).props}
+            >
               {item}
             </span>
           ))}

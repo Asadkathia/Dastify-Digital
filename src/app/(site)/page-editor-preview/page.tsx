@@ -50,8 +50,55 @@ const INLINE_TEXT_FIELDS = [
   'tagline', 'copyright', 'note', 'button', 'intro',
 ];
 
+const INSPECTED_STYLE_KEYS = [
+  'fontSize',
+  'fontWeight',
+  'lineHeight',
+  'letterSpacing',
+  'textTransform',
+  'color',
+  'backgroundColor',
+  'borderColor',
+  'borderWidth',
+  'borderRadius',
+  'marginTop',
+  'marginBottom',
+  'paddingTop',
+  'paddingBottom',
+  'paddingLeft',
+  'paddingRight',
+] as const;
+
 function sendToParent(msg: EditorMessage) {
   window.parent.postMessage(msg, '*');
+}
+
+function findInspectableElement(target: HTMLElement, root: HTMLElement | null): HTMLElement | null {
+  let el: HTMLElement | null = target;
+  while (el && el !== root) {
+    if (el.dataset?.field) return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+
+function buildNodeSelection(blockId: string, element: HTMLElement) {
+  const computed = window.getComputedStyle(element);
+  const computedStyles = Object.fromEntries(
+    INSPECTED_STYLE_KEYS.map((key) => [key, computed[key]]),
+  ) as Record<string, string>;
+
+  return {
+    blockId,
+    fieldName: element.dataset.field ?? '',
+    styleField: element.dataset.styleField || undefined,
+    tagField: element.dataset.tagField || undefined,
+    allowedTags: element.dataset.allowedTags?.split(',').map((tag) => tag.trim()).filter(Boolean),
+    tagName: element.tagName.toLowerCase(),
+    className: element.className,
+    textValue: element.innerText || element.textContent || '',
+    computedStyles,
+  };
 }
 
 // ─── Shared block click/inline-edit wrapper ───────────────────────────────────
@@ -76,6 +123,13 @@ function BlockWrapper({
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
     sendToParent({ type: 'BLOCK_CLICKED', blockId: block.id });
+    const target = e.target as HTMLElement;
+    const inspectable = findInspectableElement(target, ref.current);
+    if (inspectable) {
+      sendToParent({ type: 'CONVERTED_NODE_SELECTED', node: buildNodeSelection(block.id, inspectable) });
+    } else {
+      sendToParent({ type: 'CONVERTED_NODE_SELECTED', node: null });
+    }
   }
 
   function handleDoubleClick(e: React.MouseEvent) {
@@ -91,7 +145,12 @@ function BlockWrapper({
     }
     if (!el?.dataset?.field) return;
     const fieldName = el.dataset.field;
-    if (!INLINE_TEXT_FIELDS.includes(fieldName)) return;
+    if (!fieldName) return;
+    if (!block.blockType.startsWith('cp-') && !INLINE_TEXT_FIELDS.includes(fieldName)) return;
+
+    // Snapshot the original plain-text content before editing begins.
+    // We'll restore it on blur so React sees a clean DOM to reconcile against.
+    const originalText = el.innerText || el.textContent || '';
 
     el.contentEditable = 'true';
     el.focus();
@@ -100,10 +159,27 @@ function BlockWrapper({
 
     function handleBlur() {
       if (!el) return;
+      const isRich = el.dataset.richText === 'true';
+      const value = isRich ? el.innerHTML : (el.innerText || el.textContent || '');
+
+      // Turn off editing first
       el.contentEditable = 'false';
-      sendToParent({ type: 'INLINE_EDIT_END', blockId: block.id, fieldName: fieldName!, value: el.textContent ?? '' });
+
+      // Restore the element to its original plain-text content so React can
+      // reconcile without fighting browser-extension-injected span nodes.
+      // The store update will immediately re-render with the new value.
+      if (!isRich) {
+        el.textContent = originalText;
+      }
+
       el.removeEventListener('blur', handleBlur);
       el.removeEventListener('keydown', handleKeyDown);
+
+      // Defer the store update one tick so the DOM has fully settled
+      // (contentEditable cleanup, extension span removal) before React re-renders.
+      requestAnimationFrame(() => {
+        sendToParent({ type: 'INLINE_EDIT_END', blockId: block.id, fieldName: fieldName!, value });
+      });
     }
     function handleKeyDown(ke: KeyboardEvent) {
       if (ke.key === 'Escape' || (ke.key === 'Enter' && !ke.shiftKey)) {
@@ -116,25 +192,34 @@ function BlockWrapper({
   }
 
   const fontWeightMap: Record<string, number> = { normal: 400, medium: 500, semibold: 600, bold: 700 };
+
+  // Merge breakpoint overrides on top of base styles
+  const bpOverrides = responsiveMode === 'mobile'
+    ? (styles?.mobile ?? {})
+    : responsiveMode === 'tablet'
+      ? (styles?.tablet ?? {})
+      : {};
+  const effective = { ...styles, ...bpOverrides };
+
   const wrapperStyle: React.CSSProperties = {
     position: 'relative',
-    ...(styles?.paddingTop != null ? { paddingTop: `${styles.paddingTop}px` } : {}),
-    ...(styles?.paddingBottom != null ? { paddingBottom: `${styles.paddingBottom}px` } : {}),
-    ...(styles?.paddingLeft != null ? { paddingLeft: `${styles.paddingLeft}px` } : {}),
-    ...(styles?.paddingRight != null ? { paddingRight: `${styles.paddingRight}px` } : {}),
-    ...(styles?.marginTop != null ? { marginTop: `${styles.marginTop}px` } : {}),
-    ...(styles?.marginBottom != null ? { marginBottom: `${styles.marginBottom}px` } : {}),
-    ...(styles?.backgroundColor ? { backgroundColor: styles.backgroundColor } : {}),
-    ...(styles?.backgroundImage ? { backgroundImage: `url(${styles.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
-    ...(styles?.opacity != null && styles.opacity !== 1 ? { opacity: styles.opacity } : {}),
-    ...(styles?.borderRadius != null ? { borderRadius: `${styles.borderRadius}px` } : {}),
-    ...(styles?.borderWidth != null ? { borderWidth: `${styles.borderWidth}px`, borderStyle: 'solid', borderColor: styles.borderColor ?? '#000' } : {}),
-    ...(styles?.boxShadow ? { boxShadow: styles.boxShadow } : {}),
-    ...(styles?.textColor ? { color: styles.textColor } : {}),
-    ...(styles?.fontSize != null ? { fontSize: `${styles.fontSize}px` } : {}),
-    ...(styles?.textAlign ? { textAlign: styles.textAlign } : {}),
-    ...(styles?.fontWeight ? { fontWeight: fontWeightMap[styles.fontWeight] } : {}),
-    ...(styles?.maxWidth != null ? { maxWidth: `${styles.maxWidth}px`, marginLeft: 'auto', marginRight: 'auto' } : {}),
+    ...(effective.paddingTop != null ? { paddingTop: `${effective.paddingTop}px` } : {}),
+    ...(effective.paddingBottom != null ? { paddingBottom: `${effective.paddingBottom}px` } : {}),
+    ...(effective.paddingLeft != null ? { paddingLeft: `${effective.paddingLeft}px` } : {}),
+    ...(effective.paddingRight != null ? { paddingRight: `${effective.paddingRight}px` } : {}),
+    ...(effective.marginTop != null ? { marginTop: `${effective.marginTop}px` } : {}),
+    ...(effective.marginBottom != null ? { marginBottom: `${effective.marginBottom}px` } : {}),
+    ...(effective.backgroundColor ? { backgroundColor: effective.backgroundColor } : {}),
+    ...(effective.backgroundImage ? { backgroundImage: `url(${effective.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: effective.backgroundPosition ?? 'center' } : {}),
+    ...(effective.opacity != null && effective.opacity !== 1 ? { opacity: effective.opacity } : {}),
+    ...(effective.borderRadius != null ? { borderRadius: `${effective.borderRadius}px` } : {}),
+    ...(effective.borderWidth != null ? { borderWidth: `${effective.borderWidth}px`, borderStyle: 'solid', borderColor: effective.borderColor ?? '#000' } : {}),
+    ...(effective.boxShadow ? { boxShadow: effective.boxShadow } : {}),
+    ...(effective.textColor ? { color: effective.textColor } : {}),
+    ...(effective.fontSize != null ? { fontSize: `${effective.fontSize}px` } : {}),
+    ...(effective.textAlign ? { textAlign: effective.textAlign } : {}),
+    ...(effective.fontWeight ? { fontWeight: fontWeightMap[effective.fontWeight] } : {}),
+    ...(effective.maxWidth != null ? { maxWidth: `${effective.maxWidth}px`, marginLeft: 'auto', marginRight: 'auto' } : {}),
   };
 
   return (
@@ -148,7 +233,7 @@ function BlockWrapper({
       <div style={{ position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none', outline: isSelected ? '2px solid #0ea5e9' : '2px solid transparent', outlineOffset: '-2px', transition: 'outline-color 0.15s' }} />
       {isSelected && (
         <div style={{ position: 'absolute', top: 0, left: 0, zIndex: 20, background: '#0ea5e9', color: '#fff', fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderBottomRightRadius: '6px', pointerEvents: 'none', fontFamily: 'sans-serif' }}>
-          Selected · Double-click to edit
+          Selected · Click element to inspect · Double-click text to edit
         </div>
       )}
       {children}
@@ -357,7 +442,7 @@ function SectionsLayout({
               ...(sectionStyles?.paddingLeft != null ? { paddingLeft: `${sectionStyles.paddingLeft}px` } : {}),
               ...(sectionStyles?.paddingRight != null ? { paddingRight: `${sectionStyles.paddingRight}px` } : {}),
               ...(sectionStyles?.backgroundColor ? { backgroundColor: sectionStyles.backgroundColor } : {}),
-              ...(sectionStyles?.backgroundImage ? { backgroundImage: `url(${sectionStyles.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
+              ...(sectionStyles?.backgroundImage ? { backgroundImage: `url(${sectionStyles.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: sectionStyles.backgroundPosition ?? 'center' } : {}),
               ...(sectionStyles?.opacity != null && sectionStyles.opacity !== 1 ? { opacity: sectionStyles.opacity } : {}),
               ...(sectionStyles?.borderWidth != null ? { borderWidth: `${sectionStyles.borderWidth}px`, borderStyle: 'solid', borderColor: sectionStyles.borderColor ?? '#000' } : {}),
               ...(sectionStyles?.boxShadow ? { boxShadow: sectionStyles.boxShadow } : {}),
@@ -367,7 +452,7 @@ function SectionsLayout({
             <div style={section.columns.length > 1 ? { display: 'grid', gridTemplateColumns: gridTemplate, gap: '0' } : undefined}>
               {section.columns.map((col) => (
                 <div key={col.id}>
-                  {col.blocks.map((block) => {
+                  {col.blocks.filter((block) => !block.isHidden).map((block) => {
                     const isHp = block.blockType.startsWith('hp-');
                     const isConverted = block.blockType.startsWith('cp-');
                     return isHp ? (

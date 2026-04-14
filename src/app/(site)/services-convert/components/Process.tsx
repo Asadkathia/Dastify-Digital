@@ -1,4 +1,5 @@
 import { ConvertedPlaceholderImage } from "@/components/ConvertedPlaceholderImage";
+import { getConvertedNodeBinding } from "@/components/converted-editor";
 
 type ProcessData = {
   chip: string;
@@ -31,28 +32,33 @@ type ProcessData = {
 };
 
 export default function Process({ data }: { data: ProcessData }) {
+  const steps = Array.isArray(data.steps) ? data.steps : [];
+  const chipNode = getConvertedNodeBinding(data, { field: 'chip', defaultTag: 'div', nodeKey: 'chip' });
+  const titleNode = getConvertedNodeBinding(data, { field: 'title', defaultTag: 'h2', nodeKey: 'title', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const introNode = getConvertedNodeBinding(data, { field: 'intro', defaultTag: 'p', nodeKey: 'intro' });
+  const TitleTag = titleNode.Tag;
   return (
     <section className="svc-convert-process">
       <div className="wrap">
         <div className="svc-convert-process-inner">
           <div className="svc-convert-process-content">
-            <div className="chip svc-convert-process-chip" data-r>
+            <div className="chip svc-convert-process-chip" data-r {...chipNode.props}>
               <span className="chip-dot"></span>
               {data.chip}
             </div>
-            <h2 className="svc-convert-process-title" data-r data-delay="1">
+            <TitleTag className="svc-convert-process-title" data-r data-delay="1" {...titleNode.props}>
               {data.title}
-            </h2>
-            <p className="svc-convert-process-intro" data-r data-delay="2">
+            </TitleTag>
+            <p className="svc-convert-process-intro" data-r data-delay="2" {...introNode.props}>
               {data.intro}
             </p>
             <div className="svc-convert-process-steps">
-              {data.steps.map((step, index) => (
+              {steps.map((step, index) => (
                 <div key={step.number} className="svc-convert-process-step" data-r data-delay={index === 0 ? undefined : String(index)}>
-                  <div className="svc-convert-process-num">{step.number}</div>
+                  <div className="svc-convert-process-num" {...getConvertedNodeBinding(data, { field: `steps.${index}.number`, defaultTag: 'div', nodeKey: `steps_${index}_number` }).props}>{step.number}</div>
                   <div className="svc-convert-process-step-content">
-                    <h3 className="svc-convert-process-step-title">{step.title}</h3>
-                    <p className="svc-convert-process-step-desc">{step.description}</p>
+                    <h3 className="svc-convert-process-step-title" {...getConvertedNodeBinding(data, { field: `steps.${index}.title`, defaultTag: 'h3', nodeKey: `steps_${index}_title`, allowedTags: ['h2', 'h3', 'h4', 'p'] }).props}>{step.title}</h3>
+                    <p className="svc-convert-process-step-desc" {...getConvertedNodeBinding(data, { field: `steps.${index}.description`, defaultTag: 'p', nodeKey: `steps_${index}_description` }).props}>{step.description}</p>
                   </div>
                 </div>
               ))}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ConvertedPlaceholderImage } from "@/components/ConvertedPlaceholderImage";
+import { getConvertedNodeBinding } from "@/components/converted-editor";
 
 export type AboutTeamData = {
   watermark: string;
@@ -38,36 +39,44 @@ export type AboutTeamData = {
 };
 
 export default function AboutTeam({ data }: { data: AboutTeamData }) {
+  const stats = Array.isArray(data.stats) ? data.stats : [];
+  const visuals = Array.isArray(data.visuals) ? data.visuals : [];
+  const watermarkNode = getConvertedNodeBinding(data, { field: 'watermark', defaultTag: 'span', nodeKey: 'watermark' });
+  const chipNode = getConvertedNodeBinding(data, { field: 'chip', defaultTag: 'div', nodeKey: 'chip' });
+  const titleNode = getConvertedNodeBinding(data, { field: 'title', defaultTag: 'h2', nodeKey: 'title', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const descriptionNode = getConvertedNodeBinding(data, { field: 'description', defaultTag: 'p', nodeKey: 'description' });
+  const ctaNode = getConvertedNodeBinding(data, { field: 'cta.label', defaultTag: 'a', nodeKey: 'cta_label' });
+  const TitleTag = titleNode.Tag;
   return (
     <section className="about-team">
-      <span className="sec-wm g2">{data.watermark}</span>
+      <span className="sec-wm g2" {...watermarkNode.props}>{data.watermark}</span>
       <div className="wrap">
         <div className="about-team-inner">
           <div className="about-team-content">
-            <div className="chip about-team-chip" data-r>
+            <div className="chip about-team-chip" data-r {...chipNode.props}>
               <span className="chip-dot" />
               {data.chip}
             </div>
-            <h2 className="h1 about-team-title" data-r data-delay="1">
+            <TitleTag className="h1 about-team-title" data-r data-delay="1" {...titleNode.props}>
               {data.title}
-            </h2>
-            <p className="about-team-desc" data-r data-delay="2">
+            </TitleTag>
+            <p className="about-team-desc" data-r data-delay="2" {...descriptionNode.props}>
               {data.description}
             </p>
             <div className="about-team-stats" data-r data-delay="3">
-              {data.stats.map((item, index) => (
+              {stats.map((item, index) => (
                 <div className="about-team-stat" key={`about-team-stat-${item.label}-${index}`}>
-                  <div className="about-stat-num">{item.value}</div>
-                  <div className="about-stat-lbl">{item.label}</div>
+                  <div className="about-stat-num" {...getConvertedNodeBinding(data, { field: `stats.${index}.value`, defaultTag: 'div', nodeKey: `stats_${index}_value` }).props}>{item.value}</div>
+                  <div className="about-stat-lbl" {...getConvertedNodeBinding(data, { field: `stats.${index}.label`, defaultTag: 'div', nodeKey: `stats_${index}_label` }).props}>{item.label}</div>
                 </div>
               ))}
             </div>
-            <Link href={data.cta.href} className="btn-dk" data-r data-delay="4">
-              {data.cta.label}
+            <Link href={typeof data.cta?.href === "string" && data.cta.href.length > 0 ? data.cta.href : "#"} className="btn-dk" data-r data-delay="4" {...ctaNode.props}>
+              {typeof data.cta?.label === "string" ? data.cta.label : ""}
             </Link>
           </div>
           <div className="about-team-visual">
-            {data.visuals.map((item, index) => (
+            {visuals.map((item, index) => (
               <div
                 className={item.className}
                 data-r

@@ -25,6 +25,19 @@ import { CustomHtmlBlock } from './CustomHtmlBlock';
 import { CounterBlock } from './CounterBlock';
 import { ProgressBarBlock } from './ProgressBarBlock';
 import { ImageGalleryBlock } from './ImageGalleryBlock';
+import { FormBlock } from './FormBlock';
+import { QuoteBlock } from './QuoteBlock';
+import { DividerBlock } from './DividerBlock';
+import { IconBlock } from './IconBlock';
+import { FeatureListBlock } from './FeatureListBlock';
+import { TeamGridBlock } from './TeamGridBlock';
+import { BlogFeedBlock } from './BlogFeedBlock';
+import { MapBlock } from './MapBlock';
+import { CountdownBlock } from './CountdownBlock';
+import { TableBlock } from './TableBlock';
+import { TimelineBlock } from './TimelineBlock';
+import { StepsBlock } from './StepsBlock';
+import { AnnouncementBarBlock } from './AnnouncementBarBlock';
 
 type PageBlocksRendererProps = {
   blocks: PageBuilderBlock[];
@@ -89,8 +102,55 @@ export function PageBlocksRenderer({ blocks }: PageBlocksRendererProps) {
             return <ProgressBarBlock key={key} {...block} />;
           case 'image_gallery':
             return <ImageGalleryBlock key={key} {...block} />;
-          default:
+          case 'form':
+            return <FormBlock key={key} {...block} />;
+          case 'quote':
+            return <QuoteBlock key={key} {...block} />;
+          case 'divider':
+            return <DividerBlock key={key} {...block} />;
+          case 'icon':
+            return <IconBlock key={key} {...block} />;
+          case 'feature_list':
+            return <FeatureListBlock key={key} {...block} />;
+          case 'team_grid':
+            return <TeamGridBlock key={key} {...block} />;
+          case 'blog_feed':
+            return <BlogFeedBlock key={key} {...block} />;
+          case 'map':
+            return <MapBlock key={key} {...block} />;
+          case 'countdown':
+            return <CountdownBlock key={key} {...block} />;
+          case 'table':
+            return <TableBlock key={key} {...block} />;
+          case 'timeline':
+            return <TimelineBlock key={key} {...block} />;
+          case 'steps':
+            return <StepsBlock key={key} {...block} />;
+          case 'announcement_bar':
+            return <AnnouncementBarBlock key={key} {...block} />;
+          default: {
+            const unknownType = (block as { type?: string }).type ?? 'unknown';
+            if (process.env.NODE_ENV === 'development') {
+              return (
+                <div
+                  key={key}
+                  style={{
+                    background: '#fef2f2',
+                    border: '2px dashed #ef4444',
+                    borderRadius: '6px',
+                    color: '#b91c1c',
+                    fontFamily: 'monospace',
+                    fontSize: '13px',
+                    padding: '12px 16px',
+                    margin: '8px 0',
+                  }}
+                >
+                  ⚠ Unknown block type: <strong>{unknownType}</strong> (index {index})
+                </div>
+              );
+            }
             return null;
+          }
         }
       })}
     </>

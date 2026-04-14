@@ -26,6 +26,7 @@ export function PreviewIframe({ src = '/page-editor-preview' }: PreviewIframePro
   const selectBlock = useEditorStore((s) => s.selectBlock);
   const setIframeReady = useEditorStore((s) => s.setIframeReady);
   const updateBlockData = useEditorStore((s) => s.updateBlockData);
+  const setSelectedNode = useEditorStore((s) => s.setSelectedNode);
 
   const selectedBlockId = selection?.kind === 'block' ? selection.blockId : null;
 
@@ -60,11 +61,15 @@ export function PreviewIframe({ src = '/page-editor-preview' }: PreviewIframePro
       if (data.type === 'INLINE_EDIT_END') {
         updateBlockData(data.blockId, data.fieldName, data.value);
       }
+
+      if (data.type === 'CONVERTED_NODE_SELECTED') {
+        setSelectedNode(data.node);
+      }
     }
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [sections, selectBlock, setIframeReady, updateBlockData]);
+  }, [sections, selectBlock, setIframeReady, setSelectedNode, updateBlockData]);
 
   // Send sections to iframe (debounced)
   const sendSections = useCallback(() => {
@@ -85,11 +90,12 @@ export function PreviewIframe({ src = '/page-editor-preview' }: PreviewIframePro
   // Send selected block to iframe
   useEffect(() => {
     if (!iframeRef.current?.contentWindow || !frameLoaded) return;
+    setSelectedNode(null);
     iframeRef.current.contentWindow.postMessage(
       { type: 'SELECT_BLOCK', blockId: selectedBlockId } satisfies EditorMessage,
       '*',
     );
-  }, [selectedBlockId, frameLoaded]);
+  }, [selectedBlockId, frameLoaded, setSelectedNode]);
 
   function handleLoad() {
     setFrameLoaded(true);

@@ -80,7 +80,6 @@ export interface Config {
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
-    search: Search;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -102,7 +101,6 @@ export interface Config {
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
-    search: SearchSelect<false> | SearchSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -207,6 +205,9 @@ export interface Media {
 export interface Page {
   id: number;
   title: string;
+  /**
+   * URL-safe identifier. Lowercase letters, numbers, and hyphens only. Example: about-us
+   */
   slug: string;
   excerpt?: string | null;
   /**
@@ -250,6 +251,19 @@ export interface Page {
         | CounterBlock
         | ProgressBarBlock
         | ImageGalleryBlock
+        | FormBlock
+        | QuoteBlock
+        | DividerBlock
+        | IconBlock
+        | FeatureListBlock
+        | TeamGridBlock
+        | BlogFeedBlock
+        | MapBlock
+        | CountdownBlock
+        | TableBlock
+        | TimelineBlock
+        | StepsBlock
+        | AnnouncementBarBlock
       )[]
     | null;
   meta?: {
@@ -770,220 +784,17 @@ export interface ImageGalleryBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "services".
+ * via the `definition` "FormBlock".
  */
-export interface Service {
-  id: number;
-  title: string;
-  slug: string;
-  excerpt?: string | null;
-  heroImage?: (number | null) | Media;
-  content: string;
-  meta?: {
-    title?: string | null;
-    description?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-    /**
-     * Optional canonical URL override (absolute URL).
-     */
-    canonicalURL?: string | null;
-    noindex?: boolean | null;
-    /**
-     * Optional comma-separated keywords.
-     */
-    keywords?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "case-studies".
- */
-export interface CaseStudy {
-  id: number;
-  title: string;
-  slug: string;
-  excerpt?: string | null;
-  client?: string | null;
-  featuredImage?: (number | null) | Media;
-  content: string;
-  meta?: {
-    title?: string | null;
-    description?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-    /**
-     * Optional canonical URL override (absolute URL).
-     */
-    canonicalURL?: string | null;
-    noindex?: boolean | null;
-    /**
-     * Optional comma-separated keywords.
-     */
-    keywords?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "blog-categories".
- */
-export interface BlogCategory {
-  id: number;
-  title: string;
-  slug: string;
-  description?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "tags".
- */
-export interface Tag {
-  id: number;
-  title: string;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "blog-posts".
- */
-export interface BlogPost {
-  id: number;
-  title: string;
-  slug: string;
-  excerpt?: string | null;
-  publishedAt?: string | null;
-  featuredImage?: (number | null) | Media;
-  categories?: (number | BlogCategory)[] | null;
-  tags?: (number | Tag)[] | null;
-  content: string;
-  meta?: {
-    title?: string | null;
-    description?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-    /**
-     * Optional canonical URL override (absolute URL).
-     */
-    canonicalURL?: string | null;
-    noindex?: boolean | null;
-    /**
-     * Optional comma-separated keywords.
-     */
-    keywords?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "menus".
- */
-export interface Menu {
-  id: number;
-  title: string;
-  location: 'header' | 'footer';
-  items?:
-    | {
-        label: string;
-        href: string;
-        id?: string | null;
-      }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "import-reports".
- */
-export interface ImportReport {
-  id: number;
-  slug: string;
+export interface FormBlock {
+  form: number | Form;
   title?: string | null;
-  provider: 'anthropic' | 'openai' | 'google' | 'openrouter' | 'ollama';
-  model: string;
-  totalSections?: number | null;
-  mappedSections?: number | null;
-  fallbackSections?: number | null;
-  warnings?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  externalImages?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  seo?: {
-    title?: string | null;
-    description?: string | null;
-    keywords?: string | null;
-    canonicalURL?: string | null;
-    noindex?: boolean | null;
-  };
-  createdPageId?: string | null;
-  importedAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "redirects".
- */
-export interface Redirect {
-  id: number;
-  from: string;
-  to?: {
-    type?: ('reference' | 'custom') | null;
-    reference?:
-      | ({
-          relationTo: 'pages';
-          value: number | Page;
-        } | null)
-      | ({
-          relationTo: 'services';
-          value: number | Service;
-        } | null)
-      | ({
-          relationTo: 'case-studies';
-          value: number | CaseStudy;
-        } | null)
-      | ({
-          relationTo: 'blog-posts';
-          value: number | BlogPost;
-        } | null);
-    url?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
+  description?: string | null;
+  layout?: ('centered' | 'left' | 'card') | null;
+  backgroundStyle?: ('none' | 'light' | 'dark' | 'brand') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'form-block';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1161,6 +972,518 @@ export interface Form {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "QuoteBlock".
+ */
+export interface QuoteBlock {
+  quote: string;
+  author?: string | null;
+  role?: string | null;
+  avatar?: (number | null) | Media;
+  size?: ('sm' | 'md' | 'lg') | null;
+  align?: ('left' | 'center') | null;
+  /**
+   * CSS color for the quote mark
+   */
+  accentColor?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'quote-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "DividerBlock".
+ */
+export interface DividerBlock {
+  style?: ('line' | 'dashed' | 'dotted' | 'wave' | 'none') | null;
+  /**
+   * Line color, e.g. #e2e8f0
+   */
+  color?: string | null;
+  thickness?: number | null;
+  /**
+   * Vertical padding (px) around the divider
+   */
+  spacing?: number | null;
+  width?: ('full' | '75' | '50' | '25') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'divider-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "IconBlock".
+ */
+export interface IconBlock {
+  /**
+   * Emoji, Unicode character, or SVG string
+   */
+  icon: string;
+  size?: ('sm' | 'md' | 'lg' | 'xl') | null;
+  color?: string | null;
+  /**
+   * Optional label below the icon
+   */
+  label?: string | null;
+  align?: ('left' | 'center' | 'right') | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'icon-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FeatureListBlock".
+ */
+export interface FeatureListBlock {
+  title?: string | null;
+  subtitle?: string | null;
+  layout?: ('grid' | 'list' | '2col') | null;
+  columns?: ('2' | '3' | '4') | null;
+  items: {
+    /**
+     * Emoji or icon character
+     */
+    icon?: string | null;
+    title: string;
+    description?: string | null;
+    iconColor?: string | null;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'feature-list-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TeamGridBlock".
+ */
+export interface TeamGridBlock {
+  title?: string | null;
+  subtitle?: string | null;
+  columns?: ('2' | '3' | '4') | null;
+  cardStyle?: ('default' | 'minimal' | 'card') | null;
+  members: {
+    photo?: (number | null) | Media;
+    name: string;
+    role?: string | null;
+    bio?: string | null;
+    linkedinUrl?: string | null;
+    email?: string | null;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'team-grid-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BlogFeedBlock".
+ */
+export interface BlogFeedBlock {
+  title?: string | null;
+  subtitle?: string | null;
+  source?: ('latest' | 'category' | 'tag' | 'manual') | null;
+  /**
+   * Category slug (used when source = category)
+   */
+  category?: string | null;
+  /**
+   * Tag slug (used when source = tag)
+   */
+  tag?: string | null;
+  limit?: number | null;
+  layout?: ('grid' | 'list' | 'featured') | null;
+  columns?: ('2' | '3') | null;
+  showExcerpt?: boolean | null;
+  showDate?: boolean | null;
+  showCategory?: boolean | null;
+  /**
+   * "View all" button label
+   */
+  ctaLabel?: string | null;
+  /**
+   * "View all" button URL
+   */
+  ctaHref?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'blog-feed-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MapBlock".
+ */
+export interface MapBlock {
+  title?: string | null;
+  address?: string | null;
+  /**
+   * Google Maps embed URL (from Share > Embed a map)
+   */
+  embedUrl?: string | null;
+  /**
+   * Map height in px
+   */
+  height?: number | null;
+  borderRadius?: number | null;
+  showAddressCard?: boolean | null;
+  phone?: string | null;
+  hours?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'map-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CountdownBlock".
+ */
+export interface CountdownBlock {
+  title?: string | null;
+  targetDate: string;
+  /**
+   * Text shown after the deadline passes
+   */
+  expiredMessage?: string | null;
+  layout?: ('boxes' | 'inline' | 'minimal') | null;
+  align?: ('left' | 'center' | 'right') | null;
+  accentColor?: string | null;
+  showLabels?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'countdown-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TableBlock".
+ */
+export interface TableBlock {
+  title?: string | null;
+  caption?: string | null;
+  /**
+   * Column headers
+   */
+  headers?:
+    | {
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  rows?:
+    | {
+        cells?:
+          | {
+              value?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  striped?: boolean | null;
+  bordered?: boolean | null;
+  responsive?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'table-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TimelineBlock".
+ */
+export interface TimelineBlock {
+  title?: string | null;
+  subtitle?: string | null;
+  layout?: ('vertical' | 'horizontal' | 'alternating') | null;
+  items: {
+    date?: string | null;
+    title: string;
+    description?: string | null;
+    /**
+     * Emoji or icon character
+     */
+    icon?: string | null;
+    accentColor?: string | null;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'timeline-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "StepsBlock".
+ */
+export interface StepsBlock {
+  title?: string | null;
+  subtitle?: string | null;
+  layout?: ('horizontal' | 'vertical' | 'cards') | null;
+  /**
+   * Color for step numbers / connectors
+   */
+  accentColor?: string | null;
+  steps: {
+    /**
+     * Emoji or icon (optional, overrides step number)
+     */
+    icon?: string | null;
+    title: string;
+    description?: string | null;
+    id?: string | null;
+  }[];
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'steps-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AnnouncementBarBlock".
+ */
+export interface AnnouncementBarBlock {
+  message: string;
+  ctaLabel?: string | null;
+  ctaHref?: string | null;
+  style?: ('brand' | 'dark' | 'warning' | 'success' | 'info') | null;
+  dismissible?: boolean | null;
+  /**
+   * Leading emoji/icon (optional)
+   */
+  icon?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'announcement-bar-block';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "services".
+ */
+export interface Service {
+  id: number;
+  title: string;
+  /**
+   * URL-safe identifier. Lowercase letters, numbers, and hyphens only. Example: about-us
+   */
+  slug: string;
+  excerpt?: string | null;
+  heroImage?: (number | null) | Media;
+  content: string;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    /**
+     * Optional canonical URL override (absolute URL).
+     */
+    canonicalURL?: string | null;
+    noindex?: boolean | null;
+    /**
+     * Optional comma-separated keywords.
+     */
+    keywords?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "case-studies".
+ */
+export interface CaseStudy {
+  id: number;
+  title: string;
+  /**
+   * URL-safe identifier. Lowercase letters, numbers, and hyphens only. Example: about-us
+   */
+  slug: string;
+  excerpt?: string | null;
+  client?: string | null;
+  featuredImage?: (number | null) | Media;
+  content: string;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    /**
+     * Optional canonical URL override (absolute URL).
+     */
+    canonicalURL?: string | null;
+    noindex?: boolean | null;
+    /**
+     * Optional comma-separated keywords.
+     */
+    keywords?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-categories".
+ */
+export interface BlogCategory {
+  id: number;
+  title: string;
+  /**
+   * URL-safe identifier. Lowercase letters, numbers, and hyphens only. Example: about-us
+   */
+  slug: string;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: number;
+  title: string;
+  /**
+   * URL-safe identifier. Lowercase letters, numbers, and hyphens only. Example: about-us
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog-posts".
+ */
+export interface BlogPost {
+  id: number;
+  title: string;
+  /**
+   * URL-safe identifier. Lowercase letters, numbers, and hyphens only. Example: about-us
+   */
+  slug: string;
+  excerpt?: string | null;
+  publishedAt?: string | null;
+  featuredImage?: (number | null) | Media;
+  categories?: (number | BlogCategory)[] | null;
+  tags?: (number | Tag)[] | null;
+  content: string;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    /**
+     * Optional canonical URL override (absolute URL).
+     */
+    canonicalURL?: string | null;
+    noindex?: boolean | null;
+    /**
+     * Optional comma-separated keywords.
+     */
+    keywords?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "menus".
+ */
+export interface Menu {
+  id: number;
+  title: string;
+  location: 'header' | 'footer';
+  items?:
+    | {
+        label: string;
+        href: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "import-reports".
+ */
+export interface ImportReport {
+  id: number;
+  slug: string;
+  title?: string | null;
+  provider: 'anthropic' | 'openai' | 'google' | 'openrouter' | 'ollama';
+  model: string;
+  totalSections?: number | null;
+  mappedSections?: number | null;
+  fallbackSections?: number | null;
+  warnings?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  externalImages?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    keywords?: string | null;
+    canonicalURL?: string | null;
+    noindex?: boolean | null;
+  };
+  createdPageId?: string | null;
+  importedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "redirects".
+ */
+export interface Redirect {
+  id: number;
+  from: string;
+  to?: {
+    type?: ('reference' | 'custom') | null;
+    reference?:
+      | ({
+          relationTo: 'pages';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'services';
+          value: number | Service;
+        } | null)
+      | ({
+          relationTo: 'case-studies';
+          value: number | CaseStudy;
+        } | null)
+      | ({
+          relationTo: 'blog-posts';
+          value: number | BlogPost;
+        } | null);
+    url?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-submissions".
  */
 export interface FormSubmission {
@@ -1173,36 +1496,6 @@ export interface FormSubmission {
         id?: string | null;
       }[]
     | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This is a collection of automatically created search results. These results are used by the global site search and will be updated automatically as documents in the CMS are created or updated.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "search".
- */
-export interface Search {
-  id: number;
-  title?: string | null;
-  priority?: number | null;
-  doc:
-    | {
-        relationTo: 'pages';
-        value: number | Page;
-      }
-    | {
-        relationTo: 'services';
-        value: number | Service;
-      }
-    | {
-        relationTo: 'case-studies';
-        value: number | CaseStudy;
-      }
-    | {
-        relationTo: 'blog-posts';
-        value: number | BlogPost;
-      };
   updatedAt: string;
   createdAt: string;
 }
@@ -1373,10 +1666,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'form-submissions';
         value: number | FormSubmission;
-      } | null)
-    | ({
-        relationTo: 'search';
-        value: number | Search;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1500,6 +1789,19 @@ export interface PagesSelect<T extends boolean = true> {
         'counter-block'?: T | CounterBlockSelect<T>;
         'progress-bar-block'?: T | ProgressBarBlockSelect<T>;
         'image-gallery-block'?: T | ImageGalleryBlockSelect<T>;
+        'form-block'?: T | FormBlockSelect<T>;
+        'quote-block'?: T | QuoteBlockSelect<T>;
+        'divider-block'?: T | DividerBlockSelect<T>;
+        'icon-block'?: T | IconBlockSelect<T>;
+        'feature-list-block'?: T | FeatureListBlockSelect<T>;
+        'team-grid-block'?: T | TeamGridBlockSelect<T>;
+        'blog-feed-block'?: T | BlogFeedBlockSelect<T>;
+        'map-block'?: T | MapBlockSelect<T>;
+        'countdown-block'?: T | CountdownBlockSelect<T>;
+        'table-block'?: T | TableBlockSelect<T>;
+        'timeline-block'?: T | TimelineBlockSelect<T>;
+        'steps-block'?: T | StepsBlockSelect<T>;
+        'announcement-bar-block'?: T | AnnouncementBarBlockSelect<T>;
       };
   meta?:
     | T
@@ -1947,6 +2249,241 @@ export interface ImageGalleryBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FormBlock_select".
+ */
+export interface FormBlockSelect<T extends boolean = true> {
+  form?: T;
+  title?: T;
+  description?: T;
+  layout?: T;
+  backgroundStyle?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "QuoteBlock_select".
+ */
+export interface QuoteBlockSelect<T extends boolean = true> {
+  quote?: T;
+  author?: T;
+  role?: T;
+  avatar?: T;
+  size?: T;
+  align?: T;
+  accentColor?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "DividerBlock_select".
+ */
+export interface DividerBlockSelect<T extends boolean = true> {
+  style?: T;
+  color?: T;
+  thickness?: T;
+  spacing?: T;
+  width?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "IconBlock_select".
+ */
+export interface IconBlockSelect<T extends boolean = true> {
+  icon?: T;
+  size?: T;
+  color?: T;
+  label?: T;
+  align?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FeatureListBlock_select".
+ */
+export interface FeatureListBlockSelect<T extends boolean = true> {
+  title?: T;
+  subtitle?: T;
+  layout?: T;
+  columns?: T;
+  items?:
+    | T
+    | {
+        icon?: T;
+        title?: T;
+        description?: T;
+        iconColor?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TeamGridBlock_select".
+ */
+export interface TeamGridBlockSelect<T extends boolean = true> {
+  title?: T;
+  subtitle?: T;
+  columns?: T;
+  cardStyle?: T;
+  members?:
+    | T
+    | {
+        photo?: T;
+        name?: T;
+        role?: T;
+        bio?: T;
+        linkedinUrl?: T;
+        email?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BlogFeedBlock_select".
+ */
+export interface BlogFeedBlockSelect<T extends boolean = true> {
+  title?: T;
+  subtitle?: T;
+  source?: T;
+  category?: T;
+  tag?: T;
+  limit?: T;
+  layout?: T;
+  columns?: T;
+  showExcerpt?: T;
+  showDate?: T;
+  showCategory?: T;
+  ctaLabel?: T;
+  ctaHref?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "MapBlock_select".
+ */
+export interface MapBlockSelect<T extends boolean = true> {
+  title?: T;
+  address?: T;
+  embedUrl?: T;
+  height?: T;
+  borderRadius?: T;
+  showAddressCard?: T;
+  phone?: T;
+  hours?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "CountdownBlock_select".
+ */
+export interface CountdownBlockSelect<T extends boolean = true> {
+  title?: T;
+  targetDate?: T;
+  expiredMessage?: T;
+  layout?: T;
+  align?: T;
+  accentColor?: T;
+  showLabels?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TableBlock_select".
+ */
+export interface TableBlockSelect<T extends boolean = true> {
+  title?: T;
+  caption?: T;
+  headers?:
+    | T
+    | {
+        label?: T;
+        id?: T;
+      };
+  rows?:
+    | T
+    | {
+        cells?:
+          | T
+          | {
+              value?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  striped?: T;
+  bordered?: T;
+  responsive?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TimelineBlock_select".
+ */
+export interface TimelineBlockSelect<T extends boolean = true> {
+  title?: T;
+  subtitle?: T;
+  layout?: T;
+  items?:
+    | T
+    | {
+        date?: T;
+        title?: T;
+        description?: T;
+        icon?: T;
+        accentColor?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "StepsBlock_select".
+ */
+export interface StepsBlockSelect<T extends boolean = true> {
+  title?: T;
+  subtitle?: T;
+  layout?: T;
+  accentColor?: T;
+  steps?:
+    | T
+    | {
+        icon?: T;
+        title?: T;
+        description?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AnnouncementBarBlock_select".
+ */
+export interface AnnouncementBarBlockSelect<T extends boolean = true> {
+  message?: T;
+  ctaLabel?: T;
+  ctaHref?: T;
+  style?: T;
+  dismissible?: T;
+  icon?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "services_select".
  */
 export interface ServicesSelect<T extends boolean = true> {
@@ -2251,17 +2788,6 @@ export interface FormSubmissionsSelect<T extends boolean = true> {
         value?: T;
         id?: T;
       };
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "search_select".
- */
-export interface SearchSelect<T extends boolean = true> {
-  title?: T;
-  priority?: T;
-  doc?: T;
   updatedAt?: T;
   createdAt?: T;
 }

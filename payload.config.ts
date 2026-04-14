@@ -4,7 +4,9 @@ import { postgresAdapter } from '@payloadcms/db-postgres';
 import { sqliteAdapter } from '@payloadcms/db-sqlite';
 import { nestedDocsPlugin } from '@payloadcms/plugin-nested-docs';
 import { redirectsPlugin } from '@payloadcms/plugin-redirects';
-import { searchPlugin } from '@payloadcms/plugin-search';
+// Search plugin disabled: no frontend search UI implemented yet.
+// Re-enable when /search page is built.
+// import { searchPlugin } from '@payloadcms/plugin-search';
 import { seoPlugin } from '@payloadcms/plugin-seo';
 import { formBuilderPlugin } from '@payloadcms/plugin-form-builder';
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob';
@@ -217,9 +219,11 @@ const createConfig = async () => {
             : attachEditorToFormBuilderRichTextFields(defaultFields as unknown[], createRichTextEditor)) as never[],
       },
     }),
-    searchPlugin({
-      collections: ['pages', 'services', 'case-studies', 'blog-posts'],
-    }),
+    // Search plugin disabled: no frontend search UI implemented yet.
+    // Re-enable when /search page is built.
+    // searchPlugin({
+    //   collections: ['pages', 'services', 'case-studies', 'blog-posts'],
+    // }),
     vercelBlobStorage({
       token: process.env.BLOB_READ_WRITE_TOKEN,
       collections: {

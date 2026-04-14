@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useEditorStore } from './store';
 
 type KeyboardShortcutsProps = {
@@ -9,18 +9,23 @@ type KeyboardShortcutsProps = {
 };
 
 export function KeyboardShortcuts({ onSaveDraft, onPublish }: KeyboardShortcutsProps) {
-  const selection = useEditorStore((s) => s.selection);
-  const sections = useEditorStore((s) => s.sections);
-  const removeBlock = useEditorStore((s) => s.removeBlock);
-  const duplicateBlock = useEditorStore((s) => s.duplicateBlock);
-  const copyBlock = useEditorStore((s) => s.copyBlock);
-  const pasteBlock = useEditorStore((s) => s.pasteBlock);
-  const clipboard = useEditorStore((s) => s.clipboard);
-  const moveBlockWithinColumn = useEditorStore((s) => s.moveBlockWithinColumn);
-  const clearSelection = useEditorStore((s) => s.clearSelection);
+  const storeRef = useRef(useEditorStore.getState);
+  storeRef.current = useEditorStore.getState;
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      const store = storeRef.current();
+      const {
+        selection,
+        sections,
+        removeBlock,
+        duplicateBlock,
+        copyBlock,
+        pasteBlock,
+        clipboard,
+        moveBlockWithinColumn,
+        clearSelection,
+      } = store;
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       const isEditing =
         tag === 'input' || tag === 'textarea' || tag === 'select' ||
@@ -118,7 +123,7 @@ export function KeyboardShortcuts({ onSaveDraft, onPublish }: KeyboardShortcutsP
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selection, sections, removeBlock, duplicateBlock, copyBlock, pasteBlock, clipboard, moveBlockWithinColumn, clearSelection, onSaveDraft, onPublish]);
+  }, [onSaveDraft, onPublish]);
 
   return null;
 }

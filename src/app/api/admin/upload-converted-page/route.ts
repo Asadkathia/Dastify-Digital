@@ -153,24 +153,6 @@ export async function POST(request: Request) {
     let blocks: Record<string, unknown>[] = [];
     let convertedContent: Record<string, unknown> | null = null;
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    let response: Response;
-    try {
-      response = await fetch(`${siteUrl.replace(/\/$/, '')}/converted-preview/${pageName}`, { cache: 'no-store' });
-    } catch {
-      return NextResponse.json(
-          { ok: false, error: `Dev server must be running at ${siteUrl} to fetch converted preview HTML.` },
-        { status: 503 },
-      );
-    }
-    if (!response.ok) {
-      return NextResponse.json(
-          { ok: false, error: `Failed to fetch converted page HTML from ${siteUrl}/converted-preview/${pageName} (${response.status}).` },
-        { status: 502 },
-      );
-    }
-
-    const html = await response.text();
     const convertedConfig = getConvertedPageContentConfig(pageName);
     if (convertedConfig) {
       const loadedConvertedContent = await loadConvertedPageContent(pageName);
@@ -186,6 +168,24 @@ export async function POST(request: Request) {
       blocks = [];
       convertedContent = structuredClone(loadedConvertedContent);
     } else {
+      const siteUrl = new URL(request.url).origin || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      let response: Response;
+      try {
+        response = await fetch(`${siteUrl.replace(/\/$/, '')}/converted-preview/${pageName}`, { cache: 'no-store' });
+      } catch {
+        return NextResponse.json(
+            { ok: false, error: `Dev server must be running at ${siteUrl} to fetch converted preview HTML.` },
+          { status: 503 },
+        );
+      }
+      if (!response.ok) {
+        return NextResponse.json(
+            { ok: false, error: `Failed to fetch converted page HTML from ${siteUrl}/converted-preview/${pageName} (${response.status}).` },
+          { status: 502 },
+        );
+      }
+
+      const html = await response.text();
       // Fallback for non-registered converted pages: import a live iframe snapshot block.
       const mainHtml = extractRenderedContent(html);
       if (!mainHtml) {

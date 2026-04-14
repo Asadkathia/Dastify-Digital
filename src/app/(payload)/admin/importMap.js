@@ -28,8 +28,6 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
-import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
-import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { default as default_abff1975502f04a3537de680adc785e6 } from '@/payload/components/HomepageEditorButton'
 import { HomepagePreviewLink as HomepagePreviewLink_c22968159d877655ae3946f37bb84bca } from '@/payload/components/HomepagePreviewLink'
 import { PageConverterNavLink as PageConverterNavLink_63aa4182d7c6dfe4e5f78b77f5bd1a6b } from '../../../../src/payload/components/PageConverterNavLink'
@@ -72,8 +70,6 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
-  "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
   "@/payload/components/HomepageEditorButton#default": default_abff1975502f04a3537de680adc785e6,
   "@/payload/components/HomepagePreviewLink#HomepagePreviewLink": HomepagePreviewLink_c22968159d877655ae3946f37bb84bca,
   "/src/payload/components/PageConverterNavLink#PageConverterNavLink": PageConverterNavLink_63aa4182d7c6dfe4e5f78b77f5bd1a6b,

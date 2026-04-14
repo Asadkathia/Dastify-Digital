@@ -7,6 +7,16 @@ export const slugField: Field = {
   required: true,
   unique: true,
   index: true,
+  admin: {
+    description: 'URL-safe identifier. Lowercase letters, numbers, and hyphens only. Example: about-us',
+  },
+  validate: (val: string | null | undefined) => {
+    if (!val) return 'Slug is required';
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(val)) {
+      return 'Slug must be lowercase letters, numbers, and hyphens only (e.g. about-us)';
+    }
+    return true;
+  },
 };
 
 export const excerptField: Field = {

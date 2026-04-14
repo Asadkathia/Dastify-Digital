@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ConvertedPlaceholderImage } from "@/components/ConvertedPlaceholderImage";
+import { getConvertedNodeBinding } from "@/components/converted-editor";
 
 type HeroData = {
   chip: string;
@@ -34,33 +35,45 @@ type HeroData = {
 };
 
 export default function Hero({ data }: { data: HeroData }) {
-  const marquee = [...data.marqueeItems, ...data.marqueeItems];
+  const titleLines = typeof data.title === "string" ? data.title.split("\n") : [];
+  const marqueeItems = Array.isArray(data.marqueeItems) ? data.marqueeItems : [];
+  const primaryHref = typeof data.primaryCta?.href === "string" && data.primaryCta.href.length > 0 ? data.primaryCta.href : "#";
+  const secondaryHref = typeof data.secondaryCta?.href === "string" && data.secondaryCta.href.length > 0 ? data.secondaryCta.href : "#";
+  const primaryLabel = typeof data.primaryCta?.label === "string" ? data.primaryCta.label : "";
+  const secondaryLabel = typeof data.secondaryCta?.label === "string" ? data.secondaryCta.label : "";
+  const marquee = [...marqueeItems, ...marqueeItems];
+  const chipNode = getConvertedNodeBinding(data, { field: 'chip', defaultTag: 'div', nodeKey: 'chip' });
+  const titleNode = getConvertedNodeBinding(data, { field: 'title', defaultTag: 'h1', nodeKey: 'title', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const leadNode = getConvertedNodeBinding(data, { field: 'lead', defaultTag: 'p', nodeKey: 'lead' });
+  const primaryNode = getConvertedNodeBinding(data, { field: 'primaryCta.label', defaultTag: 'a', nodeKey: 'primaryCtaLabel' });
+  const secondaryNode = getConvertedNodeBinding(data, { field: 'secondaryCta.label', defaultTag: 'a', nodeKey: 'secondaryCtaLabel' });
+  const TitleTag = titleNode.Tag;
 
   return (
     <section className="svc-convert-hero">
       <div className="svc-convert-hero-grid">
         <div className="svc-convert-hero-inner">
-          <div className="chip svc-convert-hero-chip" data-r>
+          <div className="chip svc-convert-hero-chip" data-r {...chipNode.props}>
             <span className="chip-dot"></span>
             {data.chip}
           </div>
-          <h1 className="svc-convert-hero-title" data-r data-delay="1">
-            {data.title.split("\n").map((line, i) => (
+          <TitleTag className="svc-convert-hero-title" data-r data-delay="1" {...titleNode.props}>
+            {titleLines.map((line, i) => (
               <span key={i}>
                 {line}
-                {i < data.title.split("\n").length - 1 ? <br /> : null}
+                {i < titleLines.length - 1 ? <br /> : null}
               </span>
             ))}
-          </h1>
-          <p className="svc-convert-hero-lead" data-r data-delay="2">
+          </TitleTag>
+          <p className="svc-convert-hero-lead" data-r data-delay="2" {...leadNode.props}>
             {data.lead}
           </p>
           <div className="svc-convert-hero-ctas" data-r data-delay="3">
-            <Link href={data.primaryCta.href} className="btn-dk">
-              {data.primaryCta.label}
+            <Link href={primaryHref} className="btn-dk" {...primaryNode.props}>
+              {primaryLabel}
             </Link>
-            <Link href={data.secondaryCta.href} className="btn-ol">
-              {data.secondaryCta.label}
+            <Link href={secondaryHref} className="btn-ol" {...secondaryNode.props}>
+              {secondaryLabel}
             </Link>
           </div>
         </div>
@@ -97,7 +110,11 @@ export default function Hero({ data }: { data: HeroData }) {
       <div className="svc-convert-marquee">
         <div className="svc-convert-marquee-track">
           {marquee.map((item, index) => (
-            <span key={`${item}-${index}`} className="svc-convert-marquee-item">
+            <span
+              key={`${item}-${index}`}
+              className="svc-convert-marquee-item"
+              {...getConvertedNodeBinding(data, { field: `marqueeItems.${marqueeItems.length === 0 ? 0 : index % marqueeItems.length}`, defaultTag: 'span', nodeKey: `marqueeItems_${marqueeItems.length === 0 ? 0 : index % marqueeItems.length}` }).props}
+            >
               {item}
             </span>
           ))}

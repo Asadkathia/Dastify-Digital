@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RedirectsPanel } from './RedirectsPanel';
+import { SeoPanel } from './SeoPanel';
+import { useStore } from 'zustand';
 import {
   DndContext,
   DragOverlay,
@@ -32,7 +35,11 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { RevisionHistory } from './RevisionHistory';
 import { homepageDocToSections, sectionsToHomepagePatch } from '../HomepageEditor/homepage-adapter';
 import { buildConvertedBlockDefinition, convertedPageContentToSections, sectionsToConvertedPageContent } from '@/lib/converted-pages/editor-adapter';
+import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
 import type { BlockDefinition } from './types';
+
+/** Auto-save fires this many milliseconds after the last unsaved change. */
+const AUTO_SAVE_DELAY_MS = 30_000;
 
 type EditorMode = 'pages' | 'homepage' | 'converted';
 
@@ -72,10 +79,14 @@ type ToolbarProps = {
   pageTitle: string;
   convertedPageName: string | null;
   canShowHistory: boolean;
+  pageSlug?: string;
+  pageId?: string;
+  onNavigateBack: () => void;
   onPageTitleChange: (title: string) => void;
   onSaveDraft: () => void;
   onPublish: () => void;
   onShowHistory: () => void;
+  onSlugChange?: (slug: string) => void;
 };
 
 function Toolbar({
@@ -83,17 +94,23 @@ function Toolbar({
   pageTitle,
   convertedPageName,
   canShowHistory,
+  pageSlug,
+  pageId,
+  onNavigateBack,
   onPageTitleChange,
   onSaveDraft,
   onPublish,
   onShowHistory,
+  onSlugChange,
 }: ToolbarProps) {
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const responsiveMode = useEditorStore((s) => s.responsiveMode);
   const setResponsiveMode = useEditorStore((s) => s.setResponsiveMode);
-  const { undo, redo, pastStates, futureStates } = useEditorStore.temporal.getState();
-  const canUndo = pastStates.length > 0;
-  const canRedo = futureStates.length > 0;
+  const canUndo = useStore(useEditorStore.temporal, (s) => s.pastStates.length > 0);
+  const canRedo = useStore(useEditorStore.temporal, (s) => s.futureStates.length > 0);
+  const { undo, redo } = useEditorStore.temporal.getState();
+  const [showRedirects, setShowRedirects] = useState(false);
+  const [showSeo, setShowSeo] = useState(false);
 
   const statusLabel: Record<string, { text: string; color: string }> = {
     saved: { text: 'Saved', color: '#4ade80' },
@@ -102,13 +119,6 @@ function Toolbar({
     error: { text: 'Save failed', color: '#f87171' },
   };
   const { text: statusText, color: statusColor } = statusLabel[saveStatus] ?? statusLabel.saved;
-
-  const backHref =
-    mode === 'homepage'
-      ? '/admin/globals/homepage'
-      : mode === 'converted'
-        ? '/admin/converted-pages'
-        : '/admin/collections/pages';
 
   const backLabel =
     mode === 'homepage'
@@ -138,8 +148,8 @@ function Toolbar({
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
     >
-      <Link
-        href={backHref}
+      <button
+        onClick={onNavigateBack}
         style={{
           color: '#555',
           textDecoration: 'none',
@@ -147,10 +157,12 @@ function Toolbar({
           padding: '4px 8px',
           borderRadius: '6px',
           border: '1px solid #222',
+          cursor: 'pointer',
+          background: 'transparent',
         }}
       >
         {backLabel}
-      </Link>
+      </button>
 
       <div style={{ width: '1px', height: '20px', background: '#222', margin: '0 2px' }} />
 
@@ -208,6 +220,25 @@ function Toolbar({
 
       <div style={{ width: '1px', height: '20px', background: '#222', margin: '0 2px' }} />
 
+      {mode === 'pages' && (
+        <>
+          <button
+            onClick={() => { setShowSeo((v) => !v); setShowRedirects(false); }}
+            style={{ ...tbBtn(false), padding: '6px 10px', fontSize: '12px', color: showSeo ? '#0ea5e9' : '#666', borderColor: showSeo ? '#0ea5e9' : '#222' }}
+            title="SEO Settings"
+          >
+            SEO
+          </button>
+          <button
+            onClick={() => { setShowRedirects((v) => !v); setShowSeo(false); }}
+            style={{ ...tbBtn(false), padding: '6px 10px', fontSize: '12px', color: showRedirects ? '#0ea5e9' : '#666', borderColor: showRedirects ? '#0ea5e9' : '#222' }}
+            title="Manage Redirects"
+          >
+            ↪ Redirects
+          </button>
+        </>
+      )}
+
       <button
         onClick={onShowHistory}
         disabled={!canShowHistory}
@@ -216,6 +247,20 @@ function Toolbar({
       >
         🕓
       </button>
+
+      {showSeo && pageId && (
+        <SeoPanel
+          pageId={pageId}
+          onClose={() => setShowSeo(false)}
+          onSlugChange={onSlugChange}
+        />
+      )}
+      {showRedirects && (
+        <RedirectsPanel
+          currentSlug={pageSlug}
+          onClose={() => setShowRedirects(false)}
+        />
+      )}
 
       <button
         onClick={onSaveDraft}
@@ -506,6 +551,7 @@ type PageEditorViewProps = {
 export default function PageEditorView({ params, mode = 'pages' }: PageEditorViewProps) {
   const [pageId, setResolvedPageId] = useState(params?.id ?? params?.segments?.[0] ?? '');
   const [pageTitle, setPageTitle] = useState('');
+  const [pageSlug, setPageSlug] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [convertedBaseContent, setConvertedBaseContent] = useState<Record<string, unknown> | null>(null);
 
@@ -521,7 +567,18 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const setSaveStatus = useEditorStore((s) => s.setSaveStatus);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const titleDirtyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toasts, show: showToast, dismiss } = useToast();
+
+  const backHref = useMemo(
+    () =>
+      editorMode === 'homepage'
+        ? '/admin/globals/homepage'
+        : editorMode === 'converted'
+          ? '/admin/converted-pages'
+          : '/admin/collections/pages',
+    [editorMode],
+  );
 
   useEffect(() => {
     setEditorMode(mode);
@@ -566,6 +623,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         const doc = (await res.json()) as Record<string, unknown>;
         if (cancelled) return;
         if (typeof doc.title === 'string') setPageTitle(doc.title);
+        if (typeof doc.slug === 'string') setPageSlug(doc.slug);
 
         const convertedName =
           typeof doc.convertedPageName === 'string' && doc.convertedPageName
@@ -584,7 +642,10 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
 
           if (convertedRes.ok) {
             const convertedPayload = (await convertedRes.json()) as ConvertedContentResponse;
-            const effectiveContent = convertedContent ?? convertedPayload.content;
+            const effectiveContent =
+              convertedContent
+                ? mergeConvertedContent(convertedPayload.content, convertedContent)
+                : convertedPayload.content;
             const nextSections = convertedPageContentToSections(
               convertedName,
               effectiveContent,
@@ -613,6 +674,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
             setConvertedPageName(convertedName);
             setConvertedBaseContent(effectiveContent);
             setSections(nextSections);
+            useEditorStore.temporal.getState().clear();
             return;
           }
         }
@@ -623,11 +685,16 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         if (Array.isArray(doc.blocks) && doc.blocks.length > 0) {
           const parsedSections = deserializeSectionsFromPayload(doc.blocks as Record<string, unknown>[]);
           setSections(parsedSections);
+          useEditorStore.temporal.getState().clear();
         } else {
           setSections([]);
+          useEditorStore.temporal.getState().clear();
         }
       } catch {
-        if (!cancelled) setSections([]);
+        if (!cancelled) {
+          setSections([]);
+          useEditorStore.temporal.getState().clear();
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -641,8 +708,12 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         const doc = (await res.json()) as Record<string, unknown>;
         if (cancelled) return;
         setSections(homepageDocToSections(doc));
+        useEditorStore.temporal.getState().clear();
       } catch {
-        if (!cancelled) setSections([]);
+        if (!cancelled) {
+          setSections([]);
+          useEditorStore.temporal.getState().clear();
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -691,7 +762,9 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
 
         const nextSections = convertedPageContentToSections(
           convertedPageName,
-          convertedContent ?? payload.content,
+          convertedContent
+            ? mergeConvertedContent(payload.content, convertedContent)
+            : payload.content,
           payload.sections,
         );
 
@@ -714,11 +787,17 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         }
 
         registerRuntimeBlockDefinitions(runtimeDefinitions);
-        setConvertedBaseContent(convertedContent ?? payload.content);
+        setConvertedBaseContent(
+          convertedContent
+            ? mergeConvertedContent(payload.content, convertedContent)
+            : payload.content,
+        );
         setSections(nextSections);
+        useEditorStore.temporal.getState().clear();
       } catch {
         if (!cancelled) {
           setSections([]);
+          useEditorStore.temporal.getState().clear();
           setConvertedBaseContent(null);
         }
       } finally {
@@ -763,6 +842,15 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [saveStatus]);
+
+  const handleNavigateBack = useCallback(() => {
+    if (saveStatus === 'dirty') {
+      const confirmed = window.confirm('You have unsaved changes. Leave without saving?');
+      if (!confirmed) return;
+    }
+
+    window.location.href = backHref;
+  }, [saveStatus, backHref]);
 
   const persist = useCallback(
     async ({ status, notify }: { status: 'draft' | 'published'; notify: boolean }) => {
@@ -819,6 +907,11 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
 
         if (!res.ok) {
           setSaveStatus('error');
+          setTimeout(() => {
+            if (useEditorStore.getState().saveStatus === 'error') {
+              setSaveStatus('dirty');
+            }
+          }, 4000);
           if (notify) {
             showToast(
               status === 'published' ? 'Publish failed — please try again' : 'Save failed — please try again',
@@ -848,6 +941,11 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         return true;
       } catch {
         setSaveStatus('error');
+        setTimeout(() => {
+          if (useEditorStore.getState().saveStatus === 'error') {
+            setSaveStatus('dirty');
+          }
+        }, 4000);
         if (notify) {
           showToast(
             status === 'published' ? 'Publish failed — network error' : 'Save failed — network error',
@@ -876,12 +974,20 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     autoSaveTimer.current = setTimeout(() => {
       void persist({ status: 'draft', notify: false });
-    }, 30_000);
+    }, AUTO_SAVE_DELAY_MS);
 
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+      if (titleDirtyTimer.current) clearTimeout(titleDirtyTimer.current);
     };
   }, [saveStatus, persist]);
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+      if (titleDirtyTimer.current) clearTimeout(titleDirtyTimer.current);
+    };
+  }, []);
 
   const saveDraft = useCallback(async () => {
     await persist({ status: 'draft', notify: true });
@@ -940,11 +1046,18 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         pageTitle={pageTitle}
         convertedPageName={convertedPageName}
         canShowHistory={Boolean(historyPageId)}
+        pageSlug={pageSlug}
+        pageId={pageId}
+        onNavigateBack={handleNavigateBack}
+        onSlugChange={(newSlug) => setPageSlug(newSlug)}
         onPageTitleChange={(nextTitle) => {
           setPageTitle(nextTitle);
-          if (saveStatus !== 'saving') {
-            setSaveStatus('dirty');
-          }
+          if (titleDirtyTimer.current) clearTimeout(titleDirtyTimer.current);
+          titleDirtyTimer.current = setTimeout(() => {
+            if (useEditorStore.getState().saveStatus !== 'saving') {
+              setSaveStatus('dirty');
+            }
+          }, 500);
         }}
         onSaveDraft={saveDraft}
         onPublish={publish}

@@ -41,16 +41,13 @@ export function getAllConvertedPageContentConfigs(): ConvertedPageContentConfig[
 }
 
 export async function loadConvertedPageContent(pageName: string): Promise<Record<string, unknown> | null> {
-  if (pageName === 'about') {
-    const mod = await import('@/app/(site)/about/content');
-    return mod.defaultContent as unknown as Record<string, unknown>;
-  }
+  const config = CONTENT_CONFIG[pageName];
+  if (!config) return null;
 
-  if (pageName === 'services-convert') {
-    const mod = await import('@/app/(site)/services-convert/content');
-    return mod.defaultContent as unknown as Record<string, unknown>;
+  try {
+    const mod = await import(`../../../src/app/(site)/${pageName}/content`);
+    return (mod.defaultContent ?? mod.default ?? null) as Record<string, unknown> | null;
+  } catch {
+    return null;
   }
-
-  return null;
 }
-

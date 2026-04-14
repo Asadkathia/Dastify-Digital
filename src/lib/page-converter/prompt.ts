@@ -1,4 +1,5 @@
 import type { AIMessage } from '@/lib/ai/types';
+import { getBrandBookPromptSummary } from './brandbook';
 
 /**
  * Builds the AI prompt for converting raw HTML into Next.js TSX components.
@@ -27,9 +28,13 @@ TOKENS:    --purple #7C3AED  --blue #0367a5  --green #7eb63e  --bg #F5F1E8  --bg
 `.trim();
 
 export function buildConverterPrompt(html: string, pageName: string): AIMessage[] {
+  const brandBook = getBrandBookPromptSummary();
   const system = [
     'You are an expert Next.js developer converting raw HTML pages into pixel-perfect Next.js TSX components.',
     'Your output must be a single valid JSON object — no markdown, no explanation, just JSON.',
+    '',
+    'BRAND BOOK SUMMARY (follow this in addition to repo CSS tokens):',
+    brandBook,
     '',
     'OUTPUT SCHEMA (return exactly this shape):',
     '{',
@@ -43,6 +48,7 @@ export function buildConverterPrompt(html: string, pageName: string): AIMessage[
     '─── COMPONENT RULES ───',
     '1. Split the page into logical section components — one file per section (Hero, Navbar, Services, Results, WhySection, Process, Cta, Footer, etc.).',
     '2. Each component accepts a single `data` prop typed to a slice of the content type.',
+    '2a. Components for converted pages must be editor-aware. Every editable text, link label, media slot, or semantic heading must bind to explicit field metadata in the rendered DOM.',
     '3. Use "use client" only when the component needs onClick/useState (accordion toggles, scroll listeners, tab switches). Server components by default.',
     '4. Preserve ALL animations, transitions, hover effects, and scroll reveal from the source HTML.',
     '5. For JavaScript behaviors (scroll nav, accordion expand, IntersectionObserver reveals): implement them as client components using useEffect/useState.',
@@ -65,10 +71,23 @@ export function buildConverterPrompt(html: string, pageName: string): AIMessage[
     '',
     '─── CONTENT TYPE RULES ───',
     'contentType is a TypeScript type declaration string (export type PageContent = { ... })',
-    'It must contain every editable text string, link href, and image src in the page.',
+    'It must contain every editable text string, link href, image src, semantic heading field, and structured editable style field in the page.',
+    'Every section type should include optional editor metadata under `editor?: { nodes?: Record<string, { tag?: "h1"|"h2"|"h3"|"h4"|"p"|"span"; styles?: { color?: string; backgroundColor?: string; fontSize?: string; fontWeight?: string; lineHeight?: string; letterSpacing?: string; textTransform?: string; textAlign?: "left"|"center"|"right"; marginTop?: string; marginBottom?: string; paddingTop?: string; paddingBottom?: string; paddingLeft?: string; paddingRight?: string; borderColor?: string; borderWidth?: string; borderRadius?: string } }> }`.',
+    'Use semantic fields like `titleTag` when a heading level should be selectable by the editor.',
     'When the source HTML contains an image placeholder box (especially .iph with .iph-ic/.iph-lbl/.iph-dim), represent it as a media-capable object or item that includes `image`, `imageAlt`, and placeholder metadata such as icon/label/dimensions. Also include image presentation fields like `imageFit`, `imagePosition`, `imageRadius`, plus placeholder chrome fields like `preservePlaceholderChrome`, `placeholderBackground`, `placeholderBorderColor`, `placeholderBorderWidth`, `placeholderBorderStyle`, `placeholderPadding`, `placeholderGap`, `placeholderRadius`, `placeholderShowOverlay`, and `placeholderOverlay`.',
     'Group fields by section: nav, hero, services, results, why, process, cta, footer etc.',
     'Use string[] for lists, { label: string; href: string }[] for link lists.',
+    'For array/repeater content, preserve stable item structure so inline editing can target dotted paths like `items.0.title`.',
+    '',
+    '─── EDITOR BINDING RULES ───',
+    'Render editable nodes with DOM metadata attributes:',
+    '  - `data-field` for content path',
+    '  - `data-style-field` for persisted style path',
+    '  - `data-tag-field` for semantic tag path when applicable',
+    '  - `data-allowed-tags` when semantic tag changes are allowed',
+    'Prefer using helper bindings from `@/components/converted-editor` when practical.',
+    'Every editable heading must support semantic tag switching through bound metadata.',
+    'Every editable text/link/media node must preserve page-scoped class names and allow inspector-driven style persistence through structured fields, not raw CSS editing.',
     '',
     '─── CSS RULES ───',
     GLOBALS_CSS_CLASSES,

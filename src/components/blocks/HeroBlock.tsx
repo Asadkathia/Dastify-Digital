@@ -34,7 +34,7 @@ export function HeroBlock(props: HeroBlockProps) {
         </div>
         {props.image?.src ? (
           <div style={{ position: 'relative', minHeight: '280px', borderRadius: '24px', overflow: 'hidden' }}>
-            <CmsImage src={props.image.src} alt={props.image.alt || props.title} objectFit="cover" />
+            <CmsImage src={props.image.src} alt={props.image.alt || props.title} objectFit="cover" objectPosition={props.objectPosition} />
           </div>
         ) : null}
       </div>

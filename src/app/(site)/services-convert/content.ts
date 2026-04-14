@@ -1,18 +1,25 @@
+import type { ConvertedSectionEditorState } from '@/lib/converted-pages/types';
+
+type EditableSection<T> = T & {
+  editor?: ConvertedSectionEditorState;
+};
+
 export type PageContent = {
   meta: {
     title: string;
     description: string;
   };
-  nav: {
+  nav: EditableSection<{
     logoText: string;
     logoAccent: string;
     links: { label: string; href: string; active?: boolean }[];
     ctaLabel: string;
     ctaHref: string;
-  };
-  hero: {
+  }>;
+  hero: EditableSection<{
     chip: string;
     title: string;
+    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
     lead: string;
     primaryCta: { label: string; href: string };
     secondaryCta: { label: string; href: string };
@@ -40,10 +47,11 @@ export type PageContent = {
     placeholderLabel: string;
     placeholderDimensions: string;
     marqueeItems: string[];
-  };
-  services: {
+  }>;
+  services: EditableSection<{
     chip: string;
     title: string;
+    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
     intro: string;
     items: {
       id: string;
@@ -55,20 +63,23 @@ export type PageContent = {
       description: string;
       cta: { label: string; href: string };
     }[];
-  };
-  results: {
+  }>;
+  results: EditableSection<{
     headline: string;
+    headlineTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
     stats: { value: string; label: string }[];
-  };
-  why: {
+  }>;
+  why: EditableSection<{
     chip: string;
     title: string;
+    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
     lead: string;
     cards: { icon: string; title: string; description: string }[];
-  };
-  process: {
+  }>;
+  process: EditableSection<{
     chip: string;
     title: string;
+    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
     intro: string;
     steps: { number: string; title: string; description: string }[];
     image?: string | { url?: string; alt?: string; filename?: string } | null;
@@ -94,14 +105,15 @@ export type PageContent = {
     placeholderIcon: string;
     placeholderLabel: string;
     placeholderDimensions: string;
-  };
-  cta: {
+  }>;
+  cta: EditableSection<{
     title: string;
+    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
     subtext: string;
     primaryCta: { label: string; href: string };
     secondaryCta: { label: string; href: string };
-  };
-  footer: {
+  }>;
+  footer: EditableSection<{
     logoText: string;
     logoAccent: string;
     tagline: string;
@@ -111,7 +123,7 @@ export type PageContent = {
     }[];
     copyright: string;
     legalLinks: { label: string; href: string }[];
-  };
+  }>;
 };
 
 export const defaultContent: PageContent = {

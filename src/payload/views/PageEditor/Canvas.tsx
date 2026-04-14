@@ -93,7 +93,7 @@ const BlockCard = memo(function BlockCard({ sectionId, columnId, blockId, isSele
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1 }}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : block.isHidden ? 0.45 : 1 }}
       onClick={() => selectBlock(sectionId, columnId, blockId)}
     >
       <div
@@ -104,6 +104,10 @@ const BlockCard = memo(function BlockCard({ sectionId, columnId, blockId, isSele
             ? '2px solid #0ea5e9'
             : isMatch
             ? '2px solid #f59e0b'
+            : block.isHidden
+            ? '1px dashed #854d0e'
+            : block.isLocked
+            ? '1px solid #1e3a5f'
             : '1px solid #2a2a2a',
           background: isSelected ? '#0c1a24' : '#161616',
           marginBottom: '4px',
@@ -142,6 +146,12 @@ const BlockCard = memo(function BlockCard({ sectionId, columnId, blockId, isSele
             )}
             <p style={{ margin: 0, fontSize: '10px', color: '#3a3a3a', marginTop: '1px' }}>{dataSummary}</p>
           </div>
+          {block.isLocked && (
+            <span style={{ fontSize: '10px', flexShrink: 0, color: '#0ea5e9' }} title="Locked">🔒</span>
+          )}
+          {block.isHidden && (
+            <span style={{ fontSize: '10px', flexShrink: 0, color: '#fbbf24' }} title="Hidden">🚫</span>
+          )}
           {isSelected && (
             <span style={{ fontSize: '9px', background: '#0ea5e9', color: '#fff', borderRadius: '3px', padding: '2px 5px', flexShrink: 0, fontWeight: 600 }}>
               ●

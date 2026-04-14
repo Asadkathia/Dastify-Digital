@@ -1,5 +1,6 @@
 import type { BlockDefinition, EditorField, SectionInstance } from '@/payload/views/PageEditor/types';
 import type { ConvertedSectionSpec } from './types';
+import { setValueAtPath } from './object-path';
 
 type FlatRecord = Record<string, unknown>;
 
@@ -72,20 +73,6 @@ function flattenObject(
     }
     out[path] = value;
   }
-}
-
-function setByPath(target: Record<string, unknown>, path: string, value: unknown) {
-  const parts = path.split('.');
-  let cursor: Record<string, unknown> = target;
-  for (let i = 0; i < parts.length - 1; i += 1) {
-    const part = parts[i]!;
-    const next = cursor[part];
-    if (!isPlainObject(next)) {
-      cursor[part] = {};
-    }
-    cursor = cursor[part] as Record<string, unknown>;
-  }
-  cursor[parts[parts.length - 1]!] = value;
 }
 
 function parseMaybeJson(value: unknown): unknown {
@@ -257,7 +244,7 @@ export function sectionsToConvertedPageContent(
         for (const [key, value] of Object.entries(data)) {
           if (key.startsWith(META_PREFIX)) continue;
           const nextValue = jsonFields.includes(key) ? parseMaybeJson(value) : value;
-          setByPath(rebuilt, key, nextValue);
+          setValueAtPath(rebuilt, key, nextValue);
         }
 
         next[sectionKey] = rebuilt;
@@ -308,6 +295,10 @@ export function buildConvertedBlockDefinition(
         type: 'textarea',
         label: `${prettifyLabel(key)} (JSON)`,
       });
+      continue;
+    }
+
+    if (key.startsWith('editor.')) {
       continue;
     }
 

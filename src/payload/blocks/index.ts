@@ -24,6 +24,19 @@ import { CustomHtmlBlock } from './CustomHtmlBlock.ts';
 import { CounterBlock } from './CounterBlock.ts';
 import { ProgressBarBlock } from './ProgressBarBlock.ts';
 import { ImageGalleryBlock } from './ImageGalleryBlock.ts';
+import { FormBlock } from './FormBlock.ts';
+import { QuoteBlock } from './QuoteBlock.ts';
+import { DividerBlock } from './DividerBlock.ts';
+import { IconBlock } from './IconBlock.ts';
+import { FeatureListBlock } from './FeatureListBlock.ts';
+import { TeamGridBlock } from './TeamGridBlock.ts';
+import { BlogFeedBlock } from './BlogFeedBlock.ts';
+import { MapBlock } from './MapBlock.ts';
+import { CountdownBlock } from './CountdownBlock.ts';
+import { TableBlock } from './TableBlock.ts';
+import { TimelineBlock } from './TimelineBlock.ts';
+import { StepsBlock } from './StepsBlock.ts';
+import { AnnouncementBarBlock } from './AnnouncementBarBlock.ts';
 
 // Leaf blocks (used standalone and inside SectionBlock columns)
 export const leafBlocks = [
@@ -52,6 +65,19 @@ export const leafBlocks = [
   CounterBlock,
   ProgressBarBlock,
   ImageGalleryBlock,
+  FormBlock,
+  QuoteBlock,
+  DividerBlock,
+  IconBlock,
+  FeatureListBlock,
+  TeamGridBlock,
+  BlogFeedBlock,
+  MapBlock,
+  CountdownBlock,
+  TableBlock,
+  TimelineBlock,
+  StepsBlock,
+  AnnouncementBarBlock,
 ];
 
 // Top-level page builder blocks — SectionBlock wraps everything
