@@ -4,6 +4,8 @@ export type ConvertedSectionSpec = {
   key: string;
   label: string;
   icon?: string;
+  /** Root CSS class name of the rendered <section> — used by the Section Style editor to target overrides. */
+  className?: string;
 };
 
 export type ConvertedEditableTag = 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';

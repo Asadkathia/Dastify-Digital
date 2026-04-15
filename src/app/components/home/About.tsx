@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { HomepageContent } from '@/lib/homepage-content';
 import { CmsImage } from '@/components/CmsImage';
 
@@ -6,6 +7,8 @@ type AboutProps = {
 };
 
 export function About({ data }: AboutProps) {
+  const ctaHref = data.ctaHref?.url || null;
+
   return (
     <section className="about sp" id={data.id}>
       <span className="sec-wm g2">A</span>
@@ -18,7 +21,7 @@ export function About({ data }: AboutProps) {
             <div className="about-chip-lt" data-r data-delay="1">
               <span className="chip">
                 <span className="chip-dot" />
-                {data.chip}
+                <span data-field="chip">{data.chip}</span>
               </span>
             </div>
             <h2 className="about-h2" data-r data-delay="2">
@@ -41,9 +44,20 @@ export function About({ data }: AboutProps) {
               {data.paragraphs[1]}
             </p>
             <div data-r data-delay="4">
-              <button className="btn-ol" type="button">
-                {data.cta}
-              </button>
+              {ctaHref ? (
+                <Link
+                  className="btn-ol"
+                  href={ctaHref}
+                  target={data.ctaHref?.openInNewTab ? '_blank' : undefined}
+                  rel={data.ctaHref?.openInNewTab ? 'noopener noreferrer' : undefined}
+                >
+                  <span data-field="cta">{data.cta}</span>
+                </Link>
+              ) : (
+                <button className="btn-ol" type="button">
+                  <span data-field="cta">{data.cta}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

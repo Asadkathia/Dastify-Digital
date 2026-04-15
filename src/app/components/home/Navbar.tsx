@@ -7,6 +7,7 @@ type NavbarProps = {
 
 export function Navbar({ data }: NavbarProps) {
   const [brandLeft, brandRight] = data.logo.split('.');
+  const ctaHref = data.ctaHref?.url || null;
 
   return (
     <nav className="nav" id="nav">
@@ -28,9 +29,20 @@ export function Navbar({ data }: NavbarProps) {
           )
         ))}
       </div>
-      <button className="btn-dk nav-cta" type="button">
-        {data.cta}
-      </button>
+      {ctaHref ? (
+        <Link
+          className="btn-dk nav-cta"
+          href={ctaHref}
+          target={data.ctaHref?.openInNewTab ? '_blank' : undefined}
+          rel={data.ctaHref?.openInNewTab ? 'noopener noreferrer' : undefined}
+        >
+          <span data-field="cta">{data.cta}</span>
+        </Link>
+      ) : (
+        <button className="btn-dk nav-cta" type="button">
+          <span data-field="cta">{data.cta}</span>
+        </button>
+      )}
     </nav>
   );
 }

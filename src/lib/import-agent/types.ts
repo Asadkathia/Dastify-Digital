@@ -1,6 +1,6 @@
 // ─── AI Provider Config ───────────────────────────────────────────────────────
 
-export type AIProvider = 'anthropic' | 'openai' | 'google' | 'openrouter' | 'ollama';
+export type AIProvider = 'anthropic' | 'claude-code' | 'openai' | 'google' | 'openrouter' | 'ollama';
 
 export type AIProviderConfig = {
   provider: AIProvider;

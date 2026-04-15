@@ -8,6 +8,8 @@ type CaseStudiesProps = {
 };
 
 export function CaseStudies({ data }: CaseStudiesProps) {
+  const ctaHref = data.ctaHref?.url || '/case-studies';
+
   return (
     <section className="cases sp" id={data.id}>
       <span className="sec-wm g1">C</span>
@@ -20,12 +22,18 @@ export function CaseStudies({ data }: CaseStudiesProps) {
                 {data.chip}
               </span>
             </div>
-            <h2 className="cases-h2" data-r data-delay="1">
+            <h2 className="cases-h2" data-r data-delay="1" data-field="title">
               {data.title}
             </h2>
           </div>
-          <Link className="btn-ol" data-r href="/case-studies">
-            {data.cta}
+          <Link
+            className="btn-ol"
+            data-r
+            href={ctaHref}
+            target={data.ctaHref?.openInNewTab ? '_blank' : undefined}
+            rel={data.ctaHref?.openInNewTab ? 'noopener noreferrer' : undefined}
+          >
+            <span data-field="cta">{data.cta}</span>
           </Link>
         </div>
 

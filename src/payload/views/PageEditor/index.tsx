@@ -28,6 +28,7 @@ import { BlockPalette } from './BlockPalette';
 import { Canvas } from './Canvas';
 import { ConfigPanel } from './ConfigPanel';
 import { PreviewIframe } from './PreviewIframe';
+import { SectionStylePanel } from './SectionStylePanel';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { ToastContainer, useToast } from './Toast';
 import { EditorSkeleton } from './Skeleton';
@@ -36,6 +37,7 @@ import { RevisionHistory } from './RevisionHistory';
 import { homepageDocToSections, sectionsToHomepagePatch } from '../HomepageEditor/homepage-adapter';
 import { buildConvertedBlockDefinition, convertedPageContentToSections, sectionsToConvertedPageContent } from '@/lib/converted-pages/editor-adapter';
 import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
+import { extractSectionOverrides, SECTION_OVERRIDES_KEY } from '@/lib/converted-pages/section-overrides';
 import type { BlockDefinition } from './types';
 
 /** Auto-save fires this many milliseconds after the last unsaved change. */
@@ -312,7 +314,7 @@ type PageEditorCoreProps = {
   onPublish: () => void;
 };
 
-type LeftPanelTab = 'blocks' | 'structure' | 'inspector';
+type LeftPanelTab = 'blocks' | 'structure' | 'inspector' | 'sections';
 
 const leftPanelBtnBase: React.CSSProperties = {
   flex: 1,
@@ -480,11 +482,14 @@ function PageEditorCore({ onSaveDraft, onPublish }: PageEditorCoreProps) {
           }}
         >
           <div style={{ padding: '10px', borderBottom: '1px solid #1a1a1a', background: '#0a0a0a' }}>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {([
                 ['blocks', 'Blocks'],
                 ['structure', 'Structure'],
                 ['inspector', 'Inspector'],
+                ...((editorMode === 'converted' || (editorMode === 'pages' && convertedPageName))
+                  ? [['sections', 'Sections'] as const]
+                  : []),
               ] as const).map(([tab, label]) => {
                 const active = leftPanelTab === tab;
                 return (
@@ -510,6 +515,8 @@ function PageEditorCore({ onSaveDraft, onPublish }: PageEditorCoreProps) {
               <BlockPalette embedded />
             ) : leftPanelTab === 'structure' ? (
               <Canvas activeDrag={activeDrag} embedded />
+            ) : leftPanelTab === 'sections' ? (
+              <SectionStylePanel embedded />
             ) : (
               <ConfigPanel embedded />
             )}
@@ -566,6 +573,8 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
   const sections = useEditorStore((s) => s.sections);
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const setSaveStatus = useEditorStore((s) => s.setSaveStatus);
+  const setSectionStyleOverrides = useEditorStore((s) => s.setSectionStyleOverrides);
+  const sectionStyleOverrides = useEditorStore((s) => s.sectionStyleOverrides);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleDirtyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toasts, show: showToast, dismiss } = useToast();
@@ -674,6 +683,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
             setConvertedPageName(convertedName);
             setConvertedBaseContent(effectiveContent);
             setSections(nextSections);
+            setSectionStyleOverrides(extractSectionOverrides(effectiveContent));
             useEditorStore.temporal.getState().clear();
             return;
           }
@@ -681,6 +691,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
 
         setConvertedPageName(null);
         setConvertedBaseContent(null);
+        setSectionStyleOverrides({});
 
         if (Array.isArray(doc.blocks) && doc.blocks.length > 0) {
           const parsedSections = deserializeSectionsFromPayload(doc.blocks as Record<string, unknown>[]);
@@ -787,18 +798,19 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         }
 
         registerRuntimeBlockDefinitions(runtimeDefinitions);
-        setConvertedBaseContent(
-          convertedContent
-            ? mergeConvertedContent(payload.content, convertedContent)
-            : payload.content,
-        );
+        const effectiveContent = convertedContent
+          ? mergeConvertedContent(payload.content, convertedContent)
+          : payload.content;
+        setConvertedBaseContent(effectiveContent);
         setSections(nextSections);
+        setSectionStyleOverrides(extractSectionOverrides(effectiveContent));
         useEditorStore.temporal.getState().clear();
       } catch {
         if (!cancelled) {
           setSections([]);
           useEditorStore.temporal.getState().clear();
           setConvertedBaseContent(null);
+          setSectionStyleOverrides({});
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -868,8 +880,9 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
 
         if (editorMode === 'homepage') {
           const patch = sectionsToHomepagePatch(sections);
+          // Payload v3 globals use POST for updates (collections use PATCH).
           res = await fetch('/api/globals/homepage', {
-            method: 'PATCH',
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({
@@ -880,6 +893,12 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         } else if (editorMode === 'converted' || (editorMode === 'pages' && convertedPageName)) {
           const base = convertedBaseContent ?? {};
           const nextContent = sectionsToConvertedPageContent(base, sections);
+          // Persist section style overrides alongside content under a reserved key
+          if (Object.keys(sectionStyleOverrides).length > 0) {
+            (nextContent as Record<string, unknown>)[SECTION_OVERRIDES_KEY] = sectionStyleOverrides;
+          } else {
+            delete (nextContent as Record<string, unknown>)[SECTION_OVERRIDES_KEY];
+          }
           res = await fetch(`/api/pages/${pageId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -963,6 +982,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
       convertedBaseContent,
       sections,
       pageTitle,
+      sectionStyleOverrides,
       setSaveStatus,
       showToast,
     ],

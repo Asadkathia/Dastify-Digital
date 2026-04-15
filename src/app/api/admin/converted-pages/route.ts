@@ -15,6 +15,43 @@ const EXCLUDED = new Set([
   'case-studies',
 ]);
 
+function isConvertedPage(name: string): boolean {
+  if (EXCLUDED.has(name)) return false;
+  const pageDir = path.join(SITE_DIR, name);
+  return (
+    fs.existsSync(path.join(pageDir, 'content.ts')) ||
+    fs.existsSync(path.join(pageDir, 'editor-registry.ts')) ||
+    fs.existsSync(path.join(pageDir, 'components'))
+  );
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const body = (await req.json()) as { pageName?: string };
+    const pageName = body.pageName?.trim() || '';
+
+    if (!pageName) {
+      return NextResponse.json({ ok: false, error: 'pageName is required.' }, { status: 400 });
+    }
+
+    if (EXCLUDED.has(pageName)) {
+      return NextResponse.json({ ok: false, error: 'Cannot delete a framework directory.' }, { status: 403 });
+    }
+
+    if (!isConvertedPage(pageName)) {
+      return NextResponse.json({ ok: false, error: 'Not a converted page directory.' }, { status: 404 });
+    }
+
+    const pageDir = path.join(SITE_DIR, pageName);
+    fs.rmSync(pageDir, { recursive: true, force: true });
+
+    return NextResponse.json({ ok: true, deleted: pageName });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+  }
+}
+
 export async function GET() {
   try {
     const entries = fs.readdirSync(SITE_DIR, { withFileTypes: true });

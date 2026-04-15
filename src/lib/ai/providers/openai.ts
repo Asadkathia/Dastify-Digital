@@ -1,7 +1,7 @@
 import type { AIProviderAdapter } from '../types';
 
 type OpenAIResponse = {
-  choices?: Array<{ message?: { content?: string } }>;
+  choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
   usage?: { prompt_tokens?: number; completion_tokens?: number };
   error?: { message?: string };
 };
@@ -80,6 +80,13 @@ export function createOpenAIAdapter(apiKey: string, baseUrl = 'https://api.opena
 
       if (!response.ok) {
         throw new Error(json.error?.message || `OpenAI request failed (${response.status})`);
+      }
+
+      const finishReason = json.choices?.[0]?.finish_reason;
+      if (finishReason === 'length') {
+        throw new Error(
+          `OpenAI response truncated — output hit the token limit (${options.maxTokens ?? 'default'} tokens). Raise maxTokens or split the request.`,
+        );
       }
 
       return {

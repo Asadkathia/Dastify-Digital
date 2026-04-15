@@ -62,6 +62,12 @@ export type FaqItem = {
   answer: string;
 };
 
+export type CmsLinkValue = {
+  url: string;
+  type: 'external' | 'internal' | 'anchor';
+  openInNewTab?: boolean;
+};
+
 export type BrandAcronymItem = {
   l: string;
   word: 'DASTIFY' | 'DIGITAL';
@@ -76,6 +82,7 @@ export type HomepageContent = {
     logo: string;
     links: NavLinkItem[];
     cta: string;
+    ctaHref?: CmsLinkValue;
   };
   hero: {
     id: string;
@@ -83,7 +90,9 @@ export type HomepageContent = {
     headingLines: { text: string; delay?: number; colorVar?: string }[];
     description: string;
     primaryCta: string;
+    primaryCtaHref?: CmsLinkValue;
     secondaryCta: string;
+    secondaryCtaHref?: CmsLinkValue;
     stats: HeroStat[];
     image: string;
     imageAlt: string;
@@ -104,6 +113,7 @@ export type HomepageContent = {
     headingLines: { text: string; delay?: number; colorVar?: string }[];
     paragraphs: string[];
     cta: string;
+    ctaHref?: CmsLinkValue;
     image: string;
     imageAlt: string;
   };
@@ -115,6 +125,7 @@ export type HomepageContent = {
     chip: string;
     title: string;
     cta: string;
+    ctaHref?: CmsLinkValue;
     tabs: CaseTab[];
     main: CaseStudyMain;
     minis: CaseStudyMini[];
@@ -132,6 +143,7 @@ export type HomepageContent = {
     description: string;
     checks: string[];
     cta: string;
+    ctaHref?: CmsLinkValue;
     image: string;
     imageAlt: string;
   };
@@ -140,6 +152,7 @@ export type HomepageContent = {
     chip: string;
     title: string;
     cta: string;
+    ctaHref?: CmsLinkValue;
     items: InsightItem[];
   };
   faq: {
@@ -148,6 +161,7 @@ export type HomepageContent = {
     title: string;
     intro: string;
     cta: string;
+    ctaHref?: CmsLinkValue;
     items: FaqItem[];
   };
   cta: {

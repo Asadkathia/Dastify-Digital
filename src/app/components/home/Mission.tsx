@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { HomepageContent } from '@/lib/homepage-content';
 import { CmsImage } from '@/components/CmsImage';
 
@@ -7,6 +8,7 @@ type MissionProps = {
 
 export function Mission({ data }: MissionProps) {
   const [firstLine, secondLine] = data.title.split('\n');
+  const ctaHref = data.ctaHref?.url || null;
 
   return (
     <section className="mission">
@@ -19,15 +21,15 @@ export function Mission({ data }: MissionProps) {
           <div data-r>
             <span className="chip">
               <span className="chip-dot" />
-              {data.chip}
+              <span data-field="chip">{data.chip}</span>
             </span>
           </div>
-          <h3 className="mission-h3" data-r data-delay="1">
+          <h3 className="mission-h3" data-r data-delay="1" data-field="title">
             {firstLine}
             <br />
             {secondLine}
           </h3>
-          <p className="mission-p" data-r data-delay="2">
+          <p className="mission-p" data-r data-delay="2" data-field="description">
             {data.description}
           </p>
           <div className="mission-checks" data-r data-delay="3">
@@ -39,9 +41,20 @@ export function Mission({ data }: MissionProps) {
             ))}
           </div>
           <div data-r data-delay="4">
-            <button className="btn-pu" type="button">
-              {data.cta}
-            </button>
+            {ctaHref ? (
+              <Link
+                className="btn-pu"
+                href={ctaHref}
+                target={data.ctaHref?.openInNewTab ? '_blank' : undefined}
+                rel={data.ctaHref?.openInNewTab ? 'noopener noreferrer' : undefined}
+              >
+                <span data-field="cta">{data.cta}</span>
+              </Link>
+            ) : (
+              <button className="btn-pu" type="button">
+                <span data-field="cta">{data.cta}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

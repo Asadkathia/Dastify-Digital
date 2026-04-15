@@ -166,6 +166,14 @@ function fieldForName(name: string, value: unknown): EditorField {
     };
   }
 
+  if (tail === 'embedhtml' || tail === 'embedurl' || tail === 'embedcode') {
+    return {
+      name,
+      type: 'textarea',
+      label,
+    };
+  }
+
   return {
     name,
     type: fieldTypeForValue(value),

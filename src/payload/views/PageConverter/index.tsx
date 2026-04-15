@@ -37,6 +37,7 @@ export default function PageConverterView() {
     () => form.provider === 'openrouter' || form.provider === 'ollama',
     [form.provider],
   );
+  const needsApiKey = form.provider !== 'claude-code' && form.provider !== 'ollama';
 
   async function onConvert(e: React.FormEvent) {
     e.preventDefault();
@@ -169,6 +170,7 @@ export default function PageConverterView() {
               style={inputStyle}
             >
               <option value="anthropic">Anthropic</option>
+              <option value="claude-code">Claude Code CLI (Max plan, local only)</option>
               <option value="openai">OpenAI</option>
               <option value="google">Google</option>
               <option value="openrouter">OpenRouter</option>
@@ -182,14 +184,24 @@ export default function PageConverterView() {
               style={inputStyle}
             />
 
-            <label style={labelStyle}>API key (optional if env var set)</label>
-            <input
-              value={form.apiKey}
-              onChange={(ev) => setForm((p) => ({ ...p, apiKey: ev.target.value }))}
-              placeholder="sk-..."
-              type="password"
-              style={inputStyle}
-            />
+            {needsApiKey && (
+              <>
+                <label style={labelStyle}>API key (optional if env var set)</label>
+                <input
+                  value={form.apiKey}
+                  onChange={(ev) => setForm((p) => ({ ...p, apiKey: ev.target.value }))}
+                  placeholder="sk-..."
+                  type="password"
+                  style={inputStyle}
+                />
+              </>
+            )}
+
+            {form.provider === 'claude-code' && (
+              <div style={{ fontSize: 11, color: '#888', marginTop: 8, padding: 8, background: '#1a1a1a', border: '1px solid #333', borderRadius: 4 }}>
+                Requires the <code>claude</code> CLI installed and authenticated locally. Won&apos;t work on Vercel / serverless.
+              </div>
+            )}
 
             {needsBaseUrl && (
               <>

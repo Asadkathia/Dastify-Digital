@@ -1,4 +1,3 @@
-import AboutNavbar from './components/AboutNavbar';
 import AboutHero from './components/AboutHero';
 import AboutManifesto from './components/AboutManifesto';
 import AboutDifference from './components/AboutDifference';
@@ -14,15 +13,14 @@ const registry: ConvertedPageRegistry = {
   pageName: 'about',
   defaultContent: defaultContent as unknown as Record<string, unknown>,
   sections: [
-    { key: 'nav', label: 'Navigation', icon: '🧭', Component: AboutNavbar as never },
-    { key: 'hero', label: 'Hero', icon: '🦸', Component: AboutHero as never },
-    { key: 'manifesto', label: 'Manifesto', icon: '📣', Component: AboutManifesto as never },
-    { key: 'difference', label: 'Difference', icon: '✨', Component: AboutDifference as never },
-    { key: 'story', label: 'Story', icon: '🕰️', Component: AboutStory as never },
-    { key: 'team', label: 'Team', icon: '👥', Component: AboutTeam as never },
-    { key: 'values', label: 'Values', icon: '💎', Component: AboutValues as never },
-    { key: 'cta', label: 'CTA', icon: '🎯', Component: AboutCta as never },
-    { key: 'footer', label: 'Footer', icon: '🏁', Component: AboutFooter as never },
+    { key: 'hero', label: 'Hero', icon: '🦸', className: 'about-hero', Component: AboutHero as never },
+    { key: 'manifesto', label: 'Manifesto', icon: '📣', className: 'about-manifesto', Component: AboutManifesto as never },
+    { key: 'difference', label: 'Difference', icon: '✨', className: 'about-difference', Component: AboutDifference as never },
+    { key: 'story', label: 'Story', icon: '🕰️', className: 'about-story', Component: AboutStory as never },
+    { key: 'team', label: 'Team', icon: '👥', className: 'about-team', Component: AboutTeam as never },
+    { key: 'values', label: 'Values', icon: '💎', className: 'about-values', Component: AboutValues as never },
+    { key: 'cta', label: 'CTA', icon: '🎯', className: 'about-cta-close', Component: AboutCta as never },
+    { key: 'footer', label: 'Footer', icon: '🏁', className: 'about-footer', Component: AboutFooter as never },
   ],
 };
 

@@ -1454,6 +1454,21 @@ export const blockRegistry: Record<string, BlockDefinition> = {
   },
 };
 
+// ─── Widget container block ───────────────────────────────────────────────────
+// Only registered when the feature flag is enabled.
+// Provides a blank canvas for placing widgets (heading, paragraph, image, etc.).
+
+if (process.env.NEXT_PUBLIC_WIDGET_EDITOR === '1') {
+  blockRegistry['widget-container'] = {
+    blockType: 'widget-container',
+    label: 'Widget Container',
+    icon: '⊞',
+    category: 'Layout',
+    fields: [],
+    defaultData: {},
+  };
+}
+
 // ─── Merge homepage blocks ────────────────────────────────────────────────────
 // Static import above — no require() needed. Both registries are in the same
 // build so this is a clean, ESM-safe merge.

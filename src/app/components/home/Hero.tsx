@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { HomepageContent } from '@/lib/homepage-content';
 import { CmsImage } from '@/components/CmsImage';
 
@@ -7,6 +8,8 @@ type HeroProps = {
 
 export function Hero({ data }: HeroProps) {
   const marquee = [...data.marquee, ...data.marquee];
+  const primaryHref = data.primaryCtaHref?.url || null;
+  const secondaryHref = data.secondaryCtaHref?.url || null;
 
   return (
     <section className="hero" id={data.id}>
@@ -16,7 +19,7 @@ export function Hero({ data }: HeroProps) {
           <div className="hero-chip">
             <span className="chip">
               <span className="chip-dot" />
-              {data.chip}
+              <span data-field="chip">{data.chip}</span>
             </span>
           </div>
 
@@ -34,17 +37,39 @@ export function Hero({ data }: HeroProps) {
             ))}
           </h1>
 
-          <p className="hero-sub" data-r data-delay="2">
+          <p className="hero-sub" data-r data-delay="2" data-field="description">
             {data.description}
           </p>
 
           <div className="hero-actions" data-r data-delay="3">
-            <button className="btn-dk" type="button">
-              {data.primaryCta}
-            </button>
-            <button className="btn-ol" type="button">
-              {data.secondaryCta}
-            </button>
+            {primaryHref ? (
+              <Link
+                className="btn-dk"
+                href={primaryHref}
+                target={data.primaryCtaHref?.openInNewTab ? '_blank' : undefined}
+                rel={data.primaryCtaHref?.openInNewTab ? 'noopener noreferrer' : undefined}
+              >
+                <span data-field="primaryCta">{data.primaryCta}</span>
+              </Link>
+            ) : (
+              <button className="btn-dk" type="button">
+                <span data-field="primaryCta">{data.primaryCta}</span>
+              </button>
+            )}
+            {secondaryHref ? (
+              <Link
+                className="btn-ol"
+                href={secondaryHref}
+                target={data.secondaryCtaHref?.openInNewTab ? '_blank' : undefined}
+                rel={data.secondaryCtaHref?.openInNewTab ? 'noopener noreferrer' : undefined}
+              >
+                <span data-field="secondaryCta">{data.secondaryCta}</span>
+              </Link>
+            ) : (
+              <button className="btn-ol" type="button">
+                <span data-field="secondaryCta">{data.secondaryCta}</span>
+              </button>
+            )}
           </div>
 
           <div className="hero-stats">
@@ -72,8 +97,8 @@ export function Hero({ data }: HeroProps) {
             <CmsImage src={data.image} alt={data.imageAlt} objectFit="contain" priority />
           </div>
           <div className="hero-badge">
-            <div className="hero-badge-n">{data.badgeValue}</div>
-            <div className="hero-badge-l">{data.badgeLabel}</div>
+            <div className="hero-badge-n" data-field="badgeValue">{data.badgeValue}</div>
+            <div className="hero-badge-l" data-field="badgeLabel">{data.badgeLabel}</div>
           </div>
         </div>
       </div>

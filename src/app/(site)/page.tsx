@@ -9,14 +9,14 @@ import { Footer } from '../components/home/Footer';
 import { Hero } from '../components/home/Hero';
 import { Insights } from '../components/home/Insights';
 import { Mission } from '../components/home/Mission';
-import { Navbar } from '../components/home/Navbar';
-import { NavbarScrollState } from '../components/home/NavbarScrollState';
+import { SiteNavbar } from '@/components/SiteNavbar';
 import { LivePreviewSync } from '../components/home/LivePreviewSync';
 import { ScrollRevealController } from '../components/home/ScrollRevealController';
 import { Services } from '../components/home/Services';
 import { Faq } from '../components/home/Faq';
 import { getHomepageContent } from '@/lib/get-homepage-content';
 import { withManagedMenus } from '@/lib/cms/menus';
+import { getNavigation } from '@/lib/cms/queries';
 import { JsonLd } from '@/components/JsonLd';
 import { buildFAQJsonLd, buildOrganizationJsonLd, buildWebsiteJsonLd } from '@/lib/seo/jsonld';
 import { buildMetadata } from '@/lib/seo/metadata';
@@ -69,9 +69,10 @@ export default async function Home() {
   const { isEnabled } = await draftMode();
   noStore();
 
-  const [homepageContent, settings] = await Promise.all([
+  const [homepageContent, settings, nav] = await Promise.all([
     withManagedMenus(await getHomepageContent({ draft: isEnabled })),
     getSiteSettings(),
+    getNavigation(),
   ]);
 
   const organizationJsonLd = buildOrganizationJsonLd(settings);
@@ -81,10 +82,8 @@ export default async function Home() {
   return (
     <>
       <LivePreviewSync enabled={isEnabled} />
-      <NavbarScrollState />
       <ScrollRevealController />
-
-      <Navbar data={homepageContent.nav} />
+      <SiteNavbar nav={nav} activePath="/" scrolledClass="solid" linkListClassName="nav-links" ctaClassName="btn-dk nav-cta" />
       <Hero data={homepageContent.hero} />
       <BrandAcronym data={homepageContent.brandAcronym} />
       <About data={homepageContent.about} />

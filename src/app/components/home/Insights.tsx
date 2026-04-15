@@ -8,6 +8,7 @@ type InsightsProps = {
 
 export function Insights({ data }: InsightsProps) {
   const [titleTop, titleBottom] = data.title.split('\n');
+  const ctaHref = data.ctaHref?.url || '/blog';
 
   return (
     <section className="insights sp" id={data.id}>
@@ -27,8 +28,14 @@ export function Insights({ data }: InsightsProps) {
               {titleBottom}
             </h2>
           </div>
-          <Link className="btn-ol" data-r href="/blog">
-            {data.cta}
+          <Link
+            className="btn-ol"
+            data-r
+            href={ctaHref}
+            target={data.ctaHref?.openInNewTab ? '_blank' : undefined}
+            rel={data.ctaHref?.openInNewTab ? 'noopener noreferrer' : undefined}
+          >
+            <span data-field="cta">{data.cta}</span>
           </Link>
         </div>
 

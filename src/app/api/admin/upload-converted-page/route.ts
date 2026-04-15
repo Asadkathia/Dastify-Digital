@@ -2,10 +2,82 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { NextResponse } from 'next/server';
 import { getPayload } from 'payload';
+import type { Payload } from 'payload';
 import payloadConfig from '@payload-config';
 import { getConvertedPageContentConfig, loadConvertedPageContent } from '@/lib/converted-pages/content-map';
+import type { FormDefinition } from '@/lib/forms/types';
+import { buildPayloadFormFields } from '@/lib/forms/build-fields';
 
 const SITE_DIR = path.resolve(process.cwd(), 'src/app/(site)');
+
+// ─── Form upsert ──────────────────────────────────────────────────────────────
+
+/**
+ * Create or update a Payload form for a converted page.
+ * Returns the form ID, or null if no form definition is provided.
+ */
+async function upsertPayloadForm(
+  payload: Payload,
+  pageName: string,
+  formDef: FormDefinition,
+  existingFormId?: string | number | null,
+): Promise<string | number | null> {
+  const fields = buildPayloadFormFields(formDef.fields);
+
+  if (existingFormId) {
+    // Update existing form — preserves submissions history
+    const updated = await payload.update({
+      collection: 'forms',
+      id: String(existingFormId),
+      data: {
+        title: formDef.title,
+        fields: fields as never,
+        submitButtonLabel: formDef.submitButtonLabel,
+        confirmationType: 'message',
+        confirmationMessage: formDef.confirmationMessage
+          ? { root: { type: 'root', children: [{ type: 'paragraph', version: 1, children: [{ type: 'text', text: formDef.confirmationMessage, version: 1 }], direction: null, format: '', indent: 0 }], direction: null, format: '', indent: 0, version: 1 } }
+          : undefined,
+      } as never,
+    });
+    return (updated as { id?: string | number }).id ?? existingFormId;
+  }
+
+  // Check if a form already exists for this page (by title convention)
+  const existing = await payload.find({
+    collection: 'forms',
+    where: { title: { equals: formDef.title } },
+    limit: 1,
+  });
+
+  if (existing.docs.length > 0) {
+    const existingId = (existing.docs[0] as { id?: string | number }).id;
+    if (existingId) {
+      await payload.update({
+        collection: 'forms',
+        id: String(existingId),
+        data: {
+          fields: fields as never,
+          submitButtonLabel: formDef.submitButtonLabel,
+        } as never,
+      });
+      return existingId;
+    }
+  }
+
+  const created = await payload.create({
+    collection: 'forms',
+    data: {
+      title: formDef.title,
+      fields: fields as never,
+      submitButtonLabel: formDef.submitButtonLabel ?? 'Submit',
+      confirmationType: 'message',
+      confirmationMessage: formDef.confirmationMessage
+        ? { root: { type: 'root', children: [{ type: 'paragraph', version: 1, children: [{ type: 'text', text: formDef.confirmationMessage, version: 1 }], direction: null, format: '', indent: 0 }], direction: null, format: '', indent: 0, version: 1 } }
+        : { root: { type: 'root', children: [{ type: 'paragraph', version: 1, children: [{ type: 'text', text: "Thank you! We'll be in touch within one business day.", version: 1 }], direction: null, format: '', indent: 0 }], direction: null, format: '', indent: 0, version: 1 } },
+    } as never,
+  });
+  return (created as { id?: string | number }).id ?? null;
+}
 
 async function hasAdminSession(request: Request): Promise<boolean> {
   const auth = request.headers.get('authorization');
@@ -167,21 +239,54 @@ export async function POST(request: Request) {
       // can render real converted sections instead of opaque HTML blobs.
       blocks = [];
       convertedContent = structuredClone(loadedConvertedContent);
+
+      // ── Auto-create Payload forms for any sections that define a form ──────
+      // Load the editor registry dynamically to check for form definitions
+      try {
+        const registryMod = await import(`../../../../app/(site)/${pageName}/editor-registry`);
+        const registry = registryMod.default as { formDefinitions?: Record<string, FormDefinition> } | null;
+        if (registry?.formDefinitions) {
+          for (const [sectionKey, formDef] of Object.entries(registry.formDefinitions)) {
+            const section = convertedContent[sectionKey] as Record<string, unknown> | undefined;
+            const existingFormId = section?.formId as string | number | null | undefined;
+            const formId = await upsertPayloadForm(payload, pageName, formDef, existingFormId);
+            if (formId != null) {
+              if (!convertedContent[sectionKey] || typeof convertedContent[sectionKey] !== 'object') {
+                convertedContent[sectionKey] = {};
+              }
+              (convertedContent[sectionKey] as Record<string, unknown>).formId = formId;
+            }
+          }
+        }
+      } catch {
+        // Registry may not have formDefinitions — that's fine, skip silently
+      }
     } else {
       const siteUrl = new URL(request.url).origin || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-      let response: Response;
-      try {
-        response = await fetch(`${siteUrl.replace(/\/$/, '')}/converted-preview/${pageName}`, { cache: 'no-store' });
-      } catch {
-        return NextResponse.json(
-            { ok: false, error: `Dev server must be running at ${siteUrl} to fetch converted preview HTML.` },
-          { status: 503 },
-        );
+      const base = siteUrl.replace(/\/$/, '');
+
+      // Try the dedicated preview route first, then fall back to the direct page URL.
+      const urlsToTry = [
+        `${base}/converted-preview/${pageName}`,
+        `${base}/${pageName}`,
+      ];
+
+      let response: Response | null = null;
+      let fetchError = '';
+      for (const url of urlsToTry) {
+        try {
+          const res = await fetch(url, { cache: 'no-store' });
+          if (res.ok) { response = res; break; }
+          fetchError = `${url} → ${res.status}`;
+        } catch (e) {
+          fetchError = `${url} → ${e instanceof Error ? e.message : 'fetch error'}`;
+        }
       }
-      if (!response.ok) {
+
+      if (!response) {
         return NextResponse.json(
-            { ok: false, error: `Failed to fetch converted page HTML from ${siteUrl}/converted-preview/${pageName} (${response.status}).` },
-          { status: 502 },
+          { ok: false, error: `Could not fetch page HTML. Tried: ${urlsToTry.join(', ')}. Last error: ${fetchError}. Make sure the dev server is running.` },
+          { status: 503 },
         );
       }
 
@@ -203,17 +308,21 @@ export async function POST(request: Request) {
     let page: { id?: string | number };
     const existingId = String(existingDoc?.id ?? '');
 
+    // Only set convertedPageName for pages that have a registered registry+content
+    // (about, services-convert, etc.). For standalone converter-generated pages,
+    // we store them as regular block pages so the editor doesn't try to use an
+    // unregistered converted-page renderer.
+    const isRegisteredConverted = Boolean(convertedConfig);
+
     if (existingDoc && existingId) {
-      // With blocksAsJSON, blocks live on the parent row, so a plain update
-      // replaces the previous content in-place. No delete+recreate dance,
-      // no block-table cleanup required.
       page = await payload.update({
         collection: 'pages',
         id: existingId,
         data: {
           title,
-          convertedPageName: pageName,
-          convertedContent: convertedContent as never,
+          ...(isRegisteredConverted
+            ? { convertedPageName: pageName, convertedContent: convertedContent as never }
+            : { convertedPageName: null as never, convertedContent: null as never }),
           blocks: blocks as never,
         },
       }) as { id?: string | number };
@@ -223,8 +332,9 @@ export async function POST(request: Request) {
         data: {
           title,
           slug: pageName,
-          convertedPageName: pageName,
-          convertedContent: convertedContent as never,
+          ...(isRegisteredConverted
+            ? { convertedPageName: pageName, convertedContent: convertedContent as never }
+            : {}),
           _status: 'draft',
           blocks: blocks as never,
         },

@@ -4,16 +4,17 @@ import { notFound } from 'next/navigation';
 import { JsonLd } from '@/components/JsonLd';
 import { PageBlocksRenderer } from '@/components/blocks/PageBlocksRenderer';
 import { mapPayloadBlocksToPageBuilderBlocks } from '@/components/blocks/types';
-import { NavbarScrollState } from '@/app/components/home/NavbarScrollState';
 import { ScrollRevealController } from '@/app/components/home/ScrollRevealController';
 import { loadConvertedPageContent } from '@/lib/converted-pages/content-map';
 import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
 import { loadConvertedPageRegistry } from '@/lib/converted-pages/preview-registry';
+import { extractSectionOverrides, generateOverrideCss } from '@/lib/converted-pages/section-overrides';
 import { asPathnameFromSegments } from '@/lib/cms/slug';
-import { extractSeoMeta, findOneBySlug, isDraftEnabled } from '@/lib/cms/queries';
+import { extractSeoMeta, findOneBySlug, isDraftEnabled, getNavigation } from '@/lib/cms/queries';
 import { buildMetadata } from '@/lib/seo/metadata';
 import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from '@/lib/seo/jsonld';
 import { getSiteSettings } from '@/lib/site-settings';
+import { SiteNavbar } from '@/components/SiteNavbar';
 import type { Page } from '@/payload-types';
 
 type Props = {
@@ -77,10 +78,10 @@ export default async function GenericPage({ params }: Props) {
       ? (docRecord.convertedContent as Record<string, unknown>)
       : null;
   const blocks = mapPayloadBlocksToPageBuilderBlocks(doc.blocks);
-  const convertedRegistry =
-    convertedPageName
-      ? await loadConvertedPageRegistry(convertedPageName)
-      : null;
+  const [convertedRegistry, nav] = await Promise.all([
+    convertedPageName ? loadConvertedPageRegistry(convertedPageName) : Promise.resolve(null),
+    convertedPageName ? getNavigation() : Promise.resolve(null),
+  ]);
   const fallbackConvertedContent =
     convertedPageName && !convertedContent
       ? await loadConvertedPageContent(convertedPageName)
@@ -89,19 +90,43 @@ export default async function GenericPage({ params }: Props) {
     fallbackConvertedContent && convertedContent
       ? mergeConvertedContent(fallbackConvertedContent, convertedContent)
       : (convertedContent ?? fallbackConvertedContent);
-  const navSection = convertedRegistry?.sections.find((section) => section.key === 'nav');
   const footerSection = convertedRegistry?.sections.find((section) => section.key === 'footer');
   const contentSections = convertedRegistry?.sections.filter((section) => section.key !== 'nav' && section.key !== 'footer') ?? [];
-  const NavComponent = navSection?.Component as ComponentType<{ data: unknown }> | undefined;
   const FooterComponent = footerSection?.Component as ComponentType<{ data: unknown }> | undefined;
+
+  const sectionOverrideCss = convertedRegistry && effectiveConvertedContent
+    ? generateOverrideCss(convertedRegistry, extractSectionOverrides(effectiveConvertedContent))
+    : '';
 
   return (
     <>
+      {sectionOverrideCss ? (
+        <style dangerouslySetInnerHTML={{ __html: sectionOverrideCss }} />
+      ) : null}
       {convertedRegistry && effectiveConvertedContent ? (
         <>
-          <NavbarScrollState selector=".nav" solidClass="scrolled" offset={80} />
           <ScrollRevealController />
-          {NavComponent ? <NavComponent data={effectiveConvertedContent.nav} /> : null}
+          {nav ? (
+            <SiteNavbar
+              nav={nav}
+              activePath={pathname}
+              navClassName={convertedPageName === 'about' ? 'about-nav' : undefined}
+              linkListClassName={
+                convertedPageName === 'about'
+                  ? 'about-nav-links'
+                  : convertedPageName === 'services-convert'
+                    ? 'svc-convert-nav-links'
+                    : convertedPageName === 'blog-post'
+                      ? 'blog-post-nav-links'
+                      : undefined
+              }
+              ctaClassName={
+                convertedPageName === 'services-convert'
+                  ? 'svc-convert-btn-nav'
+                  : 'about-btn-nav'
+              }
+            />
+          ) : null}
           <main>
             {contentSections.map((section) => {
               const Component = section.Component as ComponentType<{ data: unknown }>;

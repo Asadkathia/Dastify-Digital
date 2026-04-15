@@ -5,12 +5,23 @@ export type ConvertedComponent = {
   code: string;
 };
 
+export type ConvertedSectionMeta = {
+  key: string;
+  label: string;
+  icon: string;
+  className: string;
+};
+
 export type ConversionAIOutput = {
   components: ConvertedComponent[];
   pageFile: string;           // full code for page.tsx
   contentType: string;        // TypeScript type declaration string
   defaultContent: Record<string, unknown>;
   globalsCssAdditions: string;
+  /** Full TypeScript code for editor-registry.ts (with formDefinitions if page has a form). */
+  editorRegistry: string;
+  /** One entry per section — used for auto-registering the page in preview-registry and content-map. */
+  sections: ConvertedSectionMeta[];
 };
 
 export type ConvertPageRequest = {
@@ -29,8 +40,10 @@ export type ConvertPageResult = {
   pageName: string;
   files: ConvertedFile[];
   cssAdditions: string;
+  sections: ConvertedSectionMeta[];
 } | {
   ok: false;
   error: string;
   rawAiResponse?: string;
 };
+

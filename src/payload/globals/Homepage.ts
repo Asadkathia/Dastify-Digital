@@ -16,6 +16,26 @@ const headingLineFields: Field[] = [
   { name: 'colorVar', type: 'text' },
 ];
 
+/** Structured link value stored by the visual editor for CTA buttons */
+const ctaLinkFields: Field[] = [
+  { name: 'url', type: 'text' },
+  {
+    name: 'type',
+    type: 'select',
+    options: [
+      { label: 'Internal Page', value: 'internal' },
+      { label: 'External URL', value: 'external' },
+      { label: 'Anchor (#)', value: 'anchor' },
+    ],
+    defaultValue: 'internal',
+  },
+  { name: 'openInNewTab', type: 'checkbox', defaultValue: false },
+];
+
+function ctaLinkGroup(name: string, label: string): Field {
+  return { name, type: 'group', label, fields: ctaLinkFields };
+}
+
 const STRUCTURED_SECTION_KEYS = [
   'nav',
   'hero',
@@ -461,6 +481,7 @@ export const Homepage: GlobalConfig = {
               fields: [
                 { name: 'logo', type: 'text', required: true },
                 { name: 'cta', type: 'text', required: true },
+                ctaLinkGroup('ctaHref', 'CTA Button Link'),
                 {
                   name: 'links',
                   type: 'array',
@@ -484,7 +505,9 @@ export const Homepage: GlobalConfig = {
                 { name: 'chip', type: 'text', required: true },
                 { name: 'description', type: 'textarea', required: true },
                 { name: 'primaryCta', type: 'text', required: true },
+                ctaLinkGroup('primaryCtaHref', 'Primary CTA Link'),
                 { name: 'secondaryCta', type: 'text', required: true },
+                ctaLinkGroup('secondaryCtaHref', 'Secondary CTA Link'),
                 {
                   name: 'image',
                   type: 'text',
@@ -595,6 +618,7 @@ export const Homepage: GlobalConfig = {
                 { name: 'id', type: 'text', required: true },
                 { name: 'chip', type: 'text', required: true },
                 { name: 'cta', type: 'text', required: true },
+                ctaLinkGroup('ctaHref', 'CTA Link'),
                 {
                   name: 'image',
                   type: 'text',
@@ -669,6 +693,7 @@ export const Homepage: GlobalConfig = {
                 { name: 'chip', type: 'text', required: true },
                 { name: 'title', type: 'text', required: true },
                 { name: 'cta', type: 'text', required: true },
+                ctaLinkGroup('ctaHref', 'CTA Link'),
                 {
                   name: 'tabs',
                   type: 'array',
@@ -786,6 +811,7 @@ export const Homepage: GlobalConfig = {
                 { name: 'title', type: 'text', required: true },
                 { name: 'description', type: 'textarea', required: true },
                 { name: 'cta', type: 'text', required: true },
+                ctaLinkGroup('ctaHref', 'CTA Link'),
                 {
                   name: 'image',
                   type: 'text',
@@ -817,6 +843,7 @@ export const Homepage: GlobalConfig = {
                 { name: 'chip', type: 'text', required: true },
                 { name: 'title', type: 'text', required: true },
                 { name: 'cta', type: 'text', required: true },
+                ctaLinkGroup('ctaHref', 'CTA Link'),
                 {
                   name: 'items',
                   type: 'array',
@@ -852,6 +879,7 @@ export const Homepage: GlobalConfig = {
                 { name: 'title', type: 'text', required: true },
                 { name: 'intro', type: 'textarea', required: true },
                 { name: 'cta', type: 'text', required: true },
+                ctaLinkGroup('ctaHref', 'CTA Link'),
                 {
                   name: 'items',
                   type: 'array',

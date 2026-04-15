@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { ScrollRevealController } from '@/app/components/home/ScrollRevealController';
-import { NavbarScrollState } from '@/app/components/home/NavbarScrollState';
-import AboutNavbar from '@/app/(site)/about/components/AboutNavbar';
+import { SiteNavbar } from '@/components/SiteNavbar';
 import AboutHero from '@/app/(site)/about/components/AboutHero';
 import AboutManifesto from '@/app/(site)/about/components/AboutManifesto';
 import AboutDifference from '@/app/(site)/about/components/AboutDifference';
@@ -11,6 +10,7 @@ import AboutValues from '@/app/(site)/about/components/AboutValues';
 import AboutCta from '@/app/(site)/about/components/AboutCta';
 import AboutFooter from '@/app/(site)/about/components/AboutFooter';
 import { defaultContent } from '@/app/(site)/about/content';
+import { getNavigation } from '@/lib/cms/queries';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -20,13 +20,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ConvertedAboutPreviewPage() {
-  const content = defaultContent;
+  const [content, nav] = await Promise.all([
+    Promise.resolve(defaultContent),
+    getNavigation(),
+  ]);
 
   return (
     <>
-      <NavbarScrollState selector=".nav" solidClass="scrolled" offset={80} />
       <ScrollRevealController />
-      <AboutNavbar data={content.nav} />
+      <SiteNavbar nav={nav} activePath="/about" navClassName="about-nav" linkListClassName="about-nav-links" ctaClassName="about-btn-nav" />
       <main>
         <AboutHero data={content.hero} />
         <AboutManifesto data={content.manifesto} />

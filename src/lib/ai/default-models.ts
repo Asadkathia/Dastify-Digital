@@ -7,6 +7,11 @@ export const MODEL_OPTIONS_BY_PROVIDER: Record<AIProvider, string[]> = {
     'claude-3-5-sonnet-latest',
     'claude-3-5-haiku-latest',
   ],
+  'claude-code': [
+    'claude-opus-4-6',
+    'claude-sonnet-4-6',
+    'claude-haiku-4-5-20251001',
+  ],
   openai: [
     'gpt-5.4',
     'gpt-5.4-mini',
@@ -39,6 +44,7 @@ export const MODEL_OPTIONS_BY_PROVIDER: Record<AIProvider, string[]> = {
 
 export const DEFAULT_MODEL_BY_PROVIDER: Record<AIProvider, string> = {
   anthropic: MODEL_OPTIONS_BY_PROVIDER.anthropic[0],
+  'claude-code': MODEL_OPTIONS_BY_PROVIDER['claude-code'][0],
   openai: MODEL_OPTIONS_BY_PROVIDER.openai[1],
   google: MODEL_OPTIONS_BY_PROVIDER.google[0],
   openrouter: MODEL_OPTIONS_BY_PROVIDER.openrouter[1],
@@ -53,6 +59,8 @@ function envModel(provider: AIProvider): string | undefined {
       return process.env.NEXT_PUBLIC_GOOGLE_MODEL || process.env.GOOGLE_MODEL;
     case 'anthropic':
       return process.env.NEXT_PUBLIC_ANTHROPIC_MODEL || process.env.ANTHROPIC_MODEL;
+    case 'claude-code':
+      return process.env.NEXT_PUBLIC_CLAUDE_CODE_MODEL || process.env.CLAUDE_CODE_MODEL;
     case 'openrouter':
       return process.env.NEXT_PUBLIC_OPENROUTER_MODEL || process.env.OPENROUTER_MODEL;
     case 'ollama':

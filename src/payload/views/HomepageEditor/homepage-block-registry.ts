@@ -23,6 +23,7 @@ export const homepageBlockRegistry: Record<string, BlockDefinition> = {
     fields: [
       { name: 'logo', type: 'text', label: 'Logo Text' },
       { name: 'cta', type: 'text', label: 'CTA Button Label' },
+      { name: 'ctaHref', type: 'link', label: 'CTA Button Link' },
       {
         name: 'links',
         type: 'array',
@@ -66,7 +67,9 @@ export const homepageBlockRegistry: Record<string, BlockDefinition> = {
       { name: 'chip', type: 'text', label: 'Eyebrow Chip' },
       { name: 'description', type: 'textarea', label: 'Description' },
       { name: 'primaryCta', type: 'text', label: 'Primary CTA Label' },
+      { name: 'primaryCtaHref', type: 'link', label: 'Primary CTA Link' },
       { name: 'secondaryCta', type: 'text', label: 'Secondary CTA Label' },
+      { name: 'secondaryCtaHref', type: 'link', label: 'Secondary CTA Link' },
       { name: 'image', type: 'upload', label: 'Hero Image' },
       { name: 'imageAlt', type: 'text', label: 'Image Alt Text' },
       { name: 'badgeValue', type: 'text', label: 'Badge Value' },
@@ -165,6 +168,7 @@ export const homepageBlockRegistry: Record<string, BlockDefinition> = {
     fields: [
       { name: 'chip', type: 'text', label: 'Eyebrow Chip' },
       { name: 'cta', type: 'text', label: 'CTA Label' },
+      { name: 'ctaHref', type: 'link', label: 'CTA Link' },
       { name: 'image', type: 'upload', label: 'About Image' },
       { name: 'imageAlt', type: 'text', label: 'Image Alt Text' },
       {
@@ -247,6 +251,7 @@ export const homepageBlockRegistry: Record<string, BlockDefinition> = {
       { name: 'chip', type: 'text', label: 'Eyebrow Chip' },
       { name: 'title', type: 'text', label: 'Section Title' },
       { name: 'cta', type: 'text', label: 'CTA Label' },
+      { name: 'ctaHref', type: 'link', label: 'CTA Link' },
       {
         name: 'tabs',
         type: 'array',
@@ -336,6 +341,7 @@ export const homepageBlockRegistry: Record<string, BlockDefinition> = {
       { name: 'title', type: 'text', label: 'Title' },
       { name: 'description', type: 'textarea', label: 'Description' },
       { name: 'cta', type: 'text', label: 'CTA Label' },
+      { name: 'ctaHref', type: 'link', label: 'CTA Link' },
       { name: 'image', type: 'upload', label: 'Image' },
       { name: 'imageAlt', type: 'text', label: 'Image Alt Text' },
       {
@@ -364,6 +370,7 @@ export const homepageBlockRegistry: Record<string, BlockDefinition> = {
       { name: 'chip', type: 'text', label: 'Eyebrow Chip' },
       { name: 'title', type: 'text', label: 'Section Title' },
       { name: 'cta', type: 'text', label: 'CTA Label' },
+      { name: 'ctaHref', type: 'link', label: 'CTA Link' },
       {
         name: 'items',
         type: 'array',
@@ -395,6 +402,7 @@ export const homepageBlockRegistry: Record<string, BlockDefinition> = {
       { name: 'title', type: 'text', label: 'Section Title' },
       { name: 'intro', type: 'textarea', label: 'Intro Text' },
       { name: 'cta', type: 'text', label: 'CTA Label' },
+      { name: 'ctaHref', type: 'link', label: 'CTA Link' },
       {
         name: 'items',
         type: 'array',

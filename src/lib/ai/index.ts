@@ -1,6 +1,7 @@
 import type { AIProviderConfig } from '@/lib/import-agent/types';
 import type { AIProviderAdapter } from './types';
 import { createAnthropicAdapter } from './providers/anthropic';
+import { createClaudeCodeAdapter } from './providers/claude-code';
 import { createOpenAIAdapter } from './providers/openai';
 import { createGoogleAdapter } from './providers/google';
 import { createOllamaAdapter } from './providers/ollama';
@@ -15,6 +16,8 @@ export function createAIAdapter(config: AIProviderConfig): AIProviderAdapter {
   switch (config.provider) {
     case 'anthropic':
       return createAnthropicAdapter(requireValue(config.apiKey ?? process.env.ANTHROPIC_API_KEY ?? '', 'ANTHROPIC_API_KEY'));
+    case 'claude-code':
+      return createClaudeCodeAdapter(process.env.CLAUDE_CODE_BINARY || 'claude');
     case 'openai':
       return createOpenAIAdapter(requireValue(config.apiKey ?? process.env.OPENAI_API_KEY ?? '', 'OPENAI_API_KEY'), config.baseUrl);
     case 'openrouter':

@@ -13,7 +13,7 @@ export function Cta({ data }: CtaProps) {
           <div data-r>
             <span className="chip">
               <span className="chip-dot" />
-              {data.chip}
+              <span data-field="chip">{data.chip}</span>
             </span>
           </div>
           <h2 className="cta-h2" data-r data-delay="1">
@@ -29,16 +29,16 @@ export function Cta({ data }: CtaProps) {
               </span>
             ))}
           </h2>
-          <p className="cta-sub" data-r data-delay="2">
+          <p className="cta-sub" data-r data-delay="2" data-field="subtitle">
             {data.subtitle}
           </p>
           <div className="cta-form" data-r data-delay="3">
             <input className="cta-input" type="email" placeholder={data.inputPlaceholder} />
             <button className="btn-pu" type="button">
-              {data.button}
+              <span data-field="button">{data.button}</span>
             </button>
           </div>
-          <p className="cta-note" data-r data-delay="4">
+          <p className="cta-note" data-r data-delay="4" data-field="note">
             {data.note}
           </p>
         </div>

@@ -85,11 +85,81 @@ export type BlockStyles = {
 
 // ─── Hierarchy: Page → Sections → Columns → Blocks ───────────────────────────
 
+// ─── Widget system ────────────────────────────────────────────────────────────
+
+export type WidgetStyles = {
+  paddingTop?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+  paddingRight?: number;
+  marginTop?: number;
+  marginBottom?: number;
+  backgroundColor?: string;
+  textColor?: string;
+  fontSize?: number;
+  fontWeight?: 'normal' | 'medium' | 'semibold' | 'bold';
+  textAlign?: 'left' | 'center' | 'right';
+  borderRadius?: number;
+  borderWidth?: number;
+  borderColor?: string;
+  maxWidth?: number;
+  width?: string;
+};
+
+export type WidgetInstance = {
+  id: string;
+  widgetType: string;
+  data: Record<string, unknown>;
+  styles?: WidgetStyles;
+  children?: WidgetInstance[];
+  isLocked?: boolean;
+  isHidden?: boolean;
+};
+
+export type WidgetFieldType = 'text' | 'textarea' | 'select' | 'upload' | 'checkbox' | 'link';
+
+export type WidgetFieldBase = { name: string; label: string; required?: boolean };
+
+export type WidgetTextField = WidgetFieldBase & { type: 'text' };
+export type WidgetTextareaField = WidgetFieldBase & { type: 'textarea' };
+export type WidgetSelectField = WidgetFieldBase & { type: 'select'; options: Array<{ label: string; value: string }> };
+export type WidgetUploadField = WidgetFieldBase & { type: 'upload' };
+export type WidgetCheckboxField = WidgetFieldBase & { type: 'checkbox' };
+export type WidgetLinkField = WidgetFieldBase & { type: 'link'; showLabel?: boolean };
+
+export type WidgetField =
+  | WidgetTextField
+  | WidgetTextareaField
+  | WidgetSelectField
+  | WidgetUploadField
+  | WidgetCheckboxField
+  | WidgetLinkField;
+
+export type WidgetDefinition = {
+  widgetType: string;
+  label: string;
+  icon: string;
+  category: 'Basic' | 'Media' | 'Layout' | 'Interactive';
+  isContainer?: boolean;
+  fields: WidgetField[];
+  defaultData: Record<string, unknown>;
+};
+
+// Widget selection target (extends SelectionTarget below)
+export type WidgetSelectionTarget = {
+  kind: 'widget';
+  sectionId: string;
+  columnId: string;
+  blockId: string;
+  widgetId: string;
+};
+
 export type BlockInstance = {
   id: string;
   blockType: string;
   data: Record<string, unknown>;
   styles?: BlockStyles;
+  widgets?: WidgetInstance[];
   isLocked?: boolean;
   isHidden?: boolean;
 };
@@ -114,6 +184,7 @@ export type SectionInstance = {
 export type SelectionTarget =
   | { kind: 'block'; sectionId: string; columnId: string; blockId: string }
   | { kind: 'section'; sectionId: string }
+  | WidgetSelectionTarget
   | null;
 
 // ─── Other editor types ───────────────────────────────────────────────────────
@@ -122,8 +193,26 @@ export type ResponsiveMode = 'desktop' | 'tablet' | 'mobile';
 
 export type SaveStatus = 'saved' | 'saving' | 'dirty' | 'error';
 
+// ─── Drag-and-drop protocol ───────────────────────────────────────────────────
+
+export type DragPayload =
+  | { kind: 'block'; blockId: string; sourceSectionId: string; sourceColumnId: string }
+  | { kind: 'section'; sectionId: string }
+  | { kind: 'widget'; widgetId: string; blockId: string; parentWidgetId: string | null };
+
+export type DropTarget =
+  | { kind: 'block'; targetSectionId: string; targetColumnId: string; targetBlockId: string; position: 'before' | 'after' }
+  | { kind: 'column'; targetSectionId: string; targetColumnId: string; position: 'start' | 'end' }
+  | { kind: 'section'; targetSectionId: string; position: 'before' | 'after' }
+  | { kind: 'widget'; targetBlockId: string; targetWidgetId: string | null; position: 'before' | 'after' | 'inside' };
+
+export type SectionStyleOverrideMap = Record<
+  string,
+  Partial<Record<'desktop' | 'tablet' | 'mobile', Record<string, string>>>
+>;
+
 export type EditorMessage =
-  | { type: 'UPDATE_SECTIONS'; sections: SectionInstance[]; responsiveMode: ResponsiveMode }
+  | { type: 'UPDATE_SECTIONS'; sections: SectionInstance[]; responsiveMode: ResponsiveMode; sectionStyleOverrides?: SectionStyleOverrideMap }
   | { type: 'SELECT_BLOCK'; blockId: string | null }
   | { type: 'BLOCK_CLICKED'; blockId: string }
   | { type: 'INLINE_EDIT_START'; blockId: string; fieldName: string }
@@ -144,4 +233,7 @@ export type EditorMessage =
           }
         | null;
     }
-  | { type: 'EDITOR_READY' };
+  | { type: 'EDITOR_READY' }
+  | { type: 'DRAG_COMMIT'; drag: DragPayload; drop: DropTarget }
+  | { type: 'WIDGET_CLICKED'; blockId: string; widgetId: string }
+  | { type: 'WIDGET_INLINE_EDIT_END'; blockId: string; widgetId: string; fieldName: string; value: string };

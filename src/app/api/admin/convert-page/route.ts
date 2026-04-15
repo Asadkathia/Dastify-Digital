@@ -1,10 +1,57 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { convertPage } from '@/lib/page-converter';
-import type { ConvertPageRequest } from '@/lib/page-converter/types';
+import type { ConvertPageRequest, ConvertedSectionMeta } from '@/lib/page-converter/types';
 
 const SRC_ROOT = join(process.cwd(), 'src');
+
+// ─── Auto-registration helpers ─────────────────────────────────────────────────
+
+/**
+ * Insert a new entry into preview-registry.ts REGISTRY_LOADERS if not already present.
+ */
+async function registerInPreviewRegistry(pageName: string): Promise<void> {
+  const filePath = join(SRC_ROOT, 'lib/converted-pages/preview-registry.ts');
+  let src = await readFile(filePath, 'utf8');
+
+  if (src.includes(`'${pageName}'`) || src.includes(`"${pageName}"`)) return;
+
+  const entry = `  '${pageName}': () => import('@/app/(site)/${pageName}/editor-registry'),\n`;
+  // Insert before the }; that immediately precedes the first export statement
+  src = src.replace(/\n\};\s*\nexport/, `\n${entry}};\nexport`);
+  await writeFile(filePath, src, 'utf8');
+}
+
+/**
+ * Insert a new entry into content-map.ts CONTENT_CONFIG if not already present.
+ */
+async function registerInContentMap(pageName: string, sections: ConvertedSectionMeta[]): Promise<void> {
+  const filePath = join(SRC_ROOT, 'lib/converted-pages/content-map.ts');
+  let src = await readFile(filePath, 'utf8');
+
+  if (src.includes(`'${pageName}'`) || src.includes(`"${pageName}"`)) return;
+
+  const sectionLines = sections
+    .map((s) => `      { key: '${s.key}', label: '${s.label}', icon: '${s.icon}' },`)
+    .join('\n');
+
+  const entry = [
+    `  '${pageName}': {`,
+    `    pageName: '${pageName}',`,
+    `    contentFile: 'src/app/(site)/${pageName}/content.ts',`,
+    `    sections: [`,
+    sectionLines,
+    `    ],`,
+    `  },`,
+  ].join('\n') + '\n';
+
+  // Insert before the }; that immediately precedes the first export statement
+  src = src.replace(/\n\};\s*\nexport/, `\n${entry}};\nexport`);
+  await writeFile(filePath, src, 'utf8');
+}
+
+// ─── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,6 +89,15 @@ export async function POST(req: NextRequest) {
           `\n\n/* ── Page: ${result.pageName} ── */\n${result.cssAdditions}\n`,
           'utf8',
         );
+      }
+
+      // Auto-register in preview-registry and content-map so the upload route
+      // can find the editor-registry (and its formDefinitions) immediately.
+      if (result.sections.length > 0) {
+        await Promise.all([
+          registerInPreviewRegistry(result.pageName),
+          registerInContentMap(result.pageName, result.sections),
+        ]);
       }
     }
 

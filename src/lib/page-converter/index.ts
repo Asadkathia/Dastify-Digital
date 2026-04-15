@@ -1,7 +1,12 @@
 import { createAIAdapter } from '@/lib/ai';
 import { resolveModel } from '@/lib/ai/default-models';
 import { buildConverterPrompt } from './prompt';
-import type { ConversionAIOutput, ConvertedFile, ConvertPageRequest, ConvertPageResult } from './types';
+import type {
+  ConversionAIOutput,
+  ConvertedFile,
+  ConvertPageRequest,
+  ConvertPageResult,
+} from './types';
 
 function extractJson(raw: string): string {
   const trimmed = raw.trim();
@@ -45,7 +50,7 @@ export async function convertPage(request: ConvertPageRequest): Promise<ConvertP
     const result = await adapter.complete({
       model,
       messages,
-      maxTokens: 16000,
+      maxTokens: 64000,
       temperature: 0.1,
     });
     rawResponse = result.content;
@@ -93,7 +98,7 @@ export async function convertPage(request: ConvertPageRequest): Promise<ConvertP
     code: aiOutput.pageFile,
   });
 
-  // 3. Content type file (for reference + future CMS wiring)
+  // 3. Content type + defaultContent file
   if (aiOutput.contentType) {
     files.push({
       path: `app/(site)/${pageName}/content.ts`,
@@ -105,10 +110,22 @@ export async function convertPage(request: ConvertPageRequest): Promise<ConvertP
     });
   }
 
+  // 4. Editor registry (sections + formDefinitions for CMS upload)
+  if (aiOutput.editorRegistry?.trim()) {
+    files.push({
+      path: `app/(site)/${pageName}/editor-registry.ts`,
+      code: aiOutput.editorRegistry,
+    });
+  }
+
+  const sections = Array.isArray(aiOutput.sections) ? aiOutput.sections : [];
+
   return {
     ok: true,
     pageName,
     files,
     cssAdditions: aiOutput.globalsCssAdditions ?? '',
+    sections,
   };
 }
+

@@ -22,6 +22,7 @@ import { Services } from './src/payload/collections/Services.ts';
 import { Tags } from './src/payload/collections/Tags.ts';
 import { ImportReports } from './src/payload/collections/ImportReports.ts';
 import { Homepage } from './src/payload/globals/Homepage.ts';
+import { Navigation } from './src/payload/globals/Navigation.ts';
 import { SiteSettings } from './src/payload/globals/SiteSettings.ts';
 
 const filename = fileURLToPath(import.meta.url);
@@ -170,7 +171,7 @@ const createConfig = async () => {
     Menus,
     ImportReports,
   ],
-  globals: [Homepage, SiteSettings],
+  globals: [Homepage, Navigation, SiteSettings],
   plugins: [
     seoPlugin({
       collections: ['pages', 'services', 'case-studies', 'blog-posts'],

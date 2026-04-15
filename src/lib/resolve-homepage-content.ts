@@ -1,4 +1,4 @@
-import { homepageContent, type HomepageContent } from './homepage-content.ts';
+import { homepageContent, type HomepageContent, type CmsLinkValue } from './homepage-content.ts';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -39,6 +39,14 @@ function asStringList(value: unknown, fallback: string[]): string[] {
       return '';
     })
     .filter((item) => item.length > 0);
+}
+
+function asLinkValue(value: unknown): CmsLinkValue | undefined {
+  if (!isRecord(value)) return undefined;
+  const url = typeof value.url === 'string' ? value.url : '';
+  const type = (value.type === 'internal' || value.type === 'anchor') ? value.type : 'external';
+  const openInNewTab = value.openInNewTab === true;
+  return { url, type, openInNewTab };
 }
 
 function normalizeCaseStudiesMain(
@@ -127,6 +135,7 @@ export function resolveHomepageContent(global: unknown): HomepageContent {
       logo: asString(nav.logo, defaults.nav.logo),
       links: asArray(nav.links, defaults.nav.links),
       cta: asString(nav.cta, defaults.nav.cta),
+      ctaHref: asLinkValue(nav.ctaHref),
     },
     hero: {
       id: asString(hero.id, defaults.hero.id),
@@ -134,7 +143,9 @@ export function resolveHomepageContent(global: unknown): HomepageContent {
       headingLines: asArray(hero.headingLines, defaults.hero.headingLines),
       description: asString(hero.description, defaults.hero.description),
       primaryCta: asString(hero.primaryCta, defaults.hero.primaryCta),
+      primaryCtaHref: asLinkValue(hero.primaryCtaHref),
       secondaryCta: asString(hero.secondaryCta, defaults.hero.secondaryCta),
+      secondaryCtaHref: asLinkValue(hero.secondaryCtaHref),
       stats: asArray(hero.stats, defaults.hero.stats),
       image: asMediaURL(hero.imageMedia) ?? asString(hero.image, defaults.hero.image),
       imageAlt: asString(hero.imageAlt, defaults.hero.imageAlt),
@@ -155,6 +166,7 @@ export function resolveHomepageContent(global: unknown): HomepageContent {
       headingLines: asArray(about.headingLines, defaults.about.headingLines),
       paragraphs: asStringList(about.paragraphs, defaults.about.paragraphs),
       cta: asString(about.cta, defaults.about.cta),
+      ctaHref: asLinkValue(about.ctaHref),
       image: asMediaURL(about.imageMedia) ?? asString(about.image, defaults.about.image),
       imageAlt: asString(about.imageAlt, defaults.about.imageAlt),
     },
@@ -179,6 +191,7 @@ export function resolveHomepageContent(global: unknown): HomepageContent {
       chip: asString(caseStudies.chip, defaults.caseStudies.chip),
       title: asString(caseStudies.title, defaults.caseStudies.title),
       cta: asString(caseStudies.cta, defaults.caseStudies.cta),
+      ctaHref: asLinkValue(caseStudies.ctaHref),
       tabs: normalizeCaseTabs(caseStudies.tabs, defaults.caseStudies.tabs),
       main: normalizeCaseStudiesMain(caseStudies.main, defaults.caseStudies.main),
       minis: asArray(caseStudies.minis, defaults.caseStudies.minis).map((mini, index) => {
@@ -223,6 +236,7 @@ export function resolveHomepageContent(global: unknown): HomepageContent {
       description: asString(mission.description, defaults.mission.description),
       checks: asStringList(mission.checks, defaults.mission.checks),
       cta: asString(mission.cta, defaults.mission.cta),
+      ctaHref: asLinkValue(mission.ctaHref),
       image: asMediaURL(mission.imageMedia) ?? asString(mission.image, defaults.mission.image),
       imageAlt: asString(mission.imageAlt, defaults.mission.imageAlt),
     },
@@ -231,6 +245,7 @@ export function resolveHomepageContent(global: unknown): HomepageContent {
       chip: asString(insights.chip, defaults.insights.chip),
       title: asString(insights.title, defaults.insights.title),
       cta: asString(insights.cta, defaults.insights.cta),
+      ctaHref: asLinkValue(insights.ctaHref),
       items: asArray(insights.items, defaults.insights.items).map((item, index) => {
         const fallback = defaults.insights.items[index] ?? defaults.insights.items[0];
         if (!isRecord(item)) {
@@ -251,6 +266,7 @@ export function resolveHomepageContent(global: unknown): HomepageContent {
       title: asString(faq.title, defaults.faq.title),
       intro: asString(faq.intro, defaults.faq.intro),
       cta: asString(faq.cta, defaults.faq.cta),
+      ctaHref: asLinkValue(faq.ctaHref),
       items: asArray(faq.items, defaults.faq.items),
     },
     cta: {

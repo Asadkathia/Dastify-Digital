@@ -15,6 +15,8 @@ import { migration as newBlockTables2 } from './20260407_0013_new_block_tables_2
 import { migration as lockedDocumentsImportReportsRelColumn } from './20260408_0014_locked_documents_import_reports_rel_column.ts';
 import { migration as importReportsTable } from './20260408_0015_import_reports_table.ts';
 import { migration as pagesConvertedContent } from './20260410_0016_pages_converted_content.ts';
+import { migration as homepageCtaHrefColumns } from './20260415_0017_homepage_cta_href_columns.ts';
+import { migration as formsFieldsJsonColumn } from './20260415_0018_forms_fields_json_column.ts';
 
 export const migrations: Migration[] = [
   usersRole,
@@ -33,4 +35,6 @@ export const migrations: Migration[] = [
   lockedDocumentsImportReportsRelColumn,
   importReportsTable,
   pagesConvertedContent,
+  homepageCtaHrefColumns,
+  formsFieldsJsonColumn,
 ];

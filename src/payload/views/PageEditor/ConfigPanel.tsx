@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useEditorStore, selectSelectedBlock } from './store';
 import { getBlockDefinition } from './block-registry';
+import { getWidgetDefinition } from './widget-registry';
+import { widgetCategories } from './widget-registry';
 import { ArrayFieldEditor } from './ArrayFieldEditor';
 import { LinkFieldEditor } from './LinkFieldEditor';
 import { MediaLibraryModal } from './MediaLibraryModal';
-import type { EditorField, BlockStyles, BreakpointOverrides, SectionInstance } from './types';
+import type { EditorField, BlockStyles, BreakpointOverrides, SectionInstance, WidgetInstance, WidgetField, WidgetStyles } from './types';
 import { getValueAtPath } from '@/lib/converted-pages/object-path';
 
 // Local state mirrors the prop; debounces writes to the store by `delay` ms.
@@ -1286,6 +1288,483 @@ function BlockStylesPanel({ blockId, styles }: { blockId: string; styles?: Block
   );
 }
 
+// ─── Widget field editor ──────────────────────────────────────────────────────
+
+function WidgetFieldEditorItem({ blockId, widgetId, field, value }: {
+  blockId: string;
+  widgetId: string;
+  field: WidgetField;
+  value: unknown;
+}) {
+  const updateWidgetData = useEditorStore((s) => s.updateWidgetData);
+  const strVal = typeof value === 'string' ? value : (value != null ? String(value) : '');
+
+  if (field.type === 'select') {
+    return (
+      <div style={{ marginBottom: '12px' }}>
+        <label style={labelStyle}>{field.label}</label>
+        <select
+          value={strVal}
+          onChange={(e) => updateWidgetData(blockId, widgetId, field.name, e.target.value)}
+          style={inputStyle}
+        >
+          {field.options.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
+  if (field.type === 'textarea') {
+    return (
+      <div style={{ marginBottom: '12px' }}>
+        <label style={labelStyle}>{field.label}</label>
+        <textarea
+          value={strVal}
+          rows={4}
+          onChange={(e) => updateWidgetData(blockId, widgetId, field.name, e.target.value)}
+          style={{ ...inputStyle, resize: 'vertical' }}
+        />
+      </div>
+    );
+  }
+
+  if (field.type === 'checkbox') {
+    return (
+      <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <input
+          type="checkbox"
+          checked={!!value}
+          onChange={(e) => updateWidgetData(blockId, widgetId, field.name, e.target.checked)}
+        />
+        <label style={{ ...labelStyle, margin: 0 }}>{field.label}</label>
+      </div>
+    );
+  }
+
+  if (field.type === 'link') {
+    return (
+      <LinkFieldEditor
+        blockId={blockId}
+        fieldName={field.name}
+        fieldLabel={field.label}
+        value={value}
+        showLabel={false}
+        onCommit={(val) => updateWidgetData(blockId, widgetId, field.name, val)}
+      />
+    );
+  }
+
+  // text default
+  return (
+    <div style={{ marginBottom: '12px' }}>
+      <label style={labelStyle}>{field.label}</label>
+      <input
+        type="text"
+        value={strVal}
+        onChange={(e) => updateWidgetData(blockId, widgetId, field.name, e.target.value)}
+        style={inputStyle}
+      />
+    </div>
+  );
+}
+
+// ─── Widget styles panel ──────────────────────────────────────────────────────
+
+function WidgetStylesPanel({ blockId, widgetId, styles }: {
+  blockId: string;
+  widgetId: string;
+  styles?: WidgetStyles;
+}) {
+  const updateWidgetStyles = useEditorStore((s) => s.updateWidgetStyles);
+  const clearWidgetStyle   = useEditorStore((s) => s.clearWidgetStyle);
+  const [tab, setTab] = useState<'spacing' | 'appearance' | 'typography'>('spacing');
+
+  const upd = (patch: Partial<WidgetStyles>) => updateWidgetStyles(blockId, widgetId, patch);
+  const clr = (key: keyof WidgetStyles) => clearWidgetStyle(blockId, widgetId, key);
+
+  const tabs = [
+    { id: 'spacing' as const,    label: 'Spacing'    },
+    { id: 'appearance' as const, label: 'Appearance' },
+    { id: 'typography' as const, label: 'Typography' },
+  ];
+
+  function numField(key: keyof WidgetStyles, lbl: string, max = 200) {
+    const val = styles?.[key] as number | undefined;
+    return (
+      <div key={String(key)}>
+        <label style={labelStyle}>{lbl}</label>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <input
+            type="number" min={0} max={max}
+            value={val ?? ''}
+            onChange={(e) => upd({ [key]: e.target.value === '' ? undefined : Number(e.target.value) })}
+            style={{ ...inputStyle, padding: '7px 8px', flex: 1 }}
+            placeholder="0"
+          />
+          {val != null && (
+            <button onClick={() => clr(key)} style={{ ...actionBtnStyle, flexShrink: 0 }} title="Clear">✕</button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: '12px', borderTop: '1px solid #1e1e1e', paddingTop: '12px' }}>
+      <p style={{ fontSize: '11px', fontWeight: 600, color: '#555', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 10px' }}>
+        Styles
+      </p>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '2px', marginBottom: '12px', background: '#0a0a0a', borderRadius: '6px', padding: '3px' }}>
+        {tabs.map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            flex: 1, background: tab === t.id ? '#1e1e1e' : 'transparent', border: 'none',
+            borderRadius: '4px', color: tab === t.id ? '#ccc' : '#555', cursor: 'pointer',
+            fontSize: '10px', fontWeight: 600, padding: '5px 4px', textTransform: 'capitalize',
+          }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Spacing */}
+      {tab === 'spacing' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            {numField('paddingTop',    'Pad Top')}
+            {numField('paddingBottom', 'Pad Bottom')}
+            {numField('paddingLeft',   'Pad Left')}
+            {numField('paddingRight',  'Pad Right')}
+            {numField('marginTop',     'Margin Top')}
+            {numField('marginBottom',  'Margin Bottom')}
+          </div>
+          <div>
+            <label style={labelStyle}>Max Width (px)</label>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <input
+                type="number" min={0} max={2560}
+                value={styles?.maxWidth ?? ''}
+                onChange={(e) => upd({ maxWidth: e.target.value === '' ? undefined : Number(e.target.value) })}
+                style={{ ...inputStyle, padding: '7px 8px', flex: 1 }}
+                placeholder="—"
+              />
+              {styles?.maxWidth != null && (
+                <button onClick={() => clr('maxWidth')} style={{ ...actionBtnStyle, flexShrink: 0 }} title="Clear">✕</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Appearance */}
+      {tab === 'appearance' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Background color */}
+          <div>
+            <label style={labelStyle}>Background Color</label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                type="color"
+                value={styles?.backgroundColor ?? '#ffffff'}
+                onChange={(e) => upd({ backgroundColor: e.target.value })}
+                style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid #2a2a2a', borderRadius: '4px', cursor: 'pointer', background: '#0f0f0f' }}
+              />
+              <input
+                type="text"
+                value={styles?.backgroundColor ?? ''}
+                onChange={(e) => upd({ backgroundColor: e.target.value || undefined })}
+                style={{ ...inputStyle, flex: 1 }}
+                placeholder="transparent"
+              />
+              {styles?.backgroundColor && (
+                <button onClick={() => clr('backgroundColor')} style={{ ...actionBtnStyle, flexShrink: 0 }} title="Clear">✕</button>
+              )}
+            </div>
+            <ColorSwatches onSelect={(c) => upd({ backgroundColor: c === 'transparent' ? undefined : c })} />
+          </div>
+          {/* Border */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={labelStyle}>Border Radius (px)</label>
+              <input
+                type="number" min={0} max={100}
+                value={styles?.borderRadius ?? ''}
+                onChange={(e) => upd({ borderRadius: e.target.value === '' ? undefined : Number(e.target.value) })}
+                style={{ ...inputStyle, padding: '7px 8px' }} placeholder="0"
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Border Width (px)</label>
+              <input
+                type="number" min={0} max={20}
+                value={styles?.borderWidth ?? ''}
+                onChange={(e) => upd({ borderWidth: e.target.value === '' ? undefined : Number(e.target.value) })}
+                style={{ ...inputStyle, padding: '7px 8px' }} placeholder="0"
+              />
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Border Color</label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                type="color"
+                value={styles?.borderColor ?? '#000000'}
+                onChange={(e) => upd({ borderColor: e.target.value })}
+                style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid #2a2a2a', borderRadius: '4px', cursor: 'pointer', background: '#0f0f0f' }}
+              />
+              <input
+                type="text"
+                value={styles?.borderColor ?? ''}
+                onChange={(e) => upd({ borderColor: e.target.value || undefined })}
+                style={{ ...inputStyle, flex: 1 }}
+                placeholder="#000000"
+              />
+            </div>
+            <ColorSwatches onSelect={(c) => upd({ borderColor: c === 'transparent' ? undefined : c })} />
+          </div>
+        </div>
+      )}
+
+      {/* Typography */}
+      {tab === 'typography' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div>
+            <label style={labelStyle}>Text Color</label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                type="color"
+                value={styles?.textColor ?? '#000000'}
+                onChange={(e) => upd({ textColor: e.target.value })}
+                style={{ width: '32px', height: '32px', padding: '2px', border: '1px solid #2a2a2a', borderRadius: '4px', cursor: 'pointer', background: '#0f0f0f' }}
+              />
+              <input
+                type="text"
+                value={styles?.textColor ?? ''}
+                onChange={(e) => upd({ textColor: e.target.value || undefined })}
+                style={{ ...inputStyle, flex: 1 }}
+                placeholder="#333333"
+              />
+              {styles?.textColor && (
+                <button onClick={() => clr('textColor')} style={{ ...actionBtnStyle, flexShrink: 0 }} title="Clear">✕</button>
+              )}
+            </div>
+            <ColorSwatches onSelect={(c) => upd({ textColor: c === 'transparent' ? undefined : c })} />
+          </div>
+          <div>
+            <label style={labelStyle}>Font Size (px)</label>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <input
+                type="number" min={8} max={200}
+                value={styles?.fontSize ?? ''}
+                onChange={(e) => upd({ fontSize: e.target.value === '' ? undefined : Number(e.target.value) })}
+                style={{ ...inputStyle, flex: 1 }} placeholder="16"
+              />
+              {styles?.fontSize != null && (
+                <button onClick={() => clr('fontSize')} style={{ ...actionBtnStyle, flexShrink: 0 }} title="Clear">✕</button>
+              )}
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Font Weight</label>
+            <select
+              value={styles?.fontWeight ?? ''}
+              onChange={(e) => upd({ fontWeight: (e.target.value || undefined) as WidgetStyles['fontWeight'] })}
+              style={{ ...inputStyle, cursor: 'pointer' }}
+            >
+              <option value="">Default</option>
+              <option value="normal">Normal (400)</option>
+              <option value="medium">Medium (500)</option>
+              <option value="semibold">Semibold (600)</option>
+              <option value="bold">Bold (700)</option>
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>Text Align</label>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {(['left', 'center', 'right'] as const).map((align) => (
+                <button
+                  key={align}
+                  onClick={() => upd({ textAlign: styles?.textAlign === align ? undefined : align })}
+                  style={{
+                    flex: 1,
+                    background: styles?.textAlign === align ? '#0ea5e9' : '#1a1a1a',
+                    border: `1px solid ${styles?.textAlign === align ? '#0ea5e9' : '#2a2a2a'}`,
+                    borderRadius: '5px', color: styles?.textAlign === align ? '#fff' : '#555',
+                    cursor: 'pointer', fontSize: '14px', padding: '6px 4px',
+                  }}
+                  title={align}
+                >
+                  {align === 'left' ? '⬅' : align === 'center' ? '⬛' : '➡'}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Widget add palette ───────────────────────────────────────────────────────
+
+function WidgetPalette({ blockId, label = 'Add Widget' }: { blockId: string; label?: string }) {
+  const addWidget = useEditorStore((s) => s.addWidget);
+  return (
+    <div>
+      <p style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>{label}</p>
+      {widgetCategories.map((cat) => (
+        <div key={cat.name} style={{ marginBottom: '10px' }}>
+          <p style={{ fontSize: '10px', color: '#444', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{cat.name}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+            {cat.widgets.map((wdef) => (
+              <button
+                key={wdef.widgetType}
+                type="button"
+                onClick={() => addWidget(blockId, wdef.widgetType)}
+                style={{
+                  background: '#1a1a1a', border: '1px solid #333', color: '#ccc',
+                  borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '4px',
+                }}
+                title={`Add ${wdef.label}`}
+              >
+                {wdef.icon} {wdef.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Widget inspector ─────────────────────────────────────────────────────────
+
+function WidgetInspector({ blockId, widgetId }: { blockId: string; widgetId: string }) {
+  const sections        = useEditorStore((s) => s.sections);
+  const removeWidget    = useEditorStore((s) => s.removeWidget);
+  const duplicateWidget = useEditorStore((s) => s.duplicateWidget);
+  const toggleWidgetHidden = useEditorStore((s) => s.toggleWidgetHidden);
+  const clearSelection  = useEditorStore((s) => s.clearSelection);
+  const [tab, setTab]   = useState<'content' | 'style'>('content');
+
+  let widget: WidgetInstance | null = null;
+  for (const sec of sections) {
+    for (const col of sec.columns) {
+      const block = col.blocks.find((b) => b.id === blockId);
+      if (block?.widgets) {
+        widget = block.widgets.find((w) => w.id === widgetId) ?? null;
+        if (widget) break;
+      }
+    }
+    if (widget) break;
+  }
+
+  const def = widget ? getWidgetDefinition(widget.widgetType) : null;
+
+  if (!widget || !def) {
+    return <div style={{ padding: '16px', color: '#555', fontSize: '13px' }}>Widget not found.</div>;
+  }
+
+  return (
+    <div>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+        <span style={{ fontSize: '12px', color: '#aaa', fontWeight: 600 }}>
+          {def.icon} {def.label}
+          {widget.isHidden ? <span style={{ marginLeft: '6px', color: '#fbbf24', fontSize: '10px' }}>(hidden)</span> : null}
+        </span>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <button
+            type="button"
+            onClick={() => toggleWidgetHidden(blockId, widgetId)}
+            style={{ ...actionBtnStyle, color: widget.isHidden ? '#fbbf24' : '#555' }}
+            title={widget.isHidden ? 'Show widget' : 'Hide widget'}
+          >
+            👁
+          </button>
+          <button
+            type="button"
+            onClick={() => duplicateWidget(blockId, widgetId)}
+            style={actionBtnStyle}
+            title="Duplicate widget"
+          >
+            ⧉
+          </button>
+          <button
+            type="button"
+            onClick={() => { removeWidget(blockId, widgetId); clearSelection(); }}
+            style={{ ...actionBtnStyle, color: '#f87171' }}
+            title="Remove widget"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      {/* Content / Style tabs */}
+      <div style={{ display: 'flex', gap: '2px', marginBottom: '14px', background: '#0a0a0a', borderRadius: '6px', padding: '3px' }}>
+        {(['content', 'style'] as const).map((t) => (
+          <button key={t} onClick={() => setTab(t)} style={{
+            flex: 1, background: tab === t ? '#1e1e1e' : 'transparent', border: 'none',
+            borderRadius: '4px', color: tab === t ? '#ccc' : '#555', cursor: 'pointer',
+            fontSize: '10px', fontWeight: 600, padding: '5px 4px', textTransform: 'capitalize',
+          }}>
+            {t === 'content' ? 'Content' : 'Style'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'content' ? (
+        <>
+          {def.fields.length > 0 ? (
+            def.fields.map((field) => (
+              <WidgetFieldEditorItem
+                key={field.name}
+                blockId={blockId}
+                widgetId={widgetId}
+                field={field}
+                value={widget!.data[field.name]}
+              />
+            ))
+          ) : (
+            <p style={{ fontSize: '12px', color: '#555', margin: '0 0 12px' }}>No content fields for this widget.</p>
+          )}
+          <hr style={{ border: 'none', borderTop: '1px solid #1e1e1e', margin: '16px 0' }} />
+          <WidgetPalette blockId={blockId} label="Add Widget Below" />
+        </>
+      ) : (
+        <WidgetStylesPanel blockId={blockId} widgetId={widgetId} styles={widget.styles} />
+      )}
+    </div>
+  );
+}
+
+// ─── Widget container panel ───────────────────────────────────────────────────
+
+function WidgetContainerPanel({ blockId }: { blockId: string }) {
+  const sections = useEditorStore((s) => s.sections);
+  let widgetCount = 0;
+  for (const sec of sections) {
+    for (const col of sec.columns) {
+      const block = col.blocks.find((b) => b.id === blockId);
+      if (block) { widgetCount = block.widgets?.length ?? 0; break; }
+    }
+  }
+
+  return (
+    <div>
+      <p style={{ fontSize: '12px', color: '#888', margin: '0 0 14px' }}>
+        {widgetCount} widget{widgetCount !== 1 ? 's' : ''} · Click a widget in the preview to edit it
+      </p>
+      <WidgetPalette blockId={blockId} label="Add Widget" />
+    </div>
+  );
+}
+
 type ConfigPanelProps = {
   embedded?: boolean;
 };
@@ -1300,6 +1779,7 @@ export function ConfigPanel({ embedded = false }: ConfigPanelProps) {
 
   const blockSelection = selection?.kind === 'block' ? selection : null;
   const sectionSelection = selection?.kind === 'section' ? selection : null;
+  const widgetSelection = selection?.kind === 'widget' ? selection : null;
   const def = selectedBlock ? getBlockDefinition(selectedBlock.blockType) : null;
   const toggleBlockLocked = useEditorStore((s) => s.toggleBlockLocked);
   const toggleBlockHidden = useEditorStore((s) => s.toggleBlockHidden);
@@ -1326,7 +1806,7 @@ export function ConfigPanel({ embedded = false }: ConfigPanelProps) {
       {/* Header */}
       <div style={{ padding: '16px 14px 10px', borderBottom: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <p style={{ fontSize: '11px', fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-          {selectedSection ? '▦ Section' : def ? `${def.icon} ${def.label}` : 'Properties'}
+          {selectedSection ? '▦ Section' : widgetSelection ? '⊞ Widget' : def ? `${def.icon} ${def.label}` : 'Properties'}
         </p>
         {selectedBlock && def && blockSelection && (
           <div style={{ display: 'flex', gap: '4px' }}>
@@ -1351,8 +1831,10 @@ export function ConfigPanel({ embedded = false }: ConfigPanelProps) {
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: (selectedBlock || selectedSection) ? '16px 14px' : 0 }}>
-        {selectedSection ? (
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: (selectedBlock || selectedSection || widgetSelection) ? '16px 14px' : 0 }}>
+        {widgetSelection ? (
+          <WidgetInspector blockId={widgetSelection.blockId} widgetId={widgetSelection.widgetId} />
+        ) : selectedSection ? (
           <SectionPanel section={selectedSection} />
         ) : !selectedBlock || !def ? (
           <NoSelection />
@@ -1369,6 +1851,8 @@ export function ConfigPanel({ embedded = false }: ConfigPanelProps) {
                 <p style={{ margin: 0, fontSize: '12px', color: '#7dd3fc' }}>Block is locked</p>
                 <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#555' }}>Unlock to edit content and styles.</p>
               </div>
+            ) : selectedBlock.blockType === 'widget-container' ? (
+              <WidgetContainerPanel blockId={selectedBlock.id} />
             ) : (
               <>
                 {def.fields.map((field) => (

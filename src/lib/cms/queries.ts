@@ -163,3 +163,52 @@ export function extractSeoMeta(doc: CMSDoc | null | undefined) {
     keywords: typeof doc.meta.keywords === 'string' ? doc.meta.keywords : undefined,
   };
 }
+
+// ─── Navigation global ────────────────────────────────────────────────────────
+
+export type NavigationData = {
+  logoText: string;
+  logoAccent: string;
+  logoHref: string;
+  links: { label: string; href: string }[];
+  ctaLabel: string;
+  ctaHref: string;
+};
+
+const NAVIGATION_FALLBACK: NavigationData = {
+  logoText: 'Dastify',
+  logoAccent: '.Digital',
+  logoHref: '/',
+  links: [
+    { label: 'Home', href: '/' },
+    { label: 'About', href: '/about' },
+    { label: 'Services', href: '/services' },
+    { label: 'Work', href: '/work' },
+    { label: 'Insights', href: '/insights' },
+    { label: 'Contact', href: '/contact' },
+  ],
+  ctaLabel: 'Book a Call',
+  ctaHref: '/contact',
+};
+
+export async function getNavigation(): Promise<NavigationData> {
+  try {
+    const payload = await getPayloadClient();
+    const doc = (await payload.findGlobal({ slug: 'navigation' as never })) as Record<string, unknown>;
+    if (!doc) return NAVIGATION_FALLBACK;
+    return {
+      logoText: typeof doc.logoText === 'string' && doc.logoText ? doc.logoText : NAVIGATION_FALLBACK.logoText,
+      logoAccent: typeof doc.logoAccent === 'string' && doc.logoAccent ? doc.logoAccent : NAVIGATION_FALLBACK.logoAccent,
+      logoHref: typeof doc.logoHref === 'string' && doc.logoHref ? doc.logoHref : NAVIGATION_FALLBACK.logoHref,
+      links: Array.isArray(doc.links)
+        ? (doc.links as Array<{ label?: unknown; href?: unknown }>)
+            .filter((l) => typeof l.label === 'string' && typeof l.href === 'string')
+            .map((l) => ({ label: String(l.label), href: String(l.href) }))
+        : NAVIGATION_FALLBACK.links,
+      ctaLabel: typeof doc.ctaLabel === 'string' && doc.ctaLabel ? doc.ctaLabel : NAVIGATION_FALLBACK.ctaLabel,
+      ctaHref: typeof doc.ctaHref === 'string' && doc.ctaHref ? doc.ctaHref : NAVIGATION_FALLBACK.ctaHref,
+    };
+  } catch {
+    return NAVIGATION_FALLBACK;
+  }
+}

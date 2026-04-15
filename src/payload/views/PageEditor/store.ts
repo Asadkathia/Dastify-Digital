@@ -11,8 +11,11 @@ import type {
   SaveStatus,
   SectionInstance,
   SelectionTarget,
+  WidgetInstance,
+  WidgetStyles,
 } from './types';
 import { createBlockInstance } from './block-registry';
+import { createWidgetInstance } from './widget-registry';
 import { setValueAtPath } from '@/lib/converted-pages/object-path';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -57,6 +60,15 @@ function updateNestedBlockData(data: Record<string, unknown>, field: string, val
     return next;
   }
 
+  // Converted-page blocks store data as a flat record keyed by dotted paths
+  // (e.g. "form.note"). In that case, update the flat key directly — running
+  // setValueAtPath would create a parallel nested `form` object that
+  // overwrites the sibling flat keys on the next rebuild.
+  if (Object.prototype.hasOwnProperty.call(next, field)) {
+    next[field] = value;
+    return next;
+  }
+
   setValueAtPath(next, field, value);
   return next;
 }
@@ -71,11 +83,35 @@ function makeSingleColSection(overrides?: Partial<SectionInstance>): SectionInst
 
 // ─── State shape ──────────────────────────────────────────────────────────────
 
+type SectionOverrideBreakpoint = 'desktop' | 'tablet' | 'mobile';
+
+type SectionOverrideValues = {
+  paddingTop?: string;
+  paddingBottom?: string;
+  paddingLeft?: string;
+  paddingRight?: string;
+  marginTop?: string;
+  marginBottom?: string;
+  minHeight?: string;
+  gap?: string;
+};
+
+export type SectionStyleOverrides = Record<
+  string,
+  Partial<Record<SectionOverrideBreakpoint, SectionOverrideValues>>
+>;
+
 type EditorState = {
   pageId: string | null;
   editorMode: 'pages' | 'homepage' | 'converted';
   convertedPageName: string | null;
   sections: SectionInstance[];
+  /** Per-section, per-breakpoint spacing/size overrides for converted pages. */
+  sectionStyleOverrides: SectionStyleOverrides;
+  /** Currently active section key in the Sections panel. */
+  activeSectionKey: string | null;
+  /** Breakpoint currently selected in the Sections panel. */
+  activeSectionBreakpoint: SectionOverrideBreakpoint;
   selection: SelectionTarget;
   saveStatus: SaveStatus;
   responsiveMode: ResponsiveMode;
@@ -106,6 +142,18 @@ type EditorState = {
   setResponsiveMode: (mode: ResponsiveMode) => void;
   setIframeReady: (ready: boolean) => void;
   setSelectedNode: (node: EditorState['selectedNode']) => void;
+
+  // ── Section style overrides (converted pages) ────────────────────────────
+  setSectionStyleOverrides: (overrides: SectionStyleOverrides) => void;
+  updateSectionStyleOverride: (
+    sectionKey: string,
+    breakpoint: SectionOverrideBreakpoint,
+    property: keyof SectionOverrideValues,
+    value: string | undefined,
+  ) => void;
+  clearSectionStyleBreakpoint: (sectionKey: string, breakpoint: SectionOverrideBreakpoint) => void;
+  setActiveSectionKey: (key: string | null) => void;
+  setActiveSectionBreakpoint: (bp: SectionOverrideBreakpoint) => void;
 
   // ── Selection ─────────────────────────────────────────────────────────────
   selectBlock: (sectionId: string, columnId: string, blockId: string) => void;
@@ -143,7 +191,69 @@ type EditorState = {
   addArrayItem: (blockId: string, arrayField: string, newItem: Record<string, unknown>) => void;
   removeArrayItem: (blockId: string, arrayField: string, index: number) => void;
   moveArrayItem: (blockId: string, arrayField: string, fromIndex: number, toIndex: number) => void;
+
+  // ── Widget actions ────────────────────────────────────────────────────────
+  selectWidget: (sectionId: string, columnId: string, blockId: string, widgetId: string) => void;
+  addWidget: (blockId: string, widgetType: string, atIndex?: number, parentWidgetId?: string) => void;
+  removeWidget: (blockId: string, widgetId: string, parentWidgetId?: string) => void;
+  duplicateWidget: (blockId: string, widgetId: string) => void;
+  toggleWidgetHidden: (blockId: string, widgetId: string) => void;
+  updateWidgetData: (blockId: string, widgetId: string, field: string, value: unknown) => void;
+  updateWidgetStyles: (blockId: string, widgetId: string, styles: Partial<WidgetStyles>) => void;
+  clearWidgetStyle: (blockId: string, widgetId: string, key: keyof WidgetStyles) => void;
+  moveWidgetWithinBlock: (blockId: string, fromIndex: number, toIndex: number, parentWidgetId?: string) => void;
+  moveWidgetBetweenBlocks: (sourceBlockId: string, widgetId: string, targetBlockId: string, targetWidgetId: string | null, position: 'before' | 'after') => void;
+  setBlockWidgets: (blockId: string, widgets: WidgetInstance[]) => void;
 };
+
+// ─── Widget helpers ───────────────────────────────────────────────────────────
+
+function mapWidget(
+  widgets: WidgetInstance[],
+  widgetId: string,
+  fn: (w: WidgetInstance) => WidgetInstance,
+): WidgetInstance[] {
+  return widgets.map((w) => {
+    if (w.id === widgetId) return fn(w);
+    if (w.children && w.children.length > 0) {
+      return { ...w, children: mapWidget(w.children, widgetId, fn) };
+    }
+    return w;
+  });
+}
+
+function removeWidgetById(widgets: WidgetInstance[], widgetId: string): WidgetInstance[] {
+  return widgets
+    .filter((w) => w.id !== widgetId)
+    .map((w) =>
+      w.children && w.children.length > 0
+        ? { ...w, children: removeWidgetById(w.children, widgetId) }
+        : w,
+    );
+}
+
+function cloneWidget(w: WidgetInstance): WidgetInstance {
+  const newId = `widget-${w.widgetType}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  return {
+    ...structuredClone(w),
+    id: newId,
+    children: w.children ? w.children.map(cloneWidget) : undefined,
+  };
+}
+
+function insertAfterWidget(widgets: WidgetInstance[], widgetId: string, clone: WidgetInstance): WidgetInstance[] {
+  const idx = widgets.findIndex((w) => w.id === widgetId);
+  if (idx !== -1) {
+    const next = [...widgets];
+    next.splice(idx + 1, 0, clone);
+    return next;
+  }
+  return widgets.map((w) =>
+    w.children && w.children.length > 0
+      ? { ...w, children: insertAfterWidget(w.children, widgetId, clone) }
+      : w,
+  );
+}
 
 // ─── Immutable block-level helpers ───────────────────────────────────────────
 // These operate on a sections array and return a new one.
@@ -184,6 +294,9 @@ export const useEditorStore = create<EditorState>()(
       editorMode: 'pages',
       convertedPageName: null,
       sections: [],
+      sectionStyleOverrides: {},
+      activeSectionKey: null,
+      activeSectionBreakpoint: 'desktop',
       selection: null,
       saveStatus: 'saved',
       responsiveMode: 'desktop',
@@ -202,6 +315,40 @@ export const useEditorStore = create<EditorState>()(
       setResponsiveMode: (responsiveMode) => set({ responsiveMode }),
       setIframeReady: (iframeReady) => set({ iframeReady }),
       setSelectedNode: (selectedNode) => set({ selectedNode }),
+
+      // ── Section style overrides ─────────────────────────────────────────
+      setSectionStyleOverrides: (sectionStyleOverrides) => set({ sectionStyleOverrides }),
+      updateSectionStyleOverride: (sectionKey, breakpoint, property, value) =>
+        set((state) => {
+          const prevForSection = state.sectionStyleOverrides[sectionKey] ?? {};
+          const prevForBp = prevForSection[breakpoint] ?? {};
+          const nextForBp: SectionOverrideValues = { ...prevForBp };
+          if (value == null || value === '') delete nextForBp[property];
+          else nextForBp[property] = value;
+
+          const nextForSection = { ...prevForSection };
+          if (Object.keys(nextForBp).length === 0) delete nextForSection[breakpoint];
+          else nextForSection[breakpoint] = nextForBp;
+
+          const next = { ...state.sectionStyleOverrides };
+          if (Object.keys(nextForSection).length === 0) delete next[sectionKey];
+          else next[sectionKey] = nextForSection;
+
+          return { sectionStyleOverrides: next, saveStatus: 'dirty' };
+        }),
+      clearSectionStyleBreakpoint: (sectionKey, breakpoint) =>
+        set((state) => {
+          const prev = state.sectionStyleOverrides[sectionKey];
+          if (!prev || !prev[breakpoint]) return {};
+          const nextForSection = { ...prev };
+          delete nextForSection[breakpoint];
+          const next = { ...state.sectionStyleOverrides };
+          if (Object.keys(nextForSection).length === 0) delete next[sectionKey];
+          else next[sectionKey] = nextForSection;
+          return { sectionStyleOverrides: next, saveStatus: 'dirty' };
+        }),
+      setActiveSectionKey: (activeSectionKey) => set({ activeSectionKey }),
+      setActiveSectionBreakpoint: (activeSectionBreakpoint) => set({ activeSectionBreakpoint }),
 
       // ── Selection ────────────────────────────────────────────────────────
       selectBlock: (sectionId, columnId, blockId) =>
@@ -586,6 +733,194 @@ export const useEditorStore = create<EditorState>()(
           }),
           saveStatus: 'dirty',
         })),
+
+      // ── Widget actions ──────────────────────────────────────────────────────
+      selectWidget: (sectionId, columnId, blockId, widgetId) =>
+        set({ selection: { kind: 'widget', sectionId, columnId, blockId, widgetId } }),
+
+      addWidget: (blockId, widgetType, atIndex, parentWidgetId) =>
+        set((state) => {
+          const instance = createWidgetInstance(widgetType);
+          if (!instance) return state;
+          const sections = mapBlock(state.sections, blockId, (b) => {
+            if (parentWidgetId) {
+              // Add into a container widget's children
+              const newWidgets = mapWidget(b.widgets ?? [], parentWidgetId, (parent) => {
+                const children = [...(parent.children ?? [])];
+                const insertAt = atIndex !== undefined ? atIndex : children.length;
+                children.splice(insertAt, 0, instance);
+                return { ...parent, children };
+              });
+              return { ...b, widgets: newWidgets };
+            }
+            const widgets = [...(b.widgets ?? [])];
+            const insertAt = atIndex !== undefined ? atIndex : widgets.length;
+            widgets.splice(insertAt, 0, instance);
+            return { ...b, widgets };
+          });
+          return { sections, saveStatus: 'dirty' };
+        }),
+
+      removeWidget: (blockId, widgetId, _parentWidgetId) =>
+        set((state) => ({
+          sections: mapBlock(state.sections, blockId, (b) => ({
+            ...b,
+            widgets: removeWidgetById(b.widgets ?? [], widgetId),
+          })),
+          selection:
+            state.selection?.kind === 'widget' && state.selection.widgetId === widgetId
+              ? { kind: 'block', sectionId: state.selection.sectionId, columnId: state.selection.columnId, blockId }
+              : state.selection,
+          saveStatus: 'dirty',
+        })),
+
+      updateWidgetData: (blockId, widgetId, field, value) =>
+        set((state) => ({
+          sections: mapBlock(state.sections, blockId, (b) => ({
+            ...b,
+            widgets: mapWidget(b.widgets ?? [], widgetId, (w) => ({
+              ...w,
+              data: { ...w.data, [field]: value },
+            })),
+          })),
+          saveStatus: 'dirty',
+        })),
+
+      updateWidgetStyles: (blockId, widgetId, styles) =>
+        set((state) => ({
+          sections: mapBlock(state.sections, blockId, (b) => ({
+            ...b,
+            widgets: mapWidget(b.widgets ?? [], widgetId, (w) => ({
+              ...w,
+              styles: { ...w.styles, ...styles },
+            })),
+          })),
+          saveStatus: 'dirty',
+        })),
+
+      moveWidgetWithinBlock: (blockId, fromIndex, toIndex, parentWidgetId) =>
+        set((state) => ({
+          sections: mapBlock(state.sections, blockId, (b) => {
+            if (parentWidgetId) {
+              const newWidgets = mapWidget(b.widgets ?? [], parentWidgetId, (parent) => {
+                const children = [...(parent.children ?? [])];
+                const [moved] = children.splice(fromIndex, 1);
+                children.splice(toIndex, 0, moved);
+                return { ...parent, children };
+              });
+              return { ...b, widgets: newWidgets };
+            }
+            const widgets = [...(b.widgets ?? [])];
+            const [moved] = widgets.splice(fromIndex, 1);
+            widgets.splice(toIndex, 0, moved);
+            return { ...b, widgets };
+          }),
+          saveStatus: 'dirty',
+        })),
+
+      setBlockWidgets: (blockId, widgets) =>
+        set((state) => ({
+          sections: mapBlock(state.sections, blockId, (b) => ({ ...b, widgets })),
+          saveStatus: 'dirty',
+        })),
+
+      duplicateWidget: (blockId, widgetId) =>
+        set((state) => ({
+          sections: mapBlock(state.sections, blockId, (b) => {
+            const clone = (() => {
+              const flat = b.widgets ?? [];
+              const found = flat.find((w) => w.id === widgetId);
+              return found ? cloneWidget(found) : null;
+            })();
+            if (!clone) return b;
+            return { ...b, widgets: insertAfterWidget(b.widgets ?? [], widgetId, clone) };
+          }),
+          saveStatus: 'dirty',
+        })),
+
+      toggleWidgetHidden: (blockId, widgetId) =>
+        set((state) => ({
+          sections: mapBlock(state.sections, blockId, (b) => ({
+            ...b,
+            widgets: mapWidget(b.widgets ?? [], widgetId, (w) => ({ ...w, isHidden: !w.isHidden })),
+          })),
+          saveStatus: 'dirty',
+        })),
+
+      clearWidgetStyle: (blockId, widgetId, key) =>
+        set((state) => ({
+          sections: mapBlock(state.sections, blockId, (b) => ({
+            ...b,
+            widgets: mapWidget(b.widgets ?? [], widgetId, (w) => {
+              const styles = { ...(w.styles ?? {}) };
+              delete styles[key];
+              return { ...w, styles };
+            }),
+          })),
+          saveStatus: 'dirty',
+        })),
+
+      moveWidgetBetweenBlocks: (sourceBlockId, widgetId, targetBlockId, targetWidgetId, position) =>
+        set((state) => {
+          // Step 1: find the widget in the source block
+          let movedWidget: WidgetInstance | null = null;
+          const findWidget = (widgets: WidgetInstance[]): WidgetInstance | null => {
+            for (const w of widgets) {
+              if (w.id === widgetId) return w;
+              if (w.children) {
+                const found = findWidget(w.children);
+                if (found) return found;
+              }
+            }
+            return null;
+          };
+          const sourceBlock = (() => {
+            for (const sec of state.sections) {
+              for (const col of sec.columns) {
+                for (const b of col.blocks) {
+                  if (b.id === sourceBlockId) return b;
+                }
+              }
+            }
+            return null;
+          })();
+          if (sourceBlock) movedWidget = findWidget(sourceBlock.widgets ?? []);
+          if (!movedWidget) return state;
+
+          const widget = movedWidget;
+
+          // Step 2: insert widget into target block
+          const insertWidget = (widgets: WidgetInstance[], targetId: string | null, pos: 'before' | 'after'): WidgetInstance[] => {
+            if (!targetId) return [...widgets, widget];
+            const idx = widgets.findIndex((w) => w.id === targetId);
+            if (idx !== -1) {
+              const next = [...widgets];
+              next.splice(pos === 'before' ? idx : idx + 1, 0, widget);
+              return next;
+            }
+            return widgets.map((w) =>
+              w.children ? { ...w, children: insertWidget(w.children, targetId, pos) } : w,
+            );
+          };
+
+          const sections = state.sections.map((sec) => ({
+            ...sec,
+            columns: sec.columns.map((col) => ({
+              ...col,
+              blocks: col.blocks.map((b) => {
+                if (b.id === sourceBlockId) {
+                  return { ...b, widgets: removeWidgetById(b.widgets ?? [], widgetId) };
+                }
+                if (b.id === targetBlockId) {
+                  return { ...b, widgets: insertWidget(b.widgets ?? [], targetWidgetId, position) };
+                }
+                return b;
+              }),
+            })),
+          }));
+
+          return { sections, saveStatus: 'dirty' };
+        }),
     }),
     {
       partialize: (state) => ({ sections: state.sections }),
@@ -626,6 +961,7 @@ export function serializeSectionsForPayload(sections: SectionInstance[]): Record
         blockType: b.blockType,
         ...b.data,
         ...(b.styles ? { _styles: b.styles } : {}),
+        ...(b.widgets ? { _widgets: JSON.stringify(b.widgets) } : {}),
         ...(b.isLocked ? { _isLocked: true } : {}),
         ...(b.isHidden ? { _isHidden: true } : {}),
       })),
@@ -638,12 +974,17 @@ export function serializeSectionsForPayload(sections: SectionInstance[]): Record
 type PayloadBlock = Record<string, unknown>;
 
 function deserializeLeafBlock(raw: PayloadBlock): BlockInstance {
-  const { blockType, id: _id, _styles, _isLocked, _isHidden, ...data } = raw;
+  const { blockType, id: _id, _styles, _widgets, _isLocked, _isHidden, ...data } = raw;
+  let widgets: WidgetInstance[] | undefined;
+  if (typeof _widgets === 'string') {
+    try { widgets = JSON.parse(_widgets) as WidgetInstance[]; } catch { widgets = undefined; }
+  }
   return {
     id: uid(String(blockType)),
     blockType: String(blockType),
     data,
     styles: _styles && typeof _styles === 'object' ? (_styles as BlockStyles) : undefined,
+    widgets,
     isLocked: _isLocked === true ? true : undefined,
     isHidden: _isHidden === true ? true : undefined,
   };

@@ -113,10 +113,12 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     homepage: Homepage;
+    navigation: Navigation;
     'site-settings': SiteSetting;
   };
   globalsSelect: {
     homepage: HomepageSelect<false> | HomepageSelect<true>;
+    navigation: NavigationSelect<false> | NavigationSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
   };
   locale: null;
@@ -2871,6 +2873,11 @@ export interface Homepage {
   nav: {
     logo: string;
     cta: string;
+    ctaHref?: {
+      url?: string | null;
+      type?: ('internal' | 'external' | 'anchor') | null;
+      openInNewTab?: boolean | null;
+    };
     links?:
       | {
           label: string;
@@ -2884,7 +2891,17 @@ export interface Homepage {
     chip: string;
     description: string;
     primaryCta: string;
+    primaryCtaHref?: {
+      url?: string | null;
+      type?: ('internal' | 'external' | 'anchor') | null;
+      openInNewTab?: boolean | null;
+    };
     secondaryCta: string;
+    secondaryCtaHref?: {
+      url?: string | null;
+      type?: ('internal' | 'external' | 'anchor') | null;
+      openInNewTab?: boolean | null;
+    };
     image?: string | null;
     imageMedia?: (number | null) | Media;
     imageAlt: string;
@@ -2935,6 +2952,11 @@ export interface Homepage {
     id: string;
     chip: string;
     cta: string;
+    ctaHref?: {
+      url?: string | null;
+      type?: ('internal' | 'external' | 'anchor') | null;
+      openInNewTab?: boolean | null;
+    };
     image?: string | null;
     imageMedia?: (number | null) | Media;
     imageAlt: string;
@@ -2971,6 +2993,11 @@ export interface Homepage {
     chip: string;
     title: string;
     cta: string;
+    ctaHref?: {
+      url?: string | null;
+      type?: ('internal' | 'external' | 'anchor') | null;
+      openInNewTab?: boolean | null;
+    };
     tabs?:
       | {
           id: string;
@@ -3027,6 +3054,11 @@ export interface Homepage {
     title: string;
     description: string;
     cta: string;
+    ctaHref?: {
+      url?: string | null;
+      type?: ('internal' | 'external' | 'anchor') | null;
+      openInNewTab?: boolean | null;
+    };
     image?: string | null;
     imageMedia?: (number | null) | Media;
     imageAlt: string;
@@ -3042,6 +3074,11 @@ export interface Homepage {
     chip: string;
     title: string;
     cta: string;
+    ctaHref?: {
+      url?: string | null;
+      type?: ('internal' | 'external' | 'anchor') | null;
+      openInNewTab?: boolean | null;
+    };
     items?:
       | {
           date: string;
@@ -3059,6 +3096,11 @@ export interface Homepage {
     title: string;
     intro: string;
     cta: string;
+    ctaHref?: {
+      url?: string | null;
+      type?: ('internal' | 'external' | 'anchor') | null;
+      openInNewTab?: boolean | null;
+    };
     items?:
       | {
           question: string;
@@ -3147,6 +3189,33 @@ export interface Homepage {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation".
+ */
+export interface Navigation {
+  id: number;
+  /**
+   * The main logo word (e.g. "Dastify")
+   */
+  logoText: string;
+  /**
+   * The accented part of the logo (e.g. ".Digital")
+   */
+  logoAccent: string;
+  logoHref?: string | null;
+  links?:
+    | {
+        label: string;
+        href: string;
+        id?: string | null;
+      }[]
+    | null;
+  ctaLabel?: string | null;
+  ctaHref?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings".
  */
 export interface SiteSetting {
@@ -3190,6 +3259,13 @@ export interface HomepageSelect<T extends boolean = true> {
     | {
         logo?: T;
         cta?: T;
+        ctaHref?:
+          | T
+          | {
+              url?: T;
+              type?: T;
+              openInNewTab?: T;
+            };
         links?:
           | T
           | {
@@ -3205,7 +3281,21 @@ export interface HomepageSelect<T extends boolean = true> {
         chip?: T;
         description?: T;
         primaryCta?: T;
+        primaryCtaHref?:
+          | T
+          | {
+              url?: T;
+              type?: T;
+              openInNewTab?: T;
+            };
         secondaryCta?: T;
+        secondaryCtaHref?:
+          | T
+          | {
+              url?: T;
+              type?: T;
+              openInNewTab?: T;
+            };
         image?: T;
         imageMedia?: T;
         imageAlt?: T;
@@ -3260,6 +3350,13 @@ export interface HomepageSelect<T extends boolean = true> {
         id?: T;
         chip?: T;
         cta?: T;
+        ctaHref?:
+          | T
+          | {
+              url?: T;
+              type?: T;
+              openInNewTab?: T;
+            };
         image?: T;
         imageMedia?: T;
         imageAlt?: T;
@@ -3300,6 +3397,13 @@ export interface HomepageSelect<T extends boolean = true> {
         chip?: T;
         title?: T;
         cta?: T;
+        ctaHref?:
+          | T
+          | {
+              url?: T;
+              type?: T;
+              openInNewTab?: T;
+            };
         tabs?:
           | T
           | {
@@ -3362,6 +3466,13 @@ export interface HomepageSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         cta?: T;
+        ctaHref?:
+          | T
+          | {
+              url?: T;
+              type?: T;
+              openInNewTab?: T;
+            };
         image?: T;
         imageMedia?: T;
         imageAlt?: T;
@@ -3379,6 +3490,13 @@ export interface HomepageSelect<T extends boolean = true> {
         chip?: T;
         title?: T;
         cta?: T;
+        ctaHref?:
+          | T
+          | {
+              url?: T;
+              type?: T;
+              openInNewTab?: T;
+            };
         items?:
           | T
           | {
@@ -3398,6 +3516,13 @@ export interface HomepageSelect<T extends boolean = true> {
         title?: T;
         intro?: T;
         cta?: T;
+        ctaHref?:
+          | T
+          | {
+              url?: T;
+              type?: T;
+              openInNewTab?: T;
+            };
         items?:
           | T
           | {
@@ -3470,6 +3595,27 @@ export interface HomepageSelect<T extends boolean = true> {
       };
   content?: T;
   _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation_select".
+ */
+export interface NavigationSelect<T extends boolean = true> {
+  logoText?: T;
+  logoAccent?: T;
+  logoHref?: T;
+  links?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+        id?: T;
+      };
+  ctaLabel?: T;
+  ctaHref?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

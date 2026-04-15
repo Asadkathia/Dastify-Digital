@@ -13,6 +13,7 @@ export default function ConvertedPagesView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const [deleting, setDeleting] = useState<Record<string, boolean>>({});
   const [results, setResults] = useState<
     Record<string, { type: 'success' | 'error' | 'conflict'; message: string; adminUrl?: string }>
   >({});
@@ -92,6 +93,30 @@ export default function ConvertedPagesView() {
       }));
     } finally {
       setUploading((prev) => ({ ...prev, [pageName]: false }));
+    }
+  }
+
+  async function deletePage(pageName: string) {
+    if (!window.confirm(`Delete /${pageName} from disk? This cannot be undone.`)) return;
+    setDeleting((prev) => ({ ...prev, [pageName]: true }));
+    setResults((prev) => { const next = { ...prev }; delete next[pageName]; return next; });
+
+    try {
+      const res = await fetch('/api/admin/converted-pages', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageName }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (res.ok && data.ok) {
+        setPages((prev) => prev.filter((p) => p.name !== pageName));
+      } else {
+        setResults((prev) => ({ ...prev, [pageName]: { type: 'error', message: data.error || 'Delete failed.' } }));
+      }
+    } catch (err) {
+      setResults((prev) => ({ ...prev, [pageName]: { type: 'error', message: err instanceof Error ? err.message : 'Delete failed.' } }));
+    } finally {
+      setDeleting((prev) => ({ ...prev, [pageName]: false }));
     }
   }
 
@@ -178,6 +203,24 @@ export default function ConvertedPagesView() {
                     >
                       Re-convert
                     </a>
+                    <button
+                      type="button"
+                      onClick={() => deletePage(page.name)}
+                      disabled={deleting[page.name] === true}
+                      style={{
+                        fontSize: 11,
+                        padding: '4px 10px',
+                        background: deleting[page.name] ? '#1e293b' : '#450a0a',
+                        color: deleting[page.name] ? '#64748b' : '#fca5a5',
+                        borderRadius: 4,
+                        border: 'none',
+                        cursor: deleting[page.name] ? 'default' : 'pointer',
+                        fontWeight: 600,
+                        opacity: deleting[page.name] ? 0.7 : 1,
+                      }}
+                    >
+                      {deleting[page.name] ? 'Deleting…' : 'Delete'}
+                    </button>
                   </div>
                 </div>
                 {results[page.name] ? (
