@@ -5,15 +5,16 @@ import Results from '@/app/(site)/services-convert/components/Results';
 import WhySection from '@/app/(site)/services-convert/components/WhySection';
 import Process from '@/app/(site)/services-convert/components/Process';
 import Cta from '@/app/(site)/services-convert/components/Cta';
-import Footer from '@/app/(site)/services-convert/components/Footer';
 import { ScrollRevealController } from '@/app/components/home/ScrollRevealController';
 import { defaultContent } from '@/app/(site)/services-convert/content';
-import { getNavigation } from '@/lib/cms/queries';
+import { getNavigation, getFooter } from '@/lib/cms/queries';
+import { SiteFooter } from '@/components/SiteFooter';
 
 export default async function ConvertedServicesPreviewPage() {
-  const [content, nav] = await Promise.all([
+  const [content, nav, footer] = await Promise.all([
     Promise.resolve(defaultContent),
     getNavigation(),
+    getFooter(),
   ]);
 
   return (
@@ -26,7 +27,7 @@ export default async function ConvertedServicesPreviewPage() {
       <WhySection data={content.why} />
       <Process data={content.process} />
       <Cta data={content.cta} />
-      <Footer data={content.footer} />
+      <SiteFooter footer={footer} />
     </>
   );
 }

@@ -4,6 +4,8 @@ import * as migration_20260411_001500_pages_block_schema_sync from './20260411_0
 import * as migration_20260411_003000_pages_converted_fields_sync from './20260411_003000_pages_converted_fields_sync';
 import * as migration_20260414_navigation_global from './20260414_navigation_global';
 import * as migration_20260416_141218 from './20260416_141218';
+import * as migration_20260416_footer_global from './20260416_footer_global';
+import * as migration_20260417_logo_image_globals from './20260417_logo_image_globals';
 
 export const migrations = [
   {
@@ -34,6 +36,16 @@ export const migrations = [
   {
     up: migration_20260416_141218.up,
     down: migration_20260416_141218.down,
-    name: '20260416_141218'
+    name: '20260416_141218',
+  },
+  {
+    up: migration_20260416_footer_global.up,
+    down: migration_20260416_footer_global.down,
+    name: '20260416_footer_global',
+  },
+  {
+    up: migration_20260417_logo_image_globals.up,
+    down: migration_20260417_logo_image_globals.down,
+    name: '20260417_logo_image_globals',
   },
 ];

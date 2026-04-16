@@ -5,7 +5,6 @@ import ContactFormSection from './components/ContactFormSection';
 import ContactMap from './components/ContactMap';
 import ContactFaq from './components/ContactFaq';
 import ContactCta from './components/ContactCta';
-import ContactFooter from './components/ContactFooter';
 import { defaultContent } from './content';
 import type { ConvertedPageRegistry } from '@/lib/converted-pages/types';
 import type { FormDefinition } from '@/lib/forms/types';
@@ -21,7 +20,6 @@ const registry: ConvertedPageRegistry & { formDefinitions?: Record<string, FormD
     { key: 'map',         label: 'Map',          icon: '🗺️', className: 'contact2-map',          Component: ContactMap as never },
     { key: 'faq',         label: 'FAQ',          icon: '❓', className: 'contact2-faq',          Component: ContactFaq as never },
     { key: 'cta',         label: 'CTA',          icon: '🎯', className: 'contact2-cta',          Component: ContactCta as never },
-    { key: 'footer',      label: 'Footer',       icon: '🏁', className: 'contact2-footer',       Component: ContactFooter as never },
   ],
 };
 

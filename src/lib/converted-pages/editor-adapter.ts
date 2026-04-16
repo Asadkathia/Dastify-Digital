@@ -100,7 +100,7 @@ function fieldTypeForValue(value: unknown): 'text' | 'textarea' | 'checkbox' {
 
 function isUploadFieldName(name: string): boolean {
   const tail = name.split('.').pop()?.toLowerCase() ?? '';
-  return tail === 'image';
+  return tail === 'image' || tail === 'logoimage';
 }
 
 function buildSelectField(

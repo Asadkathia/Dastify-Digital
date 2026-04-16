@@ -105,6 +105,8 @@ export type PageContent = {
     placeholderIcon: string;
     placeholderLabel: string;
     placeholderDimensions: string;
+    imageOffsetX?: number;
+    imageOffsetY?: number;
   }>;
   cta: EditableSection<{
     title: string;
@@ -112,17 +114,6 @@ export type PageContent = {
     subtext: string;
     primaryCta: { label: string; href: string };
     secondaryCta: { label: string; href: string };
-  }>;
-  footer: EditableSection<{
-    logoText: string;
-    logoAccent: string;
-    tagline: string;
-    columns: {
-      title: string;
-      links: { label: string; href: string }[];
-    }[];
-    copyright: string;
-    legalLinks: { label: string; href: string }[];
   }>;
 };
 
@@ -438,7 +429,9 @@ export const defaultContent: PageContent = {
     "placeholderIconSize": "",
     "placeholderIcon": "🎯",
     "placeholderLabel": "Process Visual",
-    "placeholderDimensions": "480 × 520px"
+    "placeholderDimensions": "480 × 520px",
+    "imageOffsetX": 0,
+    "imageOffsetY": 0
   },
   "cta": {
     "title": "Ready to see what these\nservices look like for you?",
@@ -452,105 +445,4 @@ export const defaultContent: PageContent = {
       "href": "/work"
     }
   },
-  "footer": {
-    "logoText": "Dastify",
-    "logoAccent": ".Digital",
-    "tagline": "The creative authority for healthcare growth. HIPAA-compliant, AI-powered, obsessively measurable.",
-    "columns": [
-      {
-        "title": "Services",
-        "links": [
-          {
-            "label": "Healthcare SEO",
-            "href": "/services/seo"
-          },
-          {
-            "label": "Medical PPC",
-            "href": "/services/ppc"
-          },
-          {
-            "label": "Content Marketing",
-            "href": "/services/content"
-          },
-          {
-            "label": "Social Media",
-            "href": "/services/social"
-          },
-          {
-            "label": "Website Design",
-            "href": "/services/web"
-          },
-          {
-            "label": "Reputation Management",
-            "href": "/services/reputation"
-          }
-        ]
-      },
-      {
-        "title": "Verticals",
-        "links": [
-          {
-            "label": "Specialty Practices",
-            "href": "/verticals/specialty"
-          },
-          {
-            "label": "Dental & DSOs",
-            "href": "/verticals/dental"
-          },
-          {
-            "label": "Behavioral Health",
-            "href": "/verticals/behavioral"
-          },
-          {
-            "label": "Senior Care",
-            "href": "/verticals/senior"
-          },
-          {
-            "label": "Urgent Care",
-            "href": "/verticals/urgent"
-          },
-          {
-            "label": "Med Spas",
-            "href": "/verticals/medspa"
-          }
-        ]
-      },
-      {
-        "title": "Contact",
-        "links": [
-          {
-            "label": "Book a Strategy Call",
-            "href": "/contact"
-          },
-          {
-            "label": "hello@dastify.digital",
-            "href": "/contact"
-          },
-          {
-            "label": "Careers",
-            "href": "/careers"
-          },
-          {
-            "label": "About Us",
-            "href": "/about"
-          }
-        ]
-      }
-    ],
-    "copyright": "© 2026 Dastify Digital. All rights reserved.",
-    "legalLinks": [
-      {
-        "label": "Privacy Policy",
-        "href": "/privacy"
-      },
-      {
-        "label": "Terms of Service",
-        "href": "/terms"
-      },
-      {
-        "label": "HIPAA Compliance",
-        "href": "/hipaa"
-      }
-    ]
-  }
 };

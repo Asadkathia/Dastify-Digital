@@ -21,6 +21,7 @@ import { Pages } from './src/payload/collections/Pages.ts';
 import { Services } from './src/payload/collections/Services.ts';
 import { Tags } from './src/payload/collections/Tags.ts';
 import { ImportReports } from './src/payload/collections/ImportReports.ts';
+import { Footer } from './src/payload/globals/Footer.ts';
 import { Homepage } from './src/payload/globals/Homepage.ts';
 import { Navigation } from './src/payload/globals/Navigation.ts';
 import { SiteSettings } from './src/payload/globals/SiteSettings.ts';
@@ -171,7 +172,7 @@ const createConfig = async () => {
     Menus,
     ImportReports,
   ],
-  globals: [Homepage, Navigation, SiteSettings],
+  globals: [Homepage, Navigation, Footer, SiteSettings],
   plugins: [
     seoPlugin({
       collections: ['pages', 'services', 'case-studies', 'blog-posts'],

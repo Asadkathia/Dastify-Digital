@@ -5,7 +5,6 @@ import AboutStory from './components/AboutStory';
 import AboutTeam from './components/AboutTeam';
 import AboutValues from './components/AboutValues';
 import AboutCta from './components/AboutCta';
-import AboutFooter from './components/AboutFooter';
 import { defaultContent } from './content';
 import type { ConvertedPageRegistry } from '@/lib/converted-pages/types';
 
@@ -20,7 +19,6 @@ const registry: ConvertedPageRegistry = {
     { key: 'team', label: 'Team', icon: '👥', className: 'about-team', Component: AboutTeam as never },
     { key: 'values', label: 'Values', icon: '💎', className: 'about-values', Component: AboutValues as never },
     { key: 'cta', label: 'CTA', icon: '🎯', className: 'about-cta-close', Component: AboutCta as never },
-    { key: 'footer', label: 'Footer', icon: '🏁', className: 'about-footer', Component: AboutFooter as never },
   ],
 };
 

@@ -8,7 +8,8 @@ import ContactFormSection from "./components/ContactFormSection";
 import ContactMap from "./components/ContactMap";
 import ContactFaq from "./components/ContactFaq";
 import ContactCta from "./components/ContactCta";
-import ContactFooter from "./components/ContactFooter";
+import { SiteFooter } from "@/components/SiteFooter";
+import { getFooter } from "@/lib/cms/queries";
 import type { PageContent } from "./components/types";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -252,57 +253,11 @@ const defaultContent: PageContent = {
     primaryCta: { label: "Book Free Audit →", href: "/demo" },
     secondaryCta: { label: "See Real Results", href: "/work" },
   },
-  footer: {
-    brand: {
-      namePrimary: "Dastify",
-      nameAccent: ".",
-      nameSecondary: "Digital",
-      description: "The creative authority for healthcare growth. HIPAA-compliant marketing that fills schedules.",
-      social: [
-        { label: "Li", href: "#" },
-        { label: "X", href: "#" },
-        { label: "Ig", href: "#" },
-      ],
-    },
-    columns: [
-      {
-        title: "Services",
-        links: [
-          { label: "Healthcare SEO", href: "#" },
-          { label: "Paid Media", href: "#" },
-          { label: "Web Design", href: "#" },
-          { label: "Content Marketing", href: "#" },
-          { label: "Reputation Management", href: "#" },
-          { label: "Marketing Automation", href: "#" },
-        ],
-      },
-      {
-        title: "Specialties",
-        links: [
-          { label: "Dental Practices", href: "#" },
-          { label: "Orthopedics", href: "#" },
-          { label: "Dermatology", href: "#" },
-          { label: "Cardiology", href: "#" },
-          { label: "Mental Health", href: "#" },
-          { label: "Multi-Location", href: "#" },
-        ],
-      },
-      {
-        title: "Contact",
-        links: [
-          { label: "hello@dastifydigital.com", href: "mailto:hello@dastifydigital.com" },
-          { label: "(888) 555-1234", href: "tel:+18885551234" },
-          { label: "Book a Strategy Call →", href: "/demo", highlight: true },
-        ],
-      },
-    ],
-    copy: "© 2026 Dastify Digital. All rights reserved.",
-    badges: ["HIPAA Compliant", "Google Partner"],
-  },
 };
 
 export default async function Page() {
   const content = defaultContent;
+  const footer = await getFooter();
 
   return (
     <>
@@ -317,7 +272,7 @@ export default async function Page() {
         <ContactFaq data={content.faq} />
         <ContactCta data={content.cta} />
       </main>
-      <ContactFooter data={content.footer} />
+      <SiteFooter footer={footer} />
     </>
   );
 }

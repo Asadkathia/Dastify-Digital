@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { ScrollRevealController } from "@/app/components/home/ScrollRevealController";
-import { findOneBySlug, isDraftEnabled, getNavigation } from "@/lib/cms/queries";
+import { findOneBySlug, isDraftEnabled, getNavigation, getFooter } from "@/lib/cms/queries";
 import { mergeConvertedContent } from "@/lib/converted-pages/merge-content";
 import { SiteNavbar } from "@/components/SiteNavbar";
 import ArticleHero from "./components/ArticleHero";
 import ArticleLayout from "./components/ArticleLayout";
 import RelatedPosts from "./components/RelatedPosts";
 import BlogPostCta from "./components/BlogPostCta";
-import BlogPostFooter from "./components/BlogPostFooter";
+import { SiteFooter } from "@/components/SiteFooter";
 import { defaultContent } from "./content";
 import type { PageContent } from "./content";
 
@@ -21,9 +21,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Page() {
   const draft = await isDraftEnabled();
-  const [doc, nav] = await Promise.all([
+  const [doc, nav, footer] = await Promise.all([
     findOneBySlug('pages', 'blog-post', draft),
     getNavigation(),
+    getFooter(),
   ]);
   const docRecord = doc as unknown as Record<string, unknown> | null;
   const convertedContent =
@@ -51,7 +52,7 @@ export default async function Page() {
         <RelatedPosts data={content.relatedPosts} />
         <BlogPostCta data={content.cta} />
       </main>
-      <BlogPostFooter data={content.footer} />
+      <SiteFooter footer={footer} />
     </>
   );
 }

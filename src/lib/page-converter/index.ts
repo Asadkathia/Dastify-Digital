@@ -81,6 +81,26 @@ export async function convertPage(request: ConvertPageRequest): Promise<ConvertP
     };
   }
 
+  // ── Defensive post-processing: strip any footer artifacts from AI output ──
+  if (Array.isArray(aiOutput.sections)) {
+    const hadFooter = aiOutput.sections.some((s) => s.key === 'footer');
+    if (hadFooter) {
+      console.warn('[converter] AI generated a footer section — stripping it (footer is global)');
+    }
+    aiOutput.sections = aiOutput.sections.filter((s) => s.key !== 'footer');
+  }
+  if (Array.isArray(aiOutput.components)) {
+    aiOutput.components = aiOutput.components.filter((c) => !/footer/i.test(c.filename));
+  }
+  if (aiOutput.editorRegistry && aiOutput.editorRegistry.includes("key: 'footer'")) {
+    console.warn('[converter] AI generated footer in editorRegistry — stripping');
+    aiOutput.editorRegistry = aiOutput.editorRegistry.replace(/\{\s*key:\s*['"]footer['"][^}]*\},?\s*/g, '');
+  }
+  if (aiOutput.contentType && /^\s*footer[?]?\s*:/m.test(aiOutput.contentType)) {
+    console.warn('[converter] AI generated footer field in contentType — stripping');
+    aiOutput.contentType = aiOutput.contentType.replace(/^\s*footer[?]?\s*:[^;]+;?\n?/m, '');
+  }
+
   const files: ConvertedFile[] = [];
 
   // 1. Component files

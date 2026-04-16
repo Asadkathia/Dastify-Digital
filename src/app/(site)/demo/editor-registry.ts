@@ -4,7 +4,6 @@ import DemoProcess from './components/DemoProcess';
 import DemoResults from './components/DemoResults';
 import DemoTestimonial from './components/DemoTestimonial';
 import DemoUrgency from './components/DemoUrgency';
-import DemoFooter from './components/DemoFooter';
 import { defaultContent } from './content';
 import type { ConvertedPageRegistry } from '@/lib/converted-pages/types';
 import type { FormDefinition } from '@/lib/forms/types';
@@ -19,7 +18,6 @@ const registry: ConvertedPageRegistry & { formDefinitions?: Record<string, FormD
     { key: 'results',     label: 'Results',     icon: '📈', className: 'demo-results',     Component: DemoResults as never },
     { key: 'testimonial', label: 'Testimonial', icon: '💬', className: 'demo-testimonial', Component: DemoTestimonial as never },
     { key: 'urgency',     label: 'Urgency',     icon: '⚡', className: 'demo-urgency',     Component: DemoUrgency as never },
-    { key: 'footer',      label: 'Footer',      icon: '🏁', className: 'demo-footer',      Component: DemoFooter as never },
   ],
 };
 

@@ -114,11 +114,13 @@ export interface Config {
   globals: {
     homepage: Homepage;
     navigation: Navigation;
+    footer: Footer;
     'site-settings': SiteSetting;
   };
   globalsSelect: {
     homepage: HomepageSelect<false> | HomepageSelect<true>;
     navigation: NavigationSelect<false> | NavigationSelect<true>;
+    footer: FooterSelect<false> | FooterSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
   };
   locale: null;
@@ -3194,7 +3196,11 @@ export interface Homepage {
 export interface Navigation {
   id: number;
   /**
-   * The main logo word (e.g. "Dastify")
+   * Upload a logo image. If set, replaces the text logo in the navbar.
+   */
+  logoImage?: (number | null) | Media;
+  /**
+   * The main logo word (e.g. "Dastify") — shown when no logo image is set.
    */
   logoText: string;
   /**
@@ -3211,6 +3217,78 @@ export interface Navigation {
     | null;
   ctaLabel?: string | null;
   ctaHref?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  brand: {
+    /**
+     * Upload a logo image. If set, replaces the text logo in the footer.
+     */
+    logoImage?: (number | null) | Media;
+    /**
+     * Text before the dot accent — shown when no logo image is set.
+     */
+    namePrefix: string;
+    /**
+     * The dot or accent character between name parts
+     */
+    accent: string;
+    /**
+     * Text after the dot accent (e.g. "Digital")
+     */
+    nameSuffix: string;
+    tagline?: string | null;
+    socials?:
+      | {
+          platform: 'x' | 'linkedin' | 'youtube' | 'facebook' | 'instagram';
+          href: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  columns?:
+    | {
+        title: string;
+        links?:
+          | {
+              label: string;
+              href: string;
+              highlight?: boolean | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Optional 4th column with a button CTA. Leave title blank to hide.
+   */
+  ctaColumn?: {
+    title?: string | null;
+    links?:
+      | {
+          label?: string | null;
+          href?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    buttonLabel?: string | null;
+    buttonHref?: string | null;
+  };
+  copyright?: string | null;
+  badges?:
+    | {
+        label: string;
+        tone?: ('purple' | 'blue' | 'green') | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -3604,6 +3682,7 @@ export interface HomepageSelect<T extends boolean = true> {
  * via the `definition` "navigation_select".
  */
 export interface NavigationSelect<T extends boolean = true> {
+  logoImage?: T;
   logoText?: T;
   logoAccent?: T;
   logoHref?: T;
@@ -3616,6 +3695,67 @@ export interface NavigationSelect<T extends boolean = true> {
       };
   ctaLabel?: T;
   ctaHref?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer_select".
+ */
+export interface FooterSelect<T extends boolean = true> {
+  brand?:
+    | T
+    | {
+        logoImage?: T;
+        namePrefix?: T;
+        accent?: T;
+        nameSuffix?: T;
+        tagline?: T;
+        socials?:
+          | T
+          | {
+              platform?: T;
+              href?: T;
+              id?: T;
+            };
+      };
+  columns?:
+    | T
+    | {
+        title?: T;
+        links?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+              highlight?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  ctaColumn?:
+    | T
+    | {
+        title?: T;
+        links?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+              id?: T;
+            };
+        buttonLabel?: T;
+        buttonHref?: T;
+      };
+  copyright?: T;
+  badges?:
+    | T
+    | {
+        label?: T;
+        tone?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

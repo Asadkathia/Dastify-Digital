@@ -4,7 +4,6 @@ import Results from './components/Results';
 import WhySection from './components/WhySection';
 import Process from './components/Process';
 import Cta from './components/Cta';
-import Footer from './components/Footer';
 import { defaultContent } from './content';
 import type { ConvertedPageRegistry } from '@/lib/converted-pages/types';
 
@@ -18,7 +17,6 @@ const registry: ConvertedPageRegistry = {
     { key: 'why', label: 'Why', icon: '💡', className: 'svc-convert-why', Component: WhySection as never },
     { key: 'process', label: 'Process', icon: '⚙️', className: 'svc-convert-process', Component: Process as never },
     { key: 'cta', label: 'CTA', icon: '🎯', className: 'svc-convert-cta', Component: Cta as never },
-    { key: 'footer', label: 'Footer', icon: '🏁', className: 'svc-convert-footer', Component: Footer as never },
   ],
 };
 

@@ -99,19 +99,4 @@ export type PageContent = {
       nodes?: Record<string, { tag?: "h1" | "h2" | "h3" | "h4" | "p" | "span"; styles?: { color?: string; backgroundColor?: string; fontSize?: string; fontWeight?: string; lineHeight?: string; letterSpacing?: string; textTransform?: string; textAlign?: "left" | "center" | "right"; marginTop?: string; marginBottom?: string; paddingTop?: string; paddingBottom?: string; paddingLeft?: string; paddingRight?: string; borderColor?: string; borderWidth?: string; borderRadius?: string } }>;
     };
   };
-  footer: {
-    brandName: string;
-    brandDot: string;
-    brandDescription: string;
-    socialLinks: { label: string; href: string }[];
-    columns: {
-      title: string;
-      links: { label: string; href: string; emphasis?: boolean }[];
-    }[];
-    copy: string;
-    badges: string[];
-    editor?: {
-      nodes?: Record<string, { tag?: "h1" | "h2" | "h3" | "h4" | "p" | "span"; styles?: { color?: string; backgroundColor?: string; fontSize?: string; fontWeight?: string; lineHeight?: string; letterSpacing?: string; textTransform?: string; textAlign?: "left" | "center" | "right"; marginTop?: string; marginBottom?: string; paddingTop?: string; paddingBottom?: string; paddingLeft?: string; paddingRight?: string; borderColor?: string; borderWidth?: string; borderRadius?: string } }>;
-    };
-  };
 };

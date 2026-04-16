@@ -8,9 +8,9 @@ import AboutStory from '@/app/(site)/about/components/AboutStory';
 import AboutTeam from '@/app/(site)/about/components/AboutTeam';
 import AboutValues from '@/app/(site)/about/components/AboutValues';
 import AboutCta from '@/app/(site)/about/components/AboutCta';
-import AboutFooter from '@/app/(site)/about/components/AboutFooter';
 import { defaultContent } from '@/app/(site)/about/content';
-import { getNavigation } from '@/lib/cms/queries';
+import { getNavigation, getFooter } from '@/lib/cms/queries';
+import { SiteFooter } from '@/components/SiteFooter';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -20,9 +20,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ConvertedAboutPreviewPage() {
-  const [content, nav] = await Promise.all([
+  const [content, nav, footer] = await Promise.all([
     Promise.resolve(defaultContent),
     getNavigation(),
+    getFooter(),
   ]);
 
   return (
@@ -38,7 +39,7 @@ export default async function ConvertedAboutPreviewPage() {
         <AboutValues data={content.values} />
         <AboutCta data={content.cta} />
       </main>
-      <AboutFooter data={content.footer} />
+      <SiteFooter footer={footer} />
     </>
   );
 }

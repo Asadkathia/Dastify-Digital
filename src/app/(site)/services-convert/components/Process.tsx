@@ -29,6 +29,8 @@ type ProcessData = {
   placeholderIcon: string;
   placeholderLabel: string;
   placeholderDimensions: string;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
 };
 
 export default function Process({ data }: { data: ProcessData }) {
@@ -64,7 +66,7 @@ export default function Process({ data }: { data: ProcessData }) {
               ))}
             </div>
           </div>
-          <div className="svc-convert-process-iph" data-r data-delay="2">
+          <div className="svc-convert-process-iph" data-r data-delay="2" style={{ marginLeft: `${Number(data.imageOffsetX ?? 0)}px`, marginTop: `${Number(data.imageOffsetY ?? 0)}px` }}>
             <ConvertedPlaceholderImage
               className="iph"
               style={{ height: '100%' }}

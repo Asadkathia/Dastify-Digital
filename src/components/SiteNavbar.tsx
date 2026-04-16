@@ -30,8 +30,15 @@ export function SiteNavbar({
       <NavbarScrollState selector=".nav" solidClass={scrolledClass} offset={80} />
       <nav className={`nav${navClassName ? ` ${navClassName}` : ''}`} id="nav">
         <Link href={nav.logoHref || '/'} className="nav-logo">
-          <span>{nav.logoText}</span>
-          <span style={{ color: 'var(--purple, #7c3aed)' }}>{nav.logoAccent}</span>
+          {nav.logoImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={nav.logoImage} alt={nav.logoText} className="nav-logo-img" />
+          ) : (
+            <>
+              <span>{nav.logoText}</span>
+              <span style={{ color: 'var(--purple, #7c3aed)' }}>{nav.logoAccent}</span>
+            </>
+          )}
         </Link>
         <ul className={linkListClassName} style={{ listStyle: 'none', margin: 0, padding: 0 }}>
           {nav.links.map((link) => (

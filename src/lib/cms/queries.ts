@@ -164,9 +164,211 @@ export function extractSeoMeta(doc: CMSDoc | null | undefined) {
   };
 }
 
+// ─── Footer global ────────────────────────────────────────────────────────────
+
+export type SiteFooterSocial = {
+  platform: 'x' | 'linkedin' | 'youtube' | 'facebook' | 'instagram';
+  href: string;
+};
+
+export type SiteFooterLink = {
+  label: string;
+  href: string;
+  highlight?: boolean;
+};
+
+export type SiteFooterColumn = {
+  title: string;
+  links: SiteFooterLink[];
+};
+
+export type SiteFooterCtaColumn = {
+  title?: string;
+  links?: { label: string; href: string }[];
+  buttonLabel?: string;
+  buttonHref?: string;
+};
+
+export type SiteFooterBadge = {
+  label: string;
+  tone?: 'purple' | 'blue' | 'green';
+};
+
+export type SiteFooterData = {
+  brand: {
+    logoImage?: string | null;
+    namePrefix: string;
+    accent: string;
+    nameSuffix: string;
+    tagline: string;
+    socials: SiteFooterSocial[];
+  };
+  columns: SiteFooterColumn[];
+  ctaColumn?: SiteFooterCtaColumn;
+  copyright: string;
+  badges: SiteFooterBadge[];
+};
+
+const FOOTER_FALLBACK: SiteFooterData = {
+  brand: {
+    namePrefix: 'Dastify',
+    accent: '.',
+    nameSuffix: 'Digital',
+    tagline:
+      'The creative authority for healthcare growth. HIPAA-compliant campaigns that fill your calendar.',
+    socials: [
+      { platform: 'x', href: '#' },
+      { platform: 'linkedin', href: '#' },
+      { platform: 'youtube', href: '#' },
+      { platform: 'facebook', href: '#' },
+    ],
+  },
+  columns: [
+    {
+      title: 'Services',
+      links: [
+        { label: 'Healthcare SEO', href: '/services' },
+        { label: 'Google Ads & PPC', href: '/services' },
+        { label: 'Website Design', href: '/services' },
+        { label: 'Reputation Management', href: '/services' },
+        { label: 'Social Media', href: '/services' },
+        { label: 'Email & SMS', href: '/services' },
+      ],
+    },
+    {
+      title: 'Specialties',
+      links: [
+        { label: 'Dental Practices', href: '/case-studies' },
+        { label: 'Dermatology', href: '/case-studies' },
+        { label: 'Mental Health', href: '/case-studies' },
+        { label: 'Fertility & IVF', href: '/case-studies' },
+        { label: 'Plastic Surgery', href: '/case-studies' },
+        { label: 'Telehealth', href: '/case-studies' },
+      ],
+    },
+    {
+      title: 'Contact',
+      links: [
+        { label: 'Book Strategy Call', href: '/#cta' },
+        { label: 'Free Growth Audit', href: '/#cta' },
+        { label: 'hello@dastifydigital.com', href: 'mailto:hello@dastifydigital.com' },
+        { label: '1-800-DASTIFY', href: 'tel:+18003278439' },
+      ],
+    },
+  ],
+  copyright: '© 2026 Dastify Digital. All rights reserved.',
+  badges: [
+    { label: 'HIPAA', tone: 'purple' },
+    { label: 'Google Partner', tone: 'blue' },
+    { label: 'Award-Winning', tone: 'green' },
+  ],
+};
+
+export async function getFooter(): Promise<SiteFooterData> {
+  try {
+    const payload = await getPayloadClient();
+    const doc = (await payload.findGlobal({ slug: 'footer' as never })) as Record<string, unknown>;
+    if (!doc) return FOOTER_FALLBACK;
+
+    const brand = doc.brand && typeof doc.brand === 'object'
+      ? (doc.brand as Record<string, unknown>)
+      : {};
+
+    const socials = Array.isArray(brand.socials)
+      ? (brand.socials as Array<{ platform?: unknown; href?: unknown }>)
+          .filter((s) => typeof s.platform === 'string' && typeof s.href === 'string')
+          .map((s) => ({ platform: String(s.platform) as SiteFooterSocial['platform'], href: String(s.href) }))
+      : FOOTER_FALLBACK.brand.socials;
+
+    const columns = Array.isArray(doc.columns)
+      ? (doc.columns as Array<{ title?: unknown; links?: unknown[] }>).map((col) => ({
+          title: typeof col.title === 'string' ? col.title : '',
+          links: Array.isArray(col.links)
+            ? (col.links as Array<{ label?: unknown; href?: unknown; highlight?: unknown }>)
+                .filter((l) => typeof l.label === 'string' && typeof l.href === 'string')
+                .map((l) => ({
+                  label: String(l.label),
+                  href: String(l.href),
+                  highlight: l.highlight === true,
+                }))
+            : [],
+        }))
+      : FOOTER_FALLBACK.columns;
+
+    const ctaRaw = doc.ctaColumn && typeof doc.ctaColumn === 'object'
+      ? (doc.ctaColumn as Record<string, unknown>)
+      : null;
+    const ctaColumn: SiteFooterCtaColumn | undefined =
+      ctaRaw && typeof ctaRaw.title === 'string' && ctaRaw.title
+        ? {
+            title: ctaRaw.title,
+            links: Array.isArray(ctaRaw.links)
+              ? (ctaRaw.links as Array<{ label?: unknown; href?: unknown }>)
+                  .filter((l) => typeof l.label === 'string')
+                  .map((l) => ({ label: String(l.label), href: String(l.href ?? '') }))
+              : [],
+            buttonLabel: typeof ctaRaw.buttonLabel === 'string' ? ctaRaw.buttonLabel : undefined,
+            buttonHref: typeof ctaRaw.buttonHref === 'string' ? ctaRaw.buttonHref : undefined,
+          }
+        : undefined;
+
+    const badges = Array.isArray(doc.badges)
+      ? (doc.badges as Array<{ label?: unknown; tone?: unknown }>)
+          .filter((b) => typeof b.label === 'string')
+          .map((b) => ({
+            label: String(b.label),
+            tone: (['purple', 'blue', 'green'] as const).includes(b.tone as never)
+              ? (b.tone as 'purple' | 'blue' | 'green')
+              : undefined,
+          }))
+      : FOOTER_FALLBACK.badges;
+
+    const brandLogoRaw = brand.logoImage;
+    const brandLogoImage =
+      brandLogoRaw && typeof brandLogoRaw === 'object' && 'url' in (brandLogoRaw as object)
+        ? String((brandLogoRaw as { url?: string }).url ?? '')
+        : typeof brandLogoRaw === 'string' && brandLogoRaw.trim()
+          ? brandLogoRaw.trim()
+          : null;
+
+    return {
+      brand: {
+        logoImage: brandLogoImage || null,
+        namePrefix:
+          typeof brand.namePrefix === 'string' && brand.namePrefix
+            ? brand.namePrefix
+            : FOOTER_FALLBACK.brand.namePrefix,
+        accent:
+          typeof brand.accent === 'string' && brand.accent
+            ? brand.accent
+            : FOOTER_FALLBACK.brand.accent,
+        nameSuffix:
+          typeof brand.nameSuffix === 'string' && brand.nameSuffix
+            ? brand.nameSuffix
+            : FOOTER_FALLBACK.brand.nameSuffix,
+        tagline:
+          typeof brand.tagline === 'string' && brand.tagline
+            ? brand.tagline
+            : FOOTER_FALLBACK.brand.tagline,
+        socials,
+      },
+      columns: columns.length > 0 ? columns : FOOTER_FALLBACK.columns,
+      ctaColumn,
+      copyright:
+        typeof doc.copyright === 'string' && doc.copyright
+          ? doc.copyright
+          : FOOTER_FALLBACK.copyright,
+      badges: badges.length > 0 ? badges : FOOTER_FALLBACK.badges,
+    };
+  } catch {
+    return FOOTER_FALLBACK;
+  }
+}
+
 // ─── Navigation global ────────────────────────────────────────────────────────
 
 export type NavigationData = {
+  logoImage?: string | null;
   logoText: string;
   logoAccent: string;
   logoHref: string;
@@ -196,7 +398,15 @@ export async function getNavigation(): Promise<NavigationData> {
     const payload = await getPayloadClient();
     const doc = (await payload.findGlobal({ slug: 'navigation' as never })) as Record<string, unknown>;
     if (!doc) return NAVIGATION_FALLBACK;
+    const logoImageRaw = doc.logoImage;
+    const logoImage =
+      logoImageRaw && typeof logoImageRaw === 'object' && 'url' in (logoImageRaw as object)
+        ? String((logoImageRaw as { url?: string }).url ?? '')
+        : typeof logoImageRaw === 'string' && logoImageRaw.trim()
+          ? logoImageRaw.trim()
+          : null;
     return {
+      logoImage: logoImage || null,
       logoText: typeof doc.logoText === 'string' && doc.logoText ? doc.logoText : NAVIGATION_FALLBACK.logoText,
       logoAccent: typeof doc.logoAccent === 'string' && doc.logoAccent ? doc.logoAccent : NAVIGATION_FALLBACK.logoAccent,
       logoHref: typeof doc.logoHref === 'string' && doc.logoHref ? doc.logoHref : NAVIGATION_FALLBACK.logoHref,

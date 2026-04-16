@@ -5,7 +5,7 @@ import { BrandAcronym } from '../components/home/BrandAcronym';
 import { CaseStudies } from '../components/home/CaseStudies';
 import { Cta } from '../components/home/Cta';
 import { FeatureStrip } from '../components/home/FeatureStrip';
-import { Footer } from '../components/home/Footer';
+import { SiteFooter } from '@/components/SiteFooter';
 import { Hero } from '../components/home/Hero';
 import { Insights } from '../components/home/Insights';
 import { Mission } from '../components/home/Mission';
@@ -16,7 +16,7 @@ import { Services } from '../components/home/Services';
 import { Faq } from '../components/home/Faq';
 import { getHomepageContent } from '@/lib/get-homepage-content';
 import { withManagedMenus } from '@/lib/cms/menus';
-import { getNavigation } from '@/lib/cms/queries';
+import { getNavigation, getFooter } from '@/lib/cms/queries';
 import { JsonLd } from '@/components/JsonLd';
 import { buildFAQJsonLd, buildOrganizationJsonLd, buildWebsiteJsonLd } from '@/lib/seo/jsonld';
 import { buildMetadata } from '@/lib/seo/metadata';
@@ -69,10 +69,11 @@ export default async function Home() {
   const { isEnabled } = await draftMode();
   noStore();
 
-  const [homepageContent, settings, nav] = await Promise.all([
+  const [homepageContent, settings, nav, footer] = await Promise.all([
     withManagedMenus(await getHomepageContent({ draft: isEnabled })),
     getSiteSettings(),
     getNavigation(),
+    getFooter(),
   ]);
 
   const organizationJsonLd = buildOrganizationJsonLd(settings);
@@ -94,7 +95,7 @@ export default async function Home() {
       <Insights data={homepageContent.insights} />
       <Faq data={homepageContent.faq ?? { items: [] }} />
       <Cta data={homepageContent.cta} />
-      <Footer data={homepageContent.footer} />
+      <SiteFooter footer={footer} />
       <JsonLd data={organizationJsonLd} />
       <JsonLd data={websiteJsonLd} />
       <JsonLd data={faqJsonLd} />

@@ -99,21 +99,6 @@ export type PageContent = {
       nodes?: Record<string, { tag?: "h1" | "h2" | "h3" | "h4" | "p" | "span"; styles?: { color?: string; backgroundColor?: string; fontSize?: string; fontWeight?: string; lineHeight?: string; letterSpacing?: string; textTransform?: string; textAlign?: "left" | "center" | "right"; marginTop?: string; marginBottom?: string; paddingTop?: string; paddingBottom?: string; paddingLeft?: string; paddingRight?: string; borderColor?: string; borderWidth?: string; borderRadius?: string } }>;
     };
   };
-  footer: {
-    brandName: string;
-    brandDot: string;
-    brandDescription: string;
-    socialLinks: { label: string; href: string }[];
-    columns: {
-      title: string;
-      links: { label: string; href: string; emphasis?: boolean }[];
-    }[];
-    copy: string;
-    badges: string[];
-    editor?: {
-      nodes?: Record<string, { tag?: "h1" | "h2" | "h3" | "h4" | "p" | "span"; styles?: { color?: string; backgroundColor?: string; fontSize?: string; fontWeight?: string; lineHeight?: string; letterSpacing?: string; textTransform?: string; textAlign?: "left" | "center" | "right"; marginTop?: string; marginBottom?: string; paddingTop?: string; paddingBottom?: string; paddingLeft?: string; paddingRight?: string; borderColor?: string; borderWidth?: string; borderRadius?: string } }>;
-    };
-  };
 };
 
 export const defaultContent: PageContent = {
@@ -240,40 +225,4 @@ export const defaultContent: PageContent = {
     secondaryCta: { label: "Contact Us Instead", href: "/contact" },
     editor: { nodes: {} }
   },
-  footer: {
-    brandName: "Dastify",
-    brandDot: ".Digital",
-    brandDescription: "The creative authority for healthcare growth. HIPAA-compliant marketing that fills schedules.",
-    socialLinks: [
-      { label: "Li", href: "#" },
-      { label: "X", href: "#" },
-      { label: "Ig", href: "#" }
-    ],
-    columns: [
-      { title: "Services", links: [
-        { label: "Healthcare SEO", href: "#" },
-        { label: "Paid Media", href: "#" },
-        { label: "Web Design", href: "#" },
-        { label: "Content Marketing", href: "#" },
-        { label: "Reputation Management", href: "#" },
-        { label: "Marketing Automation", href: "#" }
-      ]},
-      { title: "Specialties", links: [
-        { label: "Dental Practices", href: "#" },
-        { label: "Orthopedics", href: "#" },
-        { label: "Dermatology", href: "#" },
-        { label: "Cardiology", href: "#" },
-        { label: "Mental Health", href: "#" },
-        { label: "Multi-Location", href: "#" }
-      ]},
-      { title: "Contact", links: [
-        { label: "hello@dastifydigital.com", href: "mailto:hello@dastifydigital.com" },
-        { label: "(888) 555-1234", href: "tel:+18885551234" },
-        { label: "Book a Strategy Call →", href: "/demo", emphasis: true }
-      ]}
-    ],
-    copy: "© 2026 Dastify Digital. All rights reserved.",
-    badges: ["HIPAA Compliant", "Google Partner"],
-    editor: { nodes: {} }
-  }
 };

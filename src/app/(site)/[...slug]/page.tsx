@@ -10,11 +10,12 @@ import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
 import { loadConvertedPageRegistry } from '@/lib/converted-pages/preview-registry';
 import { extractSectionOverrides, generateOverrideCss } from '@/lib/converted-pages/section-overrides';
 import { asPathnameFromSegments } from '@/lib/cms/slug';
-import { extractSeoMeta, findOneBySlug, isDraftEnabled, getNavigation } from '@/lib/cms/queries';
+import { extractSeoMeta, findOneBySlug, isDraftEnabled, getNavigation, getFooter } from '@/lib/cms/queries';
 import { buildMetadata } from '@/lib/seo/metadata';
 import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from '@/lib/seo/jsonld';
 import { getSiteSettings } from '@/lib/site-settings';
 import { SiteNavbar } from '@/components/SiteNavbar';
+import { SiteFooter } from '@/components/SiteFooter';
 import type { Page } from '@/payload-types';
 
 type Props = {
@@ -78,9 +79,10 @@ export default async function GenericPage({ params }: Props) {
       ? (docRecord.convertedContent as Record<string, unknown>)
       : null;
   const blocks = mapPayloadBlocksToPageBuilderBlocks(doc.blocks);
-  const [convertedRegistry, nav] = await Promise.all([
+  const [convertedRegistry, nav, footer] = await Promise.all([
     convertedPageName ? loadConvertedPageRegistry(convertedPageName) : Promise.resolve(null),
     convertedPageName ? getNavigation() : Promise.resolve(null),
+    convertedPageName ? getFooter() : Promise.resolve(null),
   ]);
   const fallbackConvertedContent =
     convertedPageName && !convertedContent
@@ -90,9 +92,7 @@ export default async function GenericPage({ params }: Props) {
     fallbackConvertedContent && convertedContent
       ? mergeConvertedContent(fallbackConvertedContent, convertedContent)
       : (convertedContent ?? fallbackConvertedContent);
-  const footerSection = convertedRegistry?.sections.find((section) => section.key === 'footer');
   const contentSections = convertedRegistry?.sections.filter((section) => section.key !== 'nav' && section.key !== 'footer') ?? [];
-  const FooterComponent = footerSection?.Component as ComponentType<{ data: unknown }> | undefined;
 
   const sectionOverrideCss = convertedRegistry && effectiveConvertedContent
     ? generateOverrideCss(convertedRegistry, extractSectionOverrides(effectiveConvertedContent))
@@ -133,7 +133,7 @@ export default async function GenericPage({ params }: Props) {
                 return <Component key={section.key} data={effectiveConvertedContent[section.key]} />;
               })}
           </main>
-          {FooterComponent ? <FooterComponent data={effectiveConvertedContent.footer} /> : null}
+          <SiteFooter footer={footer} />
         </>
       ) : blocks.length > 0 ? (
         <PageBlocksRenderer blocks={blocks} />

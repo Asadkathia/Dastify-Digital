@@ -6,7 +6,6 @@ import BlogGrid from "./components/BlogGrid";
 import TopicsSection from "./components/TopicsSection";
 import NewsletterSection from "./components/NewsletterSection";
 import BlogCta from "./components/BlogCta";
-import BlogFooter from "./components/BlogFooter";
 import { defaultContent } from "./content";
 import type { ConvertedPageRegistry } from "@/lib/converted-pages/types";
 import type { FormDefinition } from "@/lib/forms/types";
@@ -23,7 +22,6 @@ const registry: ConvertedPageRegistry & { formDefinitions?: Record<string, FormD
     { key: "topics", label: "Topics", icon: "🗂️", className: "blog1-topics-section", Component: TopicsSection as never },
     { key: "newsletter", label: "Newsletter", icon: "✉️", className: "blog1-newsletter-section", Component: NewsletterSection as never },
     { key: "cta", label: "CTA", icon: "🚀", className: "blog1-cta-section", Component: BlogCta as never },
-    { key: "footer", label: "Footer", icon: "🦶", className: "blog1-footer", Component: BlogFooter as never },
   ],
 };
 

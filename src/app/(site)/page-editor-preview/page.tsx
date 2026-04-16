@@ -15,7 +15,6 @@ import { Mission } from '@/app/components/home/Mission';
 import { Insights } from '@/app/components/home/Insights';
 import { Faq } from '@/app/components/home/Faq';
 import { Cta } from '@/app/components/home/Cta';
-import { Footer } from '@/app/components/home/Footer';
 import { NavbarScrollState } from '@/app/components/home/NavbarScrollState';
 import { ScrollRevealController } from '@/app/components/home/ScrollRevealController';
 import { sectionsToHomepagePatch } from '@/payload/views/HomepageEditor/homepage-adapter';
@@ -887,7 +886,8 @@ function HomepageSectionBlock({
       section = <Cta data={homepage.cta} />;
       break;
     case 'hp-footer':
-      section = <Footer data={homepage.footer} />;
+      // Footer is now a global SiteFooter rendered outside sections — skip in preview
+      section = null;
       break;
     default:
       section = (

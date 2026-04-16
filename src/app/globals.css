@@ -432,10 +432,23 @@ img {
   display: flex;
   align-items: center;
   gap: 2px;
+  margin-left: max(0px, calc((100vw - 1320px) / 2));
+}
+
+@media (max-width: 1320px) {
+  .nav-logo {
+    margin-left: 0;
+  }
 }
 
 .nav-logo-dot {
   color: var(--purple);
+}
+
+.nav-logo-img {
+  height: 48px;
+  width: auto;
+  display: block;
 }
 
 .nav-links {
@@ -1791,108 +1804,8 @@ body.mobile-menu-open {
 }
 
 /* ═══════════════════════════════════════════════
-   11. FOOTER — cream bg
+   11. FOOTER — replaced by SiteFooter (.site-footer-*)
 ═══════════════════════════════════════════════ */
-.footer {
-  background: var(--bg);
-  border-top: 1px solid var(--bd-dk);
-  padding: 72px 0 36px;
-  position: relative;
-  overflow: hidden;
-}
-
-.footer::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--g2-lt);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.footer-grid {
-  display: grid;
-  grid-template-columns: 280px 1fr 1fr 1fr;
-  gap: 48px;
-  margin-bottom: 56px;
-}
-
-.footer-logo-wrap .nav-logo {
-  font-size: 20px;
-  margin-bottom: 12px;
-  color: var(--ink);
-}
-
-.footer-tagline {
-  font-size: 13px;
-  color: var(--t3);
-  line-height: 1.65;
-  margin-bottom: 24px;
-}
-
-.footer-socials {
-  display: flex;
-  gap: 10px;
-}
-
-.social-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1px solid var(--bd-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: var(--t3);
-  transition: all .2s var(--spring);
-}
-
-.social-btn:hover {
-  border-color: var(--purple);
-  color: var(--purple);
-  transform: scale(1.1);
-}
-
-.footer-col-t {
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: .16em;
-  color: var(--t3);
-  margin-bottom: 18px;
-}
-
-.footer-link {
-  display: block;
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--t2);
-  margin-bottom: 10px;
-  transition: color .18s;
-}
-
-.footer-link:hover {
-  color: var(--ink);
-}
-
-.footer-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 28px;
-  border-top: 1px solid var(--bd-dk);
-}
-
-.footer-copy {
-  font-size: 12px;
-  color: var(--t3);
-}
-
-.footer-badges {
-  display: flex;
-  gap: 8px;
-}
 
 .f-badge {
   background: var(--purple-lt);
@@ -1916,6 +1829,135 @@ body.mobile-menu-open {
   background: var(--green-lt);
   border-color: var(--green-bd);
   color: var(--green);
+}
+
+/* ── Site Footer ── */
+.site-footer {
+  background: var(--ink);
+  padding: 72px 0 40px;
+  position: relative;
+  overflow: hidden;
+}
+.site-footer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(3,103,165,0.08) 50%, transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+.site-footer > .wrap { position: relative; z-index: 1; }
+.site-footer-wrap { position: relative; z-index: 1; }
+.site-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 56px;
+}
+.site-footer-brand-logo {
+  font-family: var(--fd);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--purple);
+  margin-bottom: 14px;
+  display: inline-block;
+}
+.site-footer-brand-logo .site-footer-dot {
+  color: var(--purple);
+}
+.site-footer-logo-img {
+  height: 40px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+.site-footer-tagline {
+  font-size: 14px;
+  color: rgba(245,241,232,0.55);
+  line-height: 1.65;
+  max-width: 320px;
+  margin-bottom: 28px;
+}
+.site-footer-socials {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.site-footer-social-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(245,241,232,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(245,241,232,0.7);
+  transition: border-color .2s var(--expo), color .2s var(--expo), transform .2s var(--spring);
+  flex-shrink: 0;
+}
+.site-footer-social-btn:hover {
+  border-color: var(--purple);
+  color: #F5F1E8;
+  transform: scale(1.08);
+}
+.site-footer-col-t {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  color: rgba(245,241,232,0.4);
+  margin-bottom: 20px;
+}
+.site-footer-link {
+  display: block;
+  font-size: 13px;
+  color: rgba(245,241,232,0.65);
+  margin-bottom: 12px;
+  transition: color .18s;
+  line-height: 1.4;
+}
+.site-footer-link:hover { color: #F5F1E8; }
+.site-footer-link.is-highlight { color: var(--purple); font-weight: 500; }
+.site-footer-link.is-highlight:hover { color: #a78bfa; }
+.site-footer-cta-btn {
+  margin-top: 20px;
+  width: 100%;
+  justify-content: center;
+}
+.site-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 28px;
+  border-top: 1px solid rgba(245,241,232,0.08);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.site-footer-copy {
+  font-size: 12px;
+  color: rgba(245,241,232,0.35);
+}
+.site-footer-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+@media (max-width: 1100px) {
+  .site-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+}
+@media (max-width: 680px) {
+  .site-footer { padding: 56px 0 32px; }
+  .site-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .site-footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -1947,7 +1989,6 @@ body.mobile-menu-open {
   .blog-grid { grid-template-columns: 1fr 1fr; }
   .faq-grid { grid-template-columns: 1fr; }
 
-  .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
 
   .svcs-head { grid-template-columns: 1fr; }
   .svc-item { grid-template-columns: 50px 1fr 40px; }
@@ -1976,14 +2017,6 @@ body.mobile-menu-open {
   .feat-grid { grid-template-columns: 1fr; }
   .blog-grid { grid-template-columns: 1fr; }
   .cta-form { flex-direction: column; }
-  .footer-grid { grid-template-columns: 1fr; }
-
-  .footer-bottom {
-    flex-direction: column;
-    gap: 16px;
-    text-align: center;
-  }
-
   .cases-tabs { overflow-x: auto; }
 
   .insights-head {

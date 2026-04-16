@@ -24,12 +24,19 @@ export const Navigation: GlobalConfig = {
   },
   fields: [
     {
+      name: 'logoImage',
+      type: 'upload',
+      label: 'Logo Image',
+      relationTo: 'media',
+      admin: { description: 'Upload a logo image. If set, replaces the text logo in the navbar.' },
+    },
+    {
       name: 'logoText',
       type: 'text',
       label: 'Logo Text',
       required: true,
       defaultValue: 'Dastify',
-      admin: { description: 'The main logo word (e.g. "Dastify")' },
+      admin: { description: 'The main logo word (e.g. "Dastify") — shown when no logo image is set.' },
     },
     {
       name: 'logoAccent',

@@ -17,6 +17,8 @@ import { migration as importReportsTable } from './20260408_0015_import_reports_
 import { migration as pagesConvertedContent } from './20260410_0016_pages_converted_content.ts';
 import { migration as homepageCtaHrefColumns } from './20260415_0017_homepage_cta_href_columns.ts';
 import { migration as formsFieldsJsonColumn } from './20260415_0018_forms_fields_json_column.ts';
+import { migration as footerGlobal } from './20260416_0019_footer_global.ts';
+import { migration as logoImageGlobals } from './20260417_0020_logo_image_globals.ts';
 
 export const migrations: Migration[] = [
   usersRole,
@@ -37,4 +39,6 @@ export const migrations: Migration[] = [
   pagesConvertedContent,
   homepageCtaHrefColumns,
   formsFieldsJsonColumn,
+  footerGlobal,
+  logoImageGlobals,
 ];

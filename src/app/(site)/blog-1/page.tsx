@@ -9,7 +9,8 @@ import BlogGrid from "./components/BlogGrid";
 import TopicsSection from "./components/TopicsSection";
 import NewsletterSection from "./components/NewsletterSection";
 import BlogCta from "./components/BlogCta";
-import BlogFooter from "./components/BlogFooter";
+import { SiteFooter } from "@/components/SiteFooter";
+import { getFooter } from "@/lib/cms/queries";
 import { defaultContent } from "./content";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,6 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Page() {
   const content = defaultContent;
+  const footer = await getFooter();
 
   return (
     <>
@@ -37,7 +39,7 @@ export default async function Page() {
         <NewsletterSection data={content.newsletter} />
         <BlogCta data={content.cta} />
       </main>
-      <BlogFooter data={content.footer} />
+      <SiteFooter footer={footer} />
     </>
   );
 }

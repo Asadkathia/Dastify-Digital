@@ -3,11 +3,11 @@ import DemoProcess from "./components/DemoProcess";
 import DemoResults from "./components/DemoResults";
 import DemoTestimonial from "./components/DemoTestimonial";
 import DemoUrgency from "./components/DemoUrgency";
-import DemoFooter from "./components/DemoFooter";
+import { SiteFooter } from "@/components/SiteFooter";
 import { defaultContent } from "./content";
 import type { PageContent } from "./components/types";
 import { ScrollRevealController } from "@/app/components/home/ScrollRevealController";
-import { findOneBySlug, isDraftEnabled, getNavigation } from "@/lib/cms/queries";
+import { findOneBySlug, isDraftEnabled, getNavigation, getFooter } from "@/lib/cms/queries";
 import { mergeConvertedContent } from "@/lib/converted-pages/merge-content";
 import { SiteNavbar } from "@/components/SiteNavbar";
 
@@ -22,9 +22,10 @@ export async function generateMetadata() {
 
 export default async function Page() {
   const draft = await isDraftEnabled();
-  const [doc, nav] = await Promise.all([
+  const [doc, nav, footer] = await Promise.all([
     findOneBySlug('pages', 'demo', draft),
     getNavigation(),
+    getFooter(),
   ]);
   const docRecord = doc as unknown as Record<string, unknown> | null;
   const convertedContent =
@@ -46,7 +47,7 @@ export default async function Page() {
         <DemoTestimonial data={content.testimonial} />
         <DemoUrgency data={content.urgency} />
       </main>
-      <DemoFooter data={content.footer} />
+      <SiteFooter footer={footer} />
     </>
   );
 }
