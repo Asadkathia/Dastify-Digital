@@ -90,7 +90,7 @@ function inputType(blockType: string): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function DemoHero({ data }: { data: HeroData }) {
-  const TitleTag = (data.titleTag || "h1") as keyof JSX.IntrinsicElements;
+  const TitleTag = (data.titleTag || "h1") as "h1" | "h2" | "h3" | "h4" | "p" | "span";
 
   const [payloadForm, setPayloadForm] = useState<PayloadForm | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});

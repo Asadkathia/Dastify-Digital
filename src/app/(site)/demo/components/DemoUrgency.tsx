@@ -7,7 +7,7 @@ type PageContent = import("./types").PageContent;
 type UrgencyData = PageContent["urgency"];
 
 export default function DemoUrgency({ data }: { data: UrgencyData }) {
-  const TitleTag = (data.titleTag || "h2") as keyof JSX.IntrinsicElements;
+  const TitleTag = (data.titleTag || "h2") as "h1" | "h2" | "h3" | "h4" | "p" | "span";
 
   return (
     <section className="urgency-section">

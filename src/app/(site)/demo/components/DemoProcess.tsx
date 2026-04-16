@@ -3,7 +3,7 @@ type PageContent = import("./types").PageContent;
 type ProcessData = PageContent["process"];
 
 export default function DemoProcess({ data }: { data: ProcessData }) {
-  const TitleTag = (data.titleTag || "h2") as keyof JSX.IntrinsicElements;
+  const TitleTag = (data.titleTag || "h2") as "h1" | "h2" | "h3" | "h4" | "p" | "span";
 
   return (
     <section className="process-section">

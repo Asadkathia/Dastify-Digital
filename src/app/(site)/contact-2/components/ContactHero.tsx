@@ -5,7 +5,7 @@ type Props = {
 };
 
 export default function ContactHero({ data }: Props) {
-  const TitleTag = (data.titleTag || "h1") as keyof JSX.IntrinsicElements;
+  const TitleTag = (data.titleTag || "h1") as "h1" | "h2" | "h3" | "h4" | "p" | "span";
 
   return (
     <section className="contact-hero">

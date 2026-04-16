@@ -10,7 +10,7 @@ type Props = {
 
 export default function ContactFaq({ data }: Props) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
-  const TitleTag = (data.titleTag || "h2") as keyof JSX.IntrinsicElements;
+  const TitleTag = (data.titleTag || "h2") as "h1" | "h2" | "h3" | "h4" | "p" | "span";
 
   return (
     <section className="faq-section">

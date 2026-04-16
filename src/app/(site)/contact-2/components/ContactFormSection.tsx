@@ -69,7 +69,7 @@ function groupFieldsIntoRows(fields: PayloadField[]): PayloadField[][] {
 type Props = { data: ContactFormData };
 
 export default function ContactFormSection({ data }: Props) {
-  const TitleTag = (data.info.titleTag || "h2") as keyof JSX.IntrinsicElements;
+  const TitleTag = (data.info.titleTag || "h2") as "h1" | "h2" | "h3" | "h4" | "p" | "span";
 
   const [payloadForm, setPayloadForm] = useState<PayloadForm | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
