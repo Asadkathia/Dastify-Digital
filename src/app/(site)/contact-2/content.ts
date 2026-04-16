@@ -138,7 +138,7 @@ export type PageContent = {
   };
 };
 
-export const defaultContent: Contact2Content = {
+export const defaultContent: PageContent = {
   "nav": {
     "logoTextPrimary": "Dastify",
     "logoTextAccent": ".",

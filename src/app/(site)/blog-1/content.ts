@@ -89,7 +89,7 @@ export type PageContent = {
   };
 };
 
-export const defaultContent: Blog1Content = {
+export const defaultContent: PageContent = {
   "nav": {
     "logoTextPrefix": "Dastify",
     "logoAccent": ".",
