@@ -22,7 +22,7 @@ export default function FeaturedPost({ data }: Props) {
                   width={640}
                   height={400}
                   className="blog1-media-img"
-                  style={{ objectFit: data.imageFit || "cover", objectPosition: data.imagePosition || "center", borderRadius: data.imageRadius || "4px" }}
+                  style={{ objectFit: (data.imageFit || "cover") as React.CSSProperties['objectFit'], objectPosition: data.imagePosition || "center", borderRadius: data.imageRadius || "4px" }}
                   data-field="featured.image"
                 />
               </div>

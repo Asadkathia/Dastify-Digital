@@ -17,7 +17,7 @@ function PlaceholderMedia({ media, fieldPath, aspectClass }: { media: any; field
             alt={media.imageAlt || ""}
             fill
             sizes="(max-width: 900px) 100vw, 720px"
-            style={{ objectFit: media.imageFit || "cover", objectPosition: media.imagePosition || "center", borderRadius: media.imageRadius || "4px" }}
+            style={{ objectFit: (media.imageFit || "cover") as React.CSSProperties['objectFit'], objectPosition: media.imagePosition || "center", borderRadius: media.imageRadius || "4px" }}
             data-field={`${fieldPath}.image` as string}
           />
         </div>

@@ -43,7 +43,7 @@ export default function BlogGrid({ data }: Props) {
                     width={480}
                     height={300}
                     className="blog1-media-img"
-                    style={{ objectFit: item.imageFit || "cover", objectPosition: item.imagePosition || "center", borderRadius: item.imageRadius || "0px" }}
+                    style={{ objectFit: (item.imageFit || "cover") as React.CSSProperties['objectFit'], objectPosition: item.imagePosition || "center", borderRadius: item.imageRadius || "0px" }}
                     data-field={`grid.posts.${index}.image`}
                   />
                 ) : (

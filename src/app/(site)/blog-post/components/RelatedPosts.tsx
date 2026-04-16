@@ -30,7 +30,7 @@ export default function RelatedPosts({ data }: Props) {
                       alt={item.media.imageAlt || ""}
                       fill
                       sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
-                      style={{ objectFit: item.media.imageFit || "cover", objectPosition: item.media.imagePosition || "center" }}
+                      style={{ objectFit: (item.media.imageFit || "cover") as React.CSSProperties['objectFit'], objectPosition: item.media.imagePosition || "center" }}
                       data-field={`relatedPosts.items.${index}.media.image`}
                     />
                   </div>
