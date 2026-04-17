@@ -1,35 +1,6 @@
-import type { GlobalConfig, GlobalBeforeChangeHook } from 'payload';
+import type { GlobalConfig } from 'payload';
 import { isAdminOrEditor } from '../access.ts';
 import { revalidateGlobalChange } from '../hooks/revalidate.ts';
-
-// Payload's upsertRow for globals with nested arrays (columns > links) sometimes
-// fails to DELETE child rows before re-INSERTing, causing UNIQUE id collisions
-// on save. This hook truncates all footer child tables prior to update so
-// Payload's subsequent INSERT pass always lands on empty tables.
-const FOOTER_CHILD_TABLES = [
-  'footer_columns_links',
-  'footer_columns',
-  'footer_cta_column_links',
-  'footer_brand_socials',
-  'footer_badges',
-];
-
-const purgeFooterChildren: GlobalBeforeChangeHook = async ({ req }) => {
-  const adapter = req.payload.db as unknown as { drizzle?: { run: (q: unknown) => Promise<unknown> }; execute?: (q: unknown) => Promise<unknown> };
-  try {
-    for (const table of FOOTER_CHILD_TABLES) {
-      if (adapter.drizzle && typeof adapter.drizzle.run === 'function') {
-        const { sql } = await import('drizzle-orm');
-        await adapter.drizzle.run(sql.raw(`DELETE FROM "${table}"`));
-      } else if (typeof adapter.execute === 'function') {
-        const { sql } = await import('drizzle-orm');
-        await adapter.execute(sql.raw(`DELETE FROM "${table}"`));
-      }
-    }
-  } catch (err) {
-    req.payload.logger.warn({ err }, '[Footer] purgeFooterChildren failed (non-fatal)');
-  }
-};
 
 export const Footer: GlobalConfig = {
   slug: 'footer',
@@ -39,7 +10,6 @@ export const Footer: GlobalConfig = {
     update: ({ req }) => isAdminOrEditor(req),
   },
   hooks: {
-    beforeChange: [purgeFooterChildren],
     afterChange: [
       revalidateGlobalChange('footer', [
         '/',
