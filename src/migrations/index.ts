@@ -7,6 +7,7 @@ import * as migration_20260416_141218 from './20260416_141218';
 import * as migration_20260416_footer_global from './20260416_footer_global';
 import * as migration_20260417_logo_image_globals from './20260417_logo_image_globals';
 import * as migration_20260417_fix_globals_id_sequences from './20260417_fix_globals_id_sequences';
+import * as migration_20260417_sync_globals_id_sequences from './20260417_sync_globals_id_sequences';
 
 export const migrations = [
   {
@@ -53,5 +54,10 @@ export const migrations = [
     up: migration_20260417_fix_globals_id_sequences.up,
     down: migration_20260417_fix_globals_id_sequences.down,
     name: '20260417_fix_globals_id_sequences',
+  },
+  {
+    up: migration_20260417_sync_globals_id_sequences.up,
+    down: migration_20260417_sync_globals_id_sequences.down,
+    name: '20260417_sync_globals_id_sequences',
   },
 ];

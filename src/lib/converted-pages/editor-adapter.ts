@@ -42,7 +42,12 @@ function canRepresentArray(value: unknown): value is unknown[] {
   return value.every(
     (item) =>
       isPlainObject(item) &&
-      Object.values(item).every((subValue) => isScalar(subValue) || isMediaObject(subValue)),
+      Object.values(item).every(
+        (subValue) =>
+          isScalar(subValue) ||
+          isMediaObject(subValue) ||
+          (isPlainObject(subValue) && Object.values(subValue).every(isScalar)),
+      ),
   );
 }
 
@@ -172,6 +177,22 @@ function fieldForName(name: string, value: unknown): EditorField {
       type: 'textarea',
       label,
     };
+  }
+
+  if (tail === 'icon') {
+    return {
+      name,
+      type: 'icon-upload',
+      label,
+    };
+  }
+
+  if (tail === 'iconsize') {
+    return { name, type: 'number', label, min: 10, max: 200, step: 1 };
+  }
+
+  if (tail === 'iconoffsetx' || tail === 'iconoffsety') {
+    return { name, type: 'number', label, min: -100, max: 100, step: 1 };
   }
 
   return {

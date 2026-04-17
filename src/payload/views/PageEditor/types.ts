@@ -1,4 +1,4 @@
-export type EditorFieldType = 'text' | 'textarea' | 'select' | 'upload' | 'checkbox' | 'array' | 'link';
+export type EditorFieldType = 'text' | 'textarea' | 'number' | 'select' | 'upload' | 'icon-upload' | 'checkbox' | 'array' | 'link';
 
 export type EditorFieldBase = {
   name: string;
@@ -10,10 +10,12 @@ export type TextField = EditorFieldBase & { type: 'text' };
 export type TextareaField = EditorFieldBase & { type: 'textarea' };
 export type SelectField = EditorFieldBase & { type: 'select'; options: Array<{ label: string; value: string }> };
 export type UploadField = EditorFieldBase & { type: 'upload' };
+export type IconUploadField = EditorFieldBase & { type: 'icon-upload' };
+export type NumberField = EditorFieldBase & { type: 'number'; min?: number; max?: number; step?: number };
 export type CheckboxField = EditorFieldBase & { type: 'checkbox' };
 export type ArrayField = EditorFieldBase & {
   type: 'array';
-  subFields: Array<TextField | TextareaField | SelectField | UploadField | CheckboxField | LinkField>;
+  subFields: Array<TextField | TextareaField | NumberField | SelectField | UploadField | CheckboxField | LinkField | IconUploadField>;
 };
 
 // Structured link value stored in block data
@@ -26,7 +28,7 @@ export type LinkValue = {
 
 export type LinkField = EditorFieldBase & { type: 'link'; showLabel?: boolean };
 
-export type EditorField = TextField | TextareaField | SelectField | UploadField | CheckboxField | ArrayField | LinkField;
+export type EditorField = TextField | TextareaField | NumberField | SelectField | UploadField | IconUploadField | CheckboxField | ArrayField | LinkField;
 
 export type BlockDefinition = {
   blockType: string;

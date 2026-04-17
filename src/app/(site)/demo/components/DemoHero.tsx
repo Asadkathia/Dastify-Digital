@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import { renderIcon } from "@/lib/converted-pages/renderIcon";
 import { useEffect, useRef, useState } from "react";
 
 type PageContent = import("./types").PageContent;
@@ -208,7 +209,7 @@ export default function DemoHero({ data }: { data: HeroData }) {
               {data.trustItems.map((item, index) => (
                 <div className="demo-trust-item" key={`trust-${index}`}>
                   <div className="demo-trust-icon" data-field={`hero.trustItems.${index}.icon`}>
-                    {item.icon}
+                    {renderIcon(item.icon)}
                   </div>
                   <span data-field={`hero.trustItems.${index}.label`}>{item.label}</span>
                 </div>

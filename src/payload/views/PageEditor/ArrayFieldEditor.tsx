@@ -1,9 +1,10 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import type { ArrayField, LinkField, UploadField } from './types';
+import type { ArrayField, IconUploadField, LinkField, NumberField, UploadField } from './types';
 import { useEditorStore } from './store';
 import { LinkFieldEditor } from './LinkFieldEditor';
+import { MediaLibraryModal } from './MediaLibraryModal';
 
 type ArrayFieldEditorProps = {
   blockId: string;
@@ -23,6 +24,7 @@ export function ArrayFieldEditor({ blockId, field, value = [] }: ArrayFieldEdito
       if (sf.type === 'select') return [sf.name, sf.options[0]?.value ?? ''];
       if (sf.type === 'upload') return [sf.name, null];
       if (sf.type === 'link') return [sf.name, { url: '', type: 'external', openInNewTab: false }];
+      if (sf.type === 'number') return [sf.name, sf.min ?? 0];
       return [sf.name, ''];
     }),
   );
@@ -128,6 +130,32 @@ export function ArrayFieldEditor({ blockId, field, value = [] }: ArrayFieldEdito
             if (subField.type === 'link') {
               return (
                 <ArrayLinkSubFieldEditor
+                  key={subField.name}
+                  arrayFieldName={field.name}
+                  blockId={blockId}
+                  field={subField}
+                  index={index}
+                  value={rawSubValue}
+                />
+              );
+            }
+
+            if (subField.type === 'icon-upload') {
+              return (
+                <ArrayIconSubFieldEditor
+                  key={subField.name}
+                  arrayFieldName={field.name}
+                  blockId={blockId}
+                  field={subField}
+                  index={index}
+                  value={rawSubValue}
+                />
+              );
+            }
+
+            if (subField.type === 'number') {
+              return (
+                <ArrayNumberSubFieldEditor
                   key={subField.name}
                   arrayFieldName={field.name}
                   blockId={blockId}
@@ -360,6 +388,140 @@ function ArrayUploadSubFieldEditor({
           Uses Payload Media library
         </span>
       </div>
+    </div>
+  );
+}
+
+function ArrayNumberSubFieldEditor({
+  blockId,
+  arrayFieldName,
+  field,
+  index,
+  value,
+}: {
+  blockId: string;
+  arrayFieldName: string;
+  field: NumberField;
+  index: number;
+  value: unknown;
+}) {
+  const updateArrayItem = useEditorStore((s) => s.updateArrayItem);
+  const numVal = typeof value === 'number' ? value : (parseFloat(String(value ?? '')) || 0);
+
+  return (
+    <div style={{ marginBottom: '8px' }}>
+      <label style={labelStyle}>{field.label}{field.required ? ' *' : ''}</label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <input
+          type="range"
+          min={field.min ?? 0}
+          max={field.max ?? 100}
+          step={field.step ?? 1}
+          value={numVal}
+          onChange={(e) => updateArrayItem(blockId, arrayFieldName, index, field.name, parseFloat(e.target.value))}
+          style={{ flex: 1, accentColor: '#7c3aed', cursor: 'pointer' }}
+        />
+        <input
+          type="number"
+          min={field.min}
+          max={field.max}
+          step={field.step ?? 1}
+          value={numVal}
+          onChange={(e) => updateArrayItem(blockId, arrayFieldName, index, field.name, parseFloat(e.target.value) || 0)}
+          style={{ ...inputStyle, width: '60px', textAlign: 'center' }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ArrayIconSubFieldEditor({
+  blockId,
+  arrayFieldName,
+  field,
+  index,
+  value,
+}: {
+  blockId: string;
+  arrayFieldName: string;
+  field: IconUploadField;
+  index: number;
+  value: unknown;
+}) {
+  const updateArrayItem = useEditorStore((s) => s.updateArrayItem);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const strVal = typeof value === 'string' ? value : '';
+  const isImage = strVal.startsWith('/') || strVal.startsWith('http');
+
+  async function handleFileSelect(file: File | null) {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('_payload', JSON.stringify({ alt: field.label }));
+      const res = await fetch('/api/media', { method: 'POST', credentials: 'include', body: formData });
+      if (!res.ok) throw new Error('Upload failed');
+      const raw = await res.json() as Record<string, unknown>;
+      const doc = (raw.doc ?? raw) as Record<string, unknown>;
+      const url = typeof doc.url === 'string' ? doc.url
+        : typeof doc.filename === 'string' ? `/media/${doc.filename}` : null;
+      if (url) updateArrayItem(blockId, arrayFieldName, index, field.name, url);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: '8px' }}>
+      <label style={labelStyle}>{field.label}</label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+        <div style={{ width: '40px', height: '40px', borderRadius: '6px', border: '1px solid #2a2a2a', background: '#0f0f0f', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+          {isImage
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={strVal} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            : <span style={{ fontSize: '20px' }}>{strVal || '?'}</span>}
+        </div>
+        <input
+          type="text"
+          value={strVal}
+          onChange={(e) => updateArrayItem(blockId, arrayFieldName, index, field.name, e.target.value)}
+          style={inputStyle}
+          placeholder="Emoji or image URL…"
+        />
+      </div>
+      <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+        <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+          onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)} />
+        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading}
+          style={{ ...actionBtnStyle, padding: '5px 8px', color: isUploading ? '#555' : '#9ca3af', cursor: isUploading ? 'default' : 'pointer' }}>
+          {isUploading ? 'Uploading…' : 'Upload'}
+        </button>
+        <button type="button" onClick={() => setShowLibrary(true)}
+          style={{ ...actionBtnStyle, padding: '5px 8px', color: '#0ea5e9', border: '1px solid #0ea5e9', cursor: 'pointer' }}>
+          Library
+        </button>
+        {isImage && (
+          <button type="button" onClick={() => updateArrayItem(blockId, arrayFieldName, index, field.name, '')}
+            style={{ ...actionBtnStyle, padding: '5px 8px', color: '#f87171', cursor: 'pointer' }}>
+            Remove
+          </button>
+        )}
+      </div>
+      {showLibrary && (
+        <MediaLibraryModal
+          onSelect={(media) => {
+            const url = media.url || (media.filename ? `/media/${media.filename}` : '');
+            if (url) updateArrayItem(blockId, arrayFieldName, index, field.name, url);
+            setShowLibrary(false);
+          }}
+          onClose={() => setShowLibrary(false)}
+        />
+      )}
     </div>
   );
 }

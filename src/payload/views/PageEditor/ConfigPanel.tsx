@@ -353,6 +353,91 @@ function UploadFieldEditor({
   );
 }
 
+function IconUploadFieldEditor({ blockId, field, value }: FieldEditorProps) {
+  const updateBlockData = useEditorStore((s) => s.updateBlockData);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const strVal = typeof value === 'string' ? value : '';
+  const isImage = strVal.startsWith('/') || strVal.startsWith('http');
+
+  async function handleFileSelect(file: File | null) {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('_payload', JSON.stringify({ alt: field.label }));
+      const res = await fetch('/api/media', { method: 'POST', credentials: 'include', body: formData });
+      if (!res.ok) throw new Error('Upload failed');
+      const raw = await res.json() as Record<string, unknown>;
+      const doc = (raw.doc ?? raw) as Record<string, unknown>;
+      const url = typeof doc.url === 'string' ? doc.url : (typeof doc.filename === 'string' ? `/media/${doc.filename}` : null);
+      if (url) updateBlockData(blockId, field.name, url);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: '16px' }}>
+      <label style={labelStyle}>{field.label}</label>
+      {/* Preview */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+        <div style={{ width: '48px', height: '48px', borderRadius: '8px', border: '1px solid #2a2a2a', background: '#0f0f0f', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+          {isImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={strVal} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          ) : (
+            <span style={{ fontSize: '24px' }}>{strVal || '?'}</span>
+          )}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <input
+            type="text"
+            value={strVal}
+            onChange={(e) => updateBlockData(blockId, field.name, e.target.value)}
+            style={{ ...inputStyle, marginBottom: '4px' }}
+            placeholder="Emoji or image URL…"
+          />
+          <p style={{ fontSize: '10px', color: '#444', margin: 0 }}>Type an emoji or upload an image below</p>
+        </div>
+      </div>
+      {/* Upload controls */}
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)} />
+        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading}
+          style={{ ...actionBtnStyle, borderRadius: '6px', padding: '6px 10px', color: isUploading ? '#555' : '#9ca3af', cursor: isUploading ? 'default' : 'pointer' }}>
+          {isUploading ? 'Uploading…' : 'Upload Image'}
+        </button>
+        <button type="button" onClick={() => setShowLibrary(true)}
+          style={{ ...actionBtnStyle, borderRadius: '6px', padding: '6px 10px', color: '#0ea5e9', border: '1px solid #0ea5e9', cursor: 'pointer' }}>
+          Browse Library
+        </button>
+        {isImage && (
+          <button type="button" onClick={() => updateBlockData(blockId, field.name, '')}
+            style={{ ...actionBtnStyle, borderRadius: '6px', padding: '6px 10px', color: '#f87171', cursor: 'pointer' }}>
+            Remove
+          </button>
+        )}
+      </div>
+      {showLibrary && (
+        <MediaLibraryModal
+          onSelect={(media) => {
+            const url = media.url || (media.filename ? `/media/${media.filename}` : '');
+            if (url) updateBlockData(blockId, field.name, url);
+            setShowLibrary(false);
+          }}
+          onClose={() => setShowLibrary(false)}
+        />
+      )}
+    </div>
+  );
+}
+
 function TextFieldEditor({ blockId, field, value }: FieldEditorProps) {
   const updateBlockData = useEditorStore((s) => s.updateBlockData);
   const { value: local, onChange, onBlur } = useDebouncedField(
@@ -466,6 +551,10 @@ function FieldEditor({ blockId, field, value }: FieldEditorProps) {
     return (
       <UploadFieldEditor blockId={blockId} fieldName={field.name} fieldLabel={field.label} value={value} />
     );
+  }
+
+  if (field.type === 'icon-upload') {
+    return <IconUploadFieldEditor blockId={blockId} field={field} value={value} />;
   }
 
   if (field.type === 'link') {

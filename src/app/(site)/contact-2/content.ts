@@ -184,7 +184,11 @@ export const defaultContent: PageContent = {
     "items": [
       {
         "icon": "📞",
+        "iconSize": 32,
+        "iconOffsetX": 0,
+        "iconOffsetY": 0,
         "color": "purple",
+        "showBg": true,
         "title": "Call Us",
         "link": {
           "label": "(888) 555-1234",
@@ -194,7 +198,11 @@ export const defaultContent: PageContent = {
       },
       {
         "icon": "📧",
+        "iconSize": 32,
+        "iconOffsetX": 0,
+        "iconOffsetY": 0,
         "color": "blue",
+        "showBg": true,
         "title": "Email",
         "link": {
           "label": "hello@dastifydigital.com",
@@ -204,7 +212,11 @@ export const defaultContent: PageContent = {
       },
       {
         "icon": "📅",
+        "iconSize": 32,
+        "iconOffsetX": 0,
+        "iconOffsetY": 0,
         "color": "green",
+        "showBg": true,
         "title": "Book a Call",
         "link": {
           "label": "Schedule a 30-min strategy call",
@@ -214,7 +226,11 @@ export const defaultContent: PageContent = {
       },
       {
         "icon": "📍",
+        "iconSize": 32,
+        "iconOffsetX": 0,
+        "iconOffsetY": 0,
         "color": "purple",
+        "showBg": true,
         "title": "Visit Us",
         "detail": "2100 Ross Avenue, Suite 800 Dallas, TX 75201"
       }

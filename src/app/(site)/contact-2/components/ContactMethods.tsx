@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { PageContent } from "./types";
+import { renderIcon } from "@/lib/converted-pages/renderIcon";
 
 type Props = {
   data: PageContent["methods"];
@@ -19,8 +20,18 @@ export default function ContactMethods({ data }: Props) {
                 data-delay={String(index + 1)}
                 key={`${"methods"}-${item.link?.href ?? item.title}-${index}`}
               >
-                <div className={`contact-method-icon ${item.color}`} data-field={`methods.items.${index}.icon`}>
-                  {item.icon}
+                <div
+                  className={`contact-method-icon ${item.color}${item.showBg === false ? ' no-bg' : ''}`}
+                  data-field={`methods.items.${index}.icon`}
+                >
+                  {renderIcon(item.icon, undefined, item.iconSize || item.iconOffsetX || item.iconOffsetY ? {
+                    width: item.iconSize ? `${item.iconSize}px` : undefined,
+                    height: item.iconSize ? `${item.iconSize}px` : undefined,
+                    fontSize: item.iconSize ? `${item.iconSize}px` : undefined,
+                    transform: (item.iconOffsetX || item.iconOffsetY)
+                      ? `translate(${item.iconOffsetX ?? 0}px, ${item.iconOffsetY ?? 0}px)`
+                      : undefined,
+                  } : undefined)}
                 </div>
                 <div className="contact-method-title" data-field={`methods.items.${index}.title`}>
                   {item.title}

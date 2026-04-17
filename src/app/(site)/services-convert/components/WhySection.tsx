@@ -1,4 +1,5 @@
 import { getConvertedNodeBinding } from "@/components/converted-editor";
+import { renderIcon } from "@/lib/converted-pages/renderIcon";
 
 type WhyData = {
   chip: string;
@@ -32,7 +33,7 @@ export default function WhySection({ data }: { data: WhyData }) {
           <div className="svc-convert-why-cards">
             {cards.map((card, index) => (
               <div key={card.title} className="svc-convert-why-card" data-r data-delay={index === 0 ? undefined : String(index)}>
-                <div className="svc-convert-why-card-icon" {...getConvertedNodeBinding(data, { field: `cards.${index}.icon`, defaultTag: 'div', nodeKey: `cards_${index}_icon` }).props}>{card.icon}</div>
+                <div className="svc-convert-why-card-icon" {...getConvertedNodeBinding(data, { field: `cards.${index}.icon`, defaultTag: 'div', nodeKey: `cards_${index}_icon` }).props}>{renderIcon(card.icon)}</div>
                 <h3 className="svc-convert-why-card-title" {...getConvertedNodeBinding(data, { field: `cards.${index}.title`, defaultTag: 'h3', nodeKey: `cards_${index}_title`, allowedTags: ['h2', 'h3', 'h4', 'p'] }).props}>{card.title}</h3>
                 <p className="svc-convert-why-card-desc" {...getConvertedNodeBinding(data, { field: `cards.${index}.description`, defaultTag: 'p', nodeKey: `cards_${index}_description` }).props}>{card.description}</p>
               </div>

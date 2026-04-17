@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import { renderIcon } from "@/lib/converted-pages/renderIcon";
 import { useEffect, useRef, useState } from "react";
 import type { PageContent } from "./types";
 
@@ -153,7 +154,7 @@ export default function ContactFormSection({ data }: Props) {
               {data.info.promises.map((item, index) => (
                 <div className="contact-promise" key={`promises-${item.title}-${index}`}>
                   <div className="contact-promise-check" data-field={`contactForm.info.promises.${index}.icon`}>
-                    {item.icon}
+                    {renderIcon(item.icon)}
                   </div>
                   <div className="contact-promise-text">
                     <strong data-field={`contactForm.info.promises.${index}.title`}>{item.title}</strong>{" "}
@@ -165,7 +166,7 @@ export default function ContactFormSection({ data }: Props) {
 
             <div className="contact-response">
               <div className="contact-response-icon" data-field="contactForm.info.response.icon">
-                {data.info.response.icon}
+                {renderIcon(data.info.response.icon)}
               </div>
               <div className="contact-response-text">
                 <strong data-field="contactForm.info.response.title">{data.info.response.title}</strong>{" "}

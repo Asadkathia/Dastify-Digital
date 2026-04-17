@@ -1,4 +1,5 @@
 import type { PageContent } from "../content";
+import { renderIcon } from "@/lib/converted-pages/renderIcon";
 
 type Props = { data: PageContent["topics"] };
 
@@ -23,7 +24,7 @@ export default function TopicsSection({ data }: Props) {
         <div className="blog1-topics-grid">
           {data.items.map((item, index) => (
             <div className="blog1-topic-card" data-r data-delay={String(index + 1)} key={`${"topics"}-${item.name}-${index}`}>
-              <div className="blog1-topic-icon" data-field={`topics.items.${index}.icon`}>{item.icon}</div>
+              <div className="blog1-topic-icon" data-field={`topics.items.${index}.icon`}>{renderIcon(item.icon)}</div>
               <div className="blog1-topic-name" data-field={`topics.items.${index}.name`}>{item.name}</div>
               <div className="blog1-topic-count" data-field={`topics.items.${index}.count`}>{item.count}</div>
             </div>

@@ -1,6 +1,35 @@
-import type { GlobalConfig } from 'payload';
+import type { GlobalConfig, GlobalBeforeChangeHook } from 'payload';
 import { isAdminOrEditor } from '../access.ts';
 import { revalidateGlobalChange } from '../hooks/revalidate.ts';
+
+// Payload's upsertRow for globals with nested arrays (columns > links) sometimes
+// fails to DELETE child rows before re-INSERTing, causing UNIQUE id collisions
+// on save. This hook truncates all footer child tables prior to update so
+// Payload's subsequent INSERT pass always lands on empty tables.
+const FOOTER_CHILD_TABLES = [
+  'footer_columns_links',
+  'footer_columns',
+  'footer_cta_column_links',
+  'footer_brand_socials',
+  'footer_badges',
+];
+
+const purgeFooterChildren: GlobalBeforeChangeHook = async ({ req }) => {
+  const adapter = req.payload.db as unknown as { drizzle?: { run: (q: unknown) => Promise<unknown> }; execute?: (q: unknown) => Promise<unknown> };
+  try {
+    for (const table of FOOTER_CHILD_TABLES) {
+      if (adapter.drizzle && typeof adapter.drizzle.run === 'function') {
+        const { sql } = await import('drizzle-orm');
+        await adapter.drizzle.run(sql.raw(`DELETE FROM "${table}"`));
+      } else if (typeof adapter.execute === 'function') {
+        const { sql } = await import('drizzle-orm');
+        await adapter.execute(sql.raw(`DELETE FROM "${table}"`));
+      }
+    }
+  } catch (err) {
+    req.payload.logger.warn({ err }, '[Footer] purgeFooterChildren failed (non-fatal)');
+  }
+};
 
 export const Footer: GlobalConfig = {
   slug: 'footer',
@@ -10,6 +39,7 @@ export const Footer: GlobalConfig = {
     update: ({ req }) => isAdminOrEditor(req),
   },
   hooks: {
+    beforeChange: [purgeFooterChildren],
     afterChange: [
       revalidateGlobalChange('footer', [
         '/',
@@ -93,12 +123,6 @@ export const Footer: GlobalConfig = {
               required: true,
             },
           ],
-          defaultValue: [
-            { platform: 'x', href: '#' },
-            { platform: 'linkedin', href: '#' },
-            { platform: 'youtube', href: '#' },
-            { platform: 'facebook', href: '#' },
-          ],
         },
       ],
     },
@@ -129,39 +153,6 @@ export const Footer: GlobalConfig = {
               label: 'Highlight (purple)',
               defaultValue: false,
             },
-          ],
-        },
-      ],
-      defaultValue: [
-        {
-          title: 'Services',
-          links: [
-            { label: 'Healthcare SEO', href: '/services', highlight: false },
-            { label: 'Google Ads & PPC', href: '/services', highlight: false },
-            { label: 'Website Design', href: '/services', highlight: false },
-            { label: 'Reputation Management', href: '/services', highlight: false },
-            { label: 'Social Media', href: '/services', highlight: false },
-            { label: 'Email & SMS', href: '/services', highlight: false },
-          ],
-        },
-        {
-          title: 'Specialties',
-          links: [
-            { label: 'Dental Practices', href: '/case-studies', highlight: false },
-            { label: 'Dermatology', href: '/case-studies', highlight: false },
-            { label: 'Mental Health', href: '/case-studies', highlight: false },
-            { label: 'Fertility & IVF', href: '/case-studies', highlight: false },
-            { label: 'Plastic Surgery', href: '/case-studies', highlight: false },
-            { label: 'Telehealth', href: '/case-studies', highlight: false },
-          ],
-        },
-        {
-          title: 'Contact',
-          links: [
-            { label: 'Book Strategy Call', href: '/#cta', highlight: false },
-            { label: 'Free Growth Audit', href: '/#cta', highlight: false },
-            { label: 'hello@dastifydigital.com', href: 'mailto:hello@dastifydigital.com', highlight: false },
-            { label: '1-800-DASTIFY', href: 'tel:+18003278439', highlight: false },
           ],
         },
       ],
@@ -212,11 +203,6 @@ export const Footer: GlobalConfig = {
             { label: 'Green', value: 'green' },
           ],
         },
-      ],
-      defaultValue: [
-        { label: 'HIPAA', tone: 'purple' },
-        { label: 'Google Partner', tone: 'blue' },
-        { label: 'Award-Winning', tone: 'green' },
       ],
     },
   ],

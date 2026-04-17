@@ -1,4 +1,5 @@
 import { getConvertedNodeBinding } from "@/components/converted-editor";
+import { renderIcon } from "@/lib/converted-pages/renderIcon";
 
 export type AboutValuesData = {
   chip: string;
@@ -31,7 +32,7 @@ export default function AboutValues({ data }: { data: AboutValuesData }) {
         <div className="about-values-grid">
           {items.map((item, index) => (
             <div className="about-value-item" data-r data-delay={index === 0 ? undefined : `${index}`} key={`about-value-${item.title}-${index}`}>
-              <div className="about-value-icon" {...getConvertedNodeBinding(data, { field: `items.${index}.icon`, defaultTag: 'div', nodeKey: `items_${index}_icon` }).props}>{item.icon}</div>
+              <div className="about-value-icon" {...getConvertedNodeBinding(data, { field: `items.${index}.icon`, defaultTag: 'div', nodeKey: `items_${index}_icon` }).props}>{renderIcon(item.icon)}</div>
               <h3 className="about-value-title" {...getConvertedNodeBinding(data, { field: `items.${index}.title`, defaultTag: 'h3', nodeKey: `items_${index}_title`, allowedTags: ['h2', 'h3', 'h4', 'p'] }).props}>{item.title}</h3>
               <p className="about-value-desc" {...getConvertedNodeBinding(data, { field: `items.${index}.description`, defaultTag: 'p', nodeKey: `items_${index}_description` }).props}>{item.description}</p>
             </div>
