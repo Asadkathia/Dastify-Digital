@@ -1,6 +1,34 @@
-import type { GlobalConfig } from 'payload';
+import type { GlobalBeforeChangeHook, GlobalConfig } from 'payload';
 import { isAdminOrEditor } from '../access.ts';
 import { revalidateGlobalChange } from '../hooks/revalidate.ts';
+
+// Payload's upsertRow recreates `footer_columns` rows with new UUIDs on every
+// save but keeps the submitted `id` on nested `columns[].links[]` items. The
+// old `footer_columns_links` rows become orphans (their _parent_id points to
+// the now-deleted column), and the next save collides on the re-used link ids.
+//
+// Strip the `id` from every nested link item so Payload generates a fresh UUID
+// for each on insert. The orphaned rows remain in the DB but don't block saves.
+const stripNestedLinkIds: GlobalBeforeChangeHook = ({ data }) => {
+  if (Array.isArray(data?.columns)) {
+    for (const col of data.columns) {
+      if (col && typeof col === 'object' && Array.isArray((col as Record<string, unknown>).links)) {
+        for (const link of (col as { links: Array<Record<string, unknown>> }).links) {
+          if (link && typeof link === 'object') delete link.id;
+        }
+      }
+    }
+  }
+  if (data?.ctaColumn && typeof data.ctaColumn === 'object') {
+    const cta = data.ctaColumn as Record<string, unknown>;
+    if (Array.isArray(cta.links)) {
+      for (const link of cta.links as Array<Record<string, unknown>>) {
+        if (link && typeof link === 'object') delete link.id;
+      }
+    }
+  }
+  return data;
+};
 
 export const Footer: GlobalConfig = {
   slug: 'footer',
@@ -10,6 +38,7 @@ export const Footer: GlobalConfig = {
     update: ({ req }) => isAdminOrEditor(req),
   },
   hooks: {
+    beforeChange: [stripNestedLinkIds],
     afterChange: [
       revalidateGlobalChange('footer', [
         '/',
