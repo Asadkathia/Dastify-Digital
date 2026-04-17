@@ -2,31 +2,30 @@ import type { GlobalBeforeChangeHook, GlobalConfig } from 'payload';
 import { isAdminOrEditor } from '../access.ts';
 import { revalidateGlobalChange } from '../hooks/revalidate.ts';
 
-// Payload's upsertRow recreates `footer_columns` rows with new UUIDs on every
-// save but keeps the submitted `id` on nested `columns[].links[]` items. The
-// old `footer_columns_links` rows become orphans (their _parent_id points to
-// the now-deleted column), and the next save collides on the re-used link ids.
-//
-// Strip the `id` from every nested link item so Payload generates a fresh UUID
-// for each on insert. The orphaned rows remain in the DB but don't block saves.
+// Payload's upsertRow for globals with arrays can leave orphaned child rows in
+// the DB. Re-submitting existing ids on the next save collides on the UNIQUE
+// primary key. Strip every `id` from array items so Payload generates fresh
+// UUIDs on each save.
+function stripIdsFromArray(items: unknown): void {
+  if (!Array.isArray(items)) return;
+  for (const item of items) {
+    if (!item || typeof item !== 'object') continue;
+    const record = item as Record<string, unknown>;
+    delete record.id;
+    for (const val of Object.values(record)) {
+      if (Array.isArray(val)) stripIdsFromArray(val);
+    }
+  }
+}
+
 const stripNestedLinkIds: GlobalBeforeChangeHook = ({ data }) => {
-  if (Array.isArray(data?.columns)) {
-    for (const col of data.columns) {
-      if (col && typeof col === 'object' && Array.isArray((col as Record<string, unknown>).links)) {
-        for (const link of (col as { links: Array<Record<string, unknown>> }).links) {
-          if (link && typeof link === 'object') delete link.id;
-        }
-      }
-    }
-  }
-  if (data?.ctaColumn && typeof data.ctaColumn === 'object') {
-    const cta = data.ctaColumn as Record<string, unknown>;
-    if (Array.isArray(cta.links)) {
-      for (const link of cta.links as Array<Record<string, unknown>>) {
-        if (link && typeof link === 'object') delete link.id;
-      }
-    }
-  }
+  if (!data || typeof data !== 'object') return data;
+  stripIdsFromArray((data as Record<string, unknown>).columns);
+  stripIdsFromArray((data as Record<string, unknown>).badges);
+  const brand = (data as Record<string, unknown>).brand;
+  if (brand && typeof brand === 'object') stripIdsFromArray((brand as Record<string, unknown>).socials);
+  const cta = (data as Record<string, unknown>).ctaColumn;
+  if (cta && typeof cta === 'object') stripIdsFromArray((cta as Record<string, unknown>).links);
   return data;
 };
 
