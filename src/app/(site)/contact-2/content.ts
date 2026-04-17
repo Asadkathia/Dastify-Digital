@@ -24,7 +24,11 @@ export type PageContent = {
   methods: {
     items: {
       icon: string;
+      iconSize?: number;
+      iconOffsetX?: number;
+      iconOffsetY?: number;
       color: "purple"|"blue"|"green";
+      showBg?: boolean;
       title: string;
       link?: { label: string; href: string };
       detail: string;
