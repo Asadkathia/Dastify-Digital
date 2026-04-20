@@ -1,7 +1,7 @@
 import React from 'react';
 
 function getPreviewHref(): string {
-  const secret = process.env.PREVIEW_SECRET || process.env.PAYLOAD_SECRET;
+  const secret = process.env.PREVIEW_SECRET;
   const params = new URLSearchParams({
     slug: '/',
   });

@@ -4,24 +4,34 @@ import { canonicalFromPath, getSiteURL } from '../../lib/cms/urls.ts';
 async function triggerRevalidate(paths: string[], tags: string[]) {
   const secret = process.env.REVALIDATE_SECRET;
   if (!secret) {
+    console.warn('[revalidate] REVALIDATE_SECRET is not set; skipping cache revalidation. Live site may show stale content.');
     return;
   }
 
   const endpoint = `${getSiteURL()}/api/revalidate`;
 
-  await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-revalidate-secret': secret,
-    },
-    body: JSON.stringify({
-      paths,
-      tags,
-      source: 'payload-hook',
-      url: canonicalFromPath('/api/revalidate'),
-    }),
-  }).catch(() => undefined);
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-revalidate-secret': secret,
+      },
+      body: JSON.stringify({
+        paths,
+        tags,
+        source: 'payload-hook',
+        url: canonicalFromPath('/api/revalidate'),
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.error(`[revalidate] endpoint returned ${res.status}: ${body.slice(0, 200)}`, { paths, tags });
+    }
+  } catch (err) {
+    console.error('[revalidate] request failed:', err, { paths, tags });
+  }
 }
 
 export const revalidateCollectionChange = (extraPaths: string[] = [], tags: string[] = []): CollectionAfterChangeHook => {

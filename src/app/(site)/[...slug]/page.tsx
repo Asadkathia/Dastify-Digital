@@ -68,15 +68,11 @@ export default async function GenericPage({ params }: Props) {
 
   const title = String(doc.title || 'Page');
   const description = String(doc.excerpt || '');
-  const docRecord = doc as unknown as Record<string, unknown>;
   const convertedPageName =
-    typeof docRecord.convertedPageName === 'string'
-      ? String(docRecord.convertedPageName)
-      : '';
+    typeof doc.convertedPageName === 'string' ? doc.convertedPageName : '';
   const convertedContent =
-    docRecord.convertedContent &&
-    typeof docRecord.convertedContent === 'object'
-      ? (docRecord.convertedContent as Record<string, unknown>)
+    doc.convertedContent && typeof doc.convertedContent === 'object'
+      ? (doc.convertedContent as Record<string, unknown>)
       : null;
   const blocks = mapPayloadBlocksToPageBuilderBlocks(doc.blocks);
   const [convertedRegistry, nav, footer] = await Promise.all([

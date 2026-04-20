@@ -63,12 +63,19 @@ export function FormBlock({ formId, title, description, layout = 'centered', bac
       .then((data) => {
         if (data?.id) setForm(data as FormData);
       })
-      .catch(() => null);
+      .catch((err) => {
+        console.error('[FormBlock] failed to load form definition:', err);
+      });
   }, [formId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form) return;
+    // Honeypot: if a bot filled the hidden "website" field, silently pretend success.
+    if ((values.website ?? '').trim().length > 0) {
+      setSubmitted(true);
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -78,7 +85,9 @@ export function FormBlock({ formId, title, description, layout = 'centered', bac
         credentials: 'include',
         body: JSON.stringify({
           form: form.id,
-          submissionData: Object.entries(values).map(([field, value]) => ({ field, value })),
+          submissionData: Object.entries(values)
+            .filter(([field]) => field !== 'website')
+            .map(([field, value]) => ({ field, value })),
         }),
       });
       if (!res.ok) throw new Error('Submission failed');
@@ -87,7 +96,8 @@ export function FormBlock({ formId, title, description, layout = 'centered', bac
       } else {
         setSubmitted(true);
       }
-    } catch {
+    } catch (err) {
+      console.error('[FormBlock] submission failed:', err);
       setError('Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
@@ -137,6 +147,17 @@ export function FormBlock({ formId, title, description, layout = 'centered', bac
           </div>
         )}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Honeypot — hidden from humans, bots fill it and trigger rejection. */}
+          <input
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            value={values.website ?? ''}
+            onChange={(e) => setValues((v) => ({ ...v, website: e.target.value }))}
+            style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: 0 }}
+            aria-hidden="true"
+          />
           {form.fields.map((field) => (
             <div key={field.id}>
               <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: textColor, marginBottom: '6px' }}>

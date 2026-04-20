@@ -24,11 +24,12 @@ function normalizeTags(input: unknown): string[] {
 
 export async function POST(request: NextRequest) {
   const secret = process.env.REVALIDATE_SECRET;
-  const headerSecret = request.headers.get('x-revalidate-secret');
-  const querySecret = request.nextUrl.searchParams.get('secret');
-  const providedSecret = headerSecret || querySecret;
+  const providedSecret = request.headers.get('x-revalidate-secret');
 
-  if (!secret || providedSecret !== secret) {
+  if (!secret || !providedSecret || providedSecret !== secret) {
+    if (!secret) {
+      console.error('[revalidate] REVALIDATE_SECRET is not configured; rejecting request.');
+    }
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 

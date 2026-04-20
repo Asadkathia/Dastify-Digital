@@ -52,7 +52,7 @@ const STRUCTURED_SECTION_KEYS = [
 ] as const;
 
 function getHomepagePreviewURL(slug = '/'): string | null {
-  const secret = process.env.PREVIEW_SECRET || process.env.PAYLOAD_SECRET;
+  const secret = process.env.PREVIEW_SECRET;
   const params = new URLSearchParams({
     slug,
   });

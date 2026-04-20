@@ -98,7 +98,9 @@ export function SeoPanel({ pageId, onClose, onSlugChange }: Props) {
         if (img && typeof img === 'object' && 'id' in img) setOgImageId(img.id ?? null);
         setNoindex(d.noindex ?? false);
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[SeoPanel] failed to load page SEO data:', err);
+      })
       .finally(() => setLoading(false));
   }, [pageId]);
 
@@ -145,7 +147,8 @@ export function SeoPanel({ pageId, onClose, onSlugChange }: Props) {
       setSuccess(true);
       if (onSlugChange && body.slug !== data?.slug) onSlugChange(body.slug as string);
       setTimeout(() => setSuccess(false), 2500);
-    } catch {
+    } catch (err) {
+      console.error('[SeoPanel] save failed:', err);
       setError('Could not save SEO settings. Please try again.');
     } finally {
       setSaving(false);

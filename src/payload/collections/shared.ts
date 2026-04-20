@@ -57,7 +57,7 @@ export function getPreviewURL(prefix: string, slug: unknown): string {
   const path = cleanSlug
     ? `${base}/${cleanSlug}`.replace(/\/+/g, '/')
     : base || '/';
-  const secret = process.env.PREVIEW_SECRET || process.env.PAYLOAD_SECRET;
+  const secret = process.env.PREVIEW_SECRET;
   const params = new URLSearchParams({
     slug: path.startsWith('/') ? path : `/${path}`,
   });

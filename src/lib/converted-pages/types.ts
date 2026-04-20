@@ -43,9 +43,11 @@ export type ConvertedSectionRendererSpec = ConvertedSectionSpec & {
   Component: ComponentType<{ data: unknown }>;
 };
 
-export type ConvertedPageRegistry = {
+export type ConvertedPageContent = Record<string, unknown>;
+
+export type ConvertedPageRegistry<TContent extends ConvertedPageContent = ConvertedPageContent> = {
   pageName: string;
-  defaultContent: Record<string, unknown>;
+  defaultContent: TContent;
   sections: ConvertedSectionRendererSpec[];
 };
 

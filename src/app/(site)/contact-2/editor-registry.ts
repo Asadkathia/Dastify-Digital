@@ -11,7 +11,7 @@ import type { FormDefinition } from '@/lib/forms/types';
 
 const registry: ConvertedPageRegistry & { formDefinitions?: Record<string, FormDefinition> } = {
   pageName: 'contact-2',
-  defaultContent: defaultContent as unknown as Record<string, unknown>,
+  defaultContent,
   sections: [
     { key: 'nav',         label: 'Navbar',       icon: '🧭', className: 'nav',                  Component: ContactNavbar as never },
     { key: 'hero',        label: 'Hero',         icon: '🦸', className: 'contact2-hero',         Component: ContactHero as never },

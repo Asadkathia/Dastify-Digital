@@ -1,13 +1,14 @@
 import type { MetadataRoute } from 'next';
 import { absoluteURL } from '@/lib/cms/urls';
-import { findManyPublished } from '@/lib/cms/queries';
+import { findManyPublishedSlim } from '@/lib/cms/queries';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const slimFields = { slug: true, updatedAt: true } as const;
   const [pages, services, caseStudies, blogPosts] = await Promise.all([
-    findManyPublished('pages', 500),
-    findManyPublished('services', 500),
-    findManyPublished('case-studies', 500),
-    findManyPublished('blog-posts', 500),
+    findManyPublishedSlim('pages', slimFields, 500),
+    findManyPublishedSlim('services', slimFields, 500),
+    findManyPublishedSlim('case-studies', slimFields, 500),
+    findManyPublishedSlim('blog-posts', slimFields, 500),
   ]);
 
   const rootEntry: MetadataRoute.Sitemap[number] = {

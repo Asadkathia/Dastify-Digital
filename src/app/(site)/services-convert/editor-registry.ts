@@ -9,7 +9,7 @@ import type { ConvertedPageRegistry } from '@/lib/converted-pages/types';
 
 const registry: ConvertedPageRegistry = {
   pageName: 'services-convert',
-  defaultContent: defaultContent as unknown as Record<string, unknown>,
+  defaultContent,
   sections: [
     { key: 'hero', label: 'Hero', icon: '🦸', className: 'svc-convert-hero', Component: Hero as never },
     { key: 'services', label: 'Services', icon: '🧩', className: 'svc-convert-services', Component: Services as never },

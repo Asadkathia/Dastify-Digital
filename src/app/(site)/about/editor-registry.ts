@@ -10,7 +10,7 @@ import type { ConvertedPageRegistry } from '@/lib/converted-pages/types';
 
 const registry: ConvertedPageRegistry = {
   pageName: 'about',
-  defaultContent: defaultContent as unknown as Record<string, unknown>,
+  defaultContent,
   sections: [
     { key: 'hero', label: 'Hero', icon: '🦸', className: 'about-hero', Component: AboutHero as never },
     { key: 'manifesto', label: 'Manifesto', icon: '📣', className: 'about-manifesto', Component: AboutManifesto as never },

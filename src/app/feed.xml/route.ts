@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
-import { findManyPublished } from '@/lib/cms/queries';
+import { findManyPublishedSlim } from '@/lib/cms/queries';
 import { generateRSS } from '@/lib/seo/rss';
 import { getSiteSettings } from '@/lib/site-settings';
 
 export async function GET() {
-  const [posts, settings] = await Promise.all([findManyPublished('blog-posts', 200), getSiteSettings()]);
+  const [posts, settings] = await Promise.all([
+    findManyPublishedSlim('blog-posts', { title: true, excerpt: true, slug: true, publishedAt: true }, 200),
+    getSiteSettings(),
+  ]);
 
   const xml = generateRSS({
     title: `${settings.siteName} Blog`,

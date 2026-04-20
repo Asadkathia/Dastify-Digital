@@ -26,10 +26,9 @@ export default async function Page() {
     getNavigation(),
     getFooter(),
   ]);
-  const docRecord = doc as unknown as Record<string, unknown> | null;
   const convertedContent =
-    docRecord?.convertedContent && typeof docRecord.convertedContent === 'object'
-      ? (docRecord.convertedContent as Record<string, unknown>)
+    doc?.convertedContent && typeof doc.convertedContent === 'object'
+      ? (doc.convertedContent as Record<string, unknown>)
       : null;
   const content: PageContent = convertedContent
     ? mergeConvertedContent(defaultContent, convertedContent)

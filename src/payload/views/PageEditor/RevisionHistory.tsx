@@ -34,7 +34,9 @@ export function RevisionHistory({ pageId, onClose }: RevisionHistoryProps) {
       .then((data: { docs?: Version[] }) => {
         setVersions(data.docs ?? []);
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[RevisionHistory] failed to load versions:', err);
+      })
       .finally(() => setLoading(false));
   }, [pageId]);
 
@@ -50,8 +52,8 @@ export function RevisionHistory({ pageId, onClose }: RevisionHistoryProps) {
         setSaveStatus('dirty');
         onClose();
       }
-    } catch {
-      // silent — user stays on current version
+    } catch (err) {
+      console.error('[RevisionHistory] failed to restore version:', err);
     } finally {
       setRestoring(null);
     }

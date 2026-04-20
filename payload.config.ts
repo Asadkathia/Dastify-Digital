@@ -121,16 +121,23 @@ const createConfig = async () => {
     createRichTextEditor = () => lexical.lexicalEditor({});
   }
 
+  if (!process.env.PAYLOAD_SECRET && process.env.NODE_ENV === 'production') {
+    throw new Error('PAYLOAD_SECRET must be set in production.');
+  }
+
+  const siteURL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SERVER_URL || 'http://localhost:3000';
+
   return buildConfig({
   secret: process.env.PAYLOAD_SECRET || 'dev-payload-secret-change-me',
+  // CSRF allowlist: Payload rejects admin POSTs whose Origin doesn't match.
+  // Required because our auth cookie is SameSite=Lax by default, but CSRF
+  // provides defense-in-depth for any form that relaxes that.
+  csrf: [siteURL].filter(Boolean),
   admin: {
     user: Users.slug,
     livePreview: {
       globals: ['homepage'],
-      url:
-        process.env.NEXT_PUBLIC_SITE_URL
-        || process.env.SERVER_URL
-        || 'http://localhost:3000',
+      url: siteURL,
     },
     components: {
       beforeNavLinks: [
@@ -219,6 +226,43 @@ const createConfig = async () => {
           (disableLexical || !createRichTextEditor
             ? rewriteFormBuilderRichTextFields(defaultFields as unknown[])
             : attachEditorToFormBuilderRichTextFields(defaultFields as unknown[], createRichTextEditor)) as never[],
+      },
+      formSubmissionOverrides: {
+        hooks: {
+          beforeValidate: [
+            ({ data, req }) => {
+              // Honeypot: reject silently if a hidden bot-bait field is filled.
+              // Any submissionData entry with a field named "website", "url",
+              // "hp_url", "hp", or "bot_field" whose value is non-empty is junk.
+              const HONEYPOT_FIELDS = new Set(['website', 'url', 'hp_url', 'hp', 'bot_field']);
+              const items = Array.isArray(data?.submissionData) ? data.submissionData : [];
+              for (const item of items as Array<{ field?: unknown; value?: unknown }>) {
+                if (
+                  typeof item.field === 'string' &&
+                  HONEYPOT_FIELDS.has(item.field.toLowerCase()) &&
+                  typeof item.value === 'string' &&
+                  item.value.trim().length > 0
+                ) {
+                  throw new Error('Submission rejected');
+                }
+              }
+
+              // Origin check: in production, require the request to come from
+              // our own site. Skip in dev so local testing works.
+              if (process.env.NODE_ENV === 'production') {
+                const origin = req?.headers?.get?.('origin') ?? '';
+                const host = req?.headers?.get?.('host') ?? '';
+                const siteURL = process.env.NEXT_PUBLIC_SITE_URL ?? '';
+                const allowed = [siteURL, `https://${host}`].filter(Boolean);
+                if (origin && !allowed.some((a) => origin.startsWith(a))) {
+                  throw new Error('Submission rejected');
+                }
+              }
+
+              return data;
+            },
+          ],
+        },
       },
     }),
     // Search plugin disabled: no frontend search UI implemented yet.

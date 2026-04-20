@@ -5,6 +5,12 @@ import type { Config } from '@/payload-types';
 
 type CMSCollection = keyof Config['collections'];
 
+// CMSDoc is intentionally a loose Record view. Payload's generated types are a
+// discriminated union over every collection; site render code doesn't want to
+// care which collection it got back. The `as unknown as CMSDoc[]` casts below
+// are type-only erasures (no runtime cost) that bridge the generated union to
+// this loose view. Do not replace with runtime type guards — there is nothing
+// to guard at runtime.
 export type CMSDoc = Record<string, unknown> & {
   id?: number | string;
   title?: string;
@@ -43,7 +49,8 @@ export async function findOneBySlug(collection: CMSCollection, slug: string, dra
     });
 
     return (res.docs?.[0] as unknown as CMSDoc | undefined) ?? null;
-  } catch {
+  } catch (err) {
+    console.error('[cms.queries] findOne failed:', err);
     return null;
   }
 }
@@ -64,7 +71,30 @@ export async function findManyPublished(collection: CMSCollection, limit = 100):
     });
 
     return (res.docs as unknown as CMSDoc[]) || [];
-  } catch {
+  } catch (err) {
+    console.error('[cms.queries] findManyPublished failed:', err);
+    return [];
+  }
+}
+
+export async function findManyPublishedSlim(
+  collection: CMSCollection,
+  fields: Record<string, true>,
+  limit = 500,
+): Promise<CMSDoc[]> {
+  try {
+    const payload = await getPayloadClient();
+    const res = await payload.find({
+      collection,
+      depth: 0,
+      draft: false,
+      limit,
+      where: { _status: { equals: 'published' } },
+      select: fields,
+    });
+    return (res.docs as unknown as CMSDoc[]) || [];
+  } catch (err) {
+    console.error('[cms.queries] findManyPublishedSlim failed:', err);
     return [];
   }
 }
@@ -85,7 +115,8 @@ export async function findBlogPage(pageNumber: number, draft = false): Promise<{
       docs: (res.docs as unknown as CMSDoc[]) || [],
       totalPages: res.totalPages || 1,
     };
-  } catch {
+  } catch (err) {
+    console.error('[cms.queries] findBlogPage failed:', err);
     return {
       docs: [],
       totalPages: 1,
@@ -115,7 +146,8 @@ export async function findByRelation(args: {
     });
 
     return (res.docs as unknown as CMSDoc[]) || [];
-  } catch {
+  } catch (err) {
+    console.error('[cms.queries] findByRelation failed:', err);
     return [];
   }
 }
@@ -136,7 +168,8 @@ export async function findMenuByLocation(location: 'header' | 'footer'): Promise
     });
 
     return (res.docs?.[0] as unknown as CMSDoc | undefined) ?? null;
-  } catch {
+  } catch (err) {
+    console.error('[cms.queries] findOne failed:', err);
     return null;
   }
 }
@@ -360,7 +393,8 @@ export async function getFooter(): Promise<SiteFooterData> {
           : FOOTER_FALLBACK.copyright,
       badges: badges.length > 0 ? badges : FOOTER_FALLBACK.badges,
     };
-  } catch {
+  } catch (err) {
+    console.error('[cms.queries] getFooter failed, using fallback:', err);
     return FOOTER_FALLBACK;
   }
 }
@@ -418,7 +452,8 @@ export async function getNavigation(): Promise<NavigationData> {
       ctaLabel: typeof doc.ctaLabel === 'string' && doc.ctaLabel ? doc.ctaLabel : NAVIGATION_FALLBACK.ctaLabel,
       ctaHref: typeof doc.ctaHref === 'string' && doc.ctaHref ? doc.ctaHref : NAVIGATION_FALLBACK.ctaHref,
     };
-  } catch {
+  } catch (err) {
+    console.error('[cms.queries] getNavigation failed, using fallback:', err);
     return NAVIGATION_FALLBACK;
   }
 }

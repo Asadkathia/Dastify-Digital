@@ -1863,7 +1863,6 @@ export function ConfigPanel({ embedded = false }: ConfigPanelProps) {
   const selection = useEditorStore((s) => s.selection);
   const removeBlock = useEditorStore((s) => s.removeBlock);
   const duplicateBlock = useEditorStore((s) => s.duplicateBlock);
-  const sections = useEditorStore((s) => s.sections);
   const selectedNode = useEditorStore((s) => s.selectedNode);
 
   const blockSelection = selection?.kind === 'block' ? selection : null;
@@ -1873,9 +1872,11 @@ export function ConfigPanel({ embedded = false }: ConfigPanelProps) {
   const toggleBlockLocked = useEditorStore((s) => s.toggleBlockLocked);
   const toggleBlockHidden = useEditorStore((s) => s.toggleBlockHidden);
 
-  const selectedSection = sectionSelection
-    ? sections.find((s) => s.id === sectionSelection.sectionId)
-    : null;
+  // Subscribe to only the selected section, not the full sections array.
+  // Prevents ConfigPanel re-renders when any other section changes.
+  const selectedSection = useEditorStore((s) =>
+    sectionSelection ? s.sections.find((sec) => sec.id === sectionSelection.sectionId) ?? null : null,
+  );
 
   return (
     <aside

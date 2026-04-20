@@ -12,7 +12,10 @@ export async function GET(request: NextRequest) {
   const secret = url.searchParams.get('secret');
   const slug = url.searchParams.get('slug') || '/';
 
-  const previewSecret = process.env.PREVIEW_SECRET || process.env.PAYLOAD_SECRET;
+  const previewSecret = process.env.PREVIEW_SECRET;
+  if (!previewSecret && process.env.NODE_ENV === 'production') {
+    console.error('[preview] PREVIEW_SECRET is not configured in production');
+  }
   const isProduction = process.env.NODE_ENV === 'production';
   const hasValidSecret = Boolean(previewSecret && secret === previewSecret);
 

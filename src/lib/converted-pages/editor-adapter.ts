@@ -103,103 +103,62 @@ function fieldTypeForValue(value: unknown): 'text' | 'textarea' | 'checkbox' {
   return 'text';
 }
 
-function isUploadFieldName(name: string): boolean {
-  const tail = name.split('.').pop()?.toLowerCase() ?? '';
-  return tail === 'image' || tail === 'logoimage';
-}
+// Static registry mapping the trailing segment of a field path to a builder
+// for its editor field config. Adding a new specialized field type = one entry
+// here. Unknown tails fall back to value-based type inference (fieldTypeForValue).
+type FieldBuilder = (name: string, label: string) => EditorField;
 
-function buildSelectField(
-  name: string,
-  label: string,
+const buildSelectField = (
   options: Array<{ label: string; value: string }>,
-): EditorField {
-  return {
-    name,
-    type: 'select',
-    label,
-    options,
-  };
-}
+): FieldBuilder => (name, label) => ({ name, type: 'select', label, options });
+
+const FIELD_BUILDERS_BY_TAIL: Record<string, FieldBuilder> = {
+  image: (name, label) => ({ name, type: 'upload', label }),
+  logoimage: (name, label) => ({ name, type: 'upload', label }),
+  icon: (name, label) => ({ name, type: 'icon-upload', label }),
+  imagefit: buildSelectField([
+    { label: 'Cover', value: 'cover' },
+    { label: 'Contain', value: 'contain' },
+    { label: 'Fill', value: 'fill' },
+    { label: 'None', value: 'none' },
+    { label: 'Scale Down', value: 'scale-down' },
+  ]),
+  imageposition: buildSelectField([
+    { label: 'Center', value: 'center' },
+    { label: 'Top', value: 'top' },
+    { label: 'Bottom', value: 'bottom' },
+    { label: 'Left', value: 'left' },
+    { label: 'Right', value: 'right' },
+    { label: 'Top Left', value: 'top left' },
+    { label: 'Top Right', value: 'top right' },
+    { label: 'Bottom Left', value: 'bottom left' },
+    { label: 'Bottom Right', value: 'bottom right' },
+  ]),
+  placeholderborderstyle: buildSelectField([
+    { label: 'None', value: 'none' },
+    { label: 'Solid', value: 'solid' },
+    { label: 'Dashed', value: 'dashed' },
+    { label: 'Dotted', value: 'dotted' },
+    { label: 'Double', value: 'double' },
+  ]),
+  preserveplaceholderchrome: (name, label) => ({ name, type: 'checkbox', label }),
+  placeholdershowoverlay: (name, label) => ({ name, type: 'checkbox', label }),
+  embedhtml: (name, label) => ({ name, type: 'textarea', label }),
+  embedurl: (name, label) => ({ name, type: 'textarea', label }),
+  embedcode: (name, label) => ({ name, type: 'textarea', label }),
+  iconsize: (name, label) => ({ name, type: 'number', label, min: 10, max: 200, step: 1 }),
+  iconoffsetx: (name, label) => ({ name, type: 'number', label, min: -100, max: 100, step: 1 }),
+  iconoffsety: (name, label) => ({ name, type: 'number', label, min: -100, max: 100, step: 1 }),
+};
 
 function fieldForName(name: string, value: unknown): EditorField {
   const tail = name.split('.').pop()?.toLowerCase() ?? '';
   const label = prettifyLabel(name);
 
-  if (isUploadFieldName(name)) {
-    return { name, type: 'upload', label };
-  }
+  const builder = FIELD_BUILDERS_BY_TAIL[tail];
+  if (builder) return builder(name, label);
 
-  if (tail === 'imagefit') {
-    return buildSelectField(name, label, [
-      { label: 'Cover', value: 'cover' },
-      { label: 'Contain', value: 'contain' },
-      { label: 'Fill', value: 'fill' },
-      { label: 'None', value: 'none' },
-      { label: 'Scale Down', value: 'scale-down' },
-    ]);
-  }
-
-  if (tail === 'imageposition') {
-    return buildSelectField(name, label, [
-      { label: 'Center', value: 'center' },
-      { label: 'Top', value: 'top' },
-      { label: 'Bottom', value: 'bottom' },
-      { label: 'Left', value: 'left' },
-      { label: 'Right', value: 'right' },
-      { label: 'Top Left', value: 'top left' },
-      { label: 'Top Right', value: 'top right' },
-      { label: 'Bottom Left', value: 'bottom left' },
-      { label: 'Bottom Right', value: 'bottom right' },
-    ]);
-  }
-
-  if (tail === 'placeholderborderstyle') {
-    return buildSelectField(name, label, [
-      { label: 'None', value: 'none' },
-      { label: 'Solid', value: 'solid' },
-      { label: 'Dashed', value: 'dashed' },
-      { label: 'Dotted', value: 'dotted' },
-      { label: 'Double', value: 'double' },
-    ]);
-  }
-
-  if (tail === 'preserveplaceholderchrome' || tail === 'placeholdershowoverlay') {
-    return {
-      name,
-      type: 'checkbox',
-      label,
-    };
-  }
-
-  if (tail === 'embedhtml' || tail === 'embedurl' || tail === 'embedcode') {
-    return {
-      name,
-      type: 'textarea',
-      label,
-    };
-  }
-
-  if (tail === 'icon') {
-    return {
-      name,
-      type: 'icon-upload',
-      label,
-    };
-  }
-
-  if (tail === 'iconsize') {
-    return { name, type: 'number', label, min: 10, max: 200, step: 1 };
-  }
-
-  if (tail === 'iconoffsetx' || tail === 'iconoffsety') {
-    return { name, type: 'number', label, min: -100, max: 100, step: 1 };
-  }
-
-  return {
-    name,
-    type: fieldTypeForValue(value),
-    label,
-  };
+  return { name, type: fieldTypeForValue(value), label };
 }
 
 function subFieldForName(

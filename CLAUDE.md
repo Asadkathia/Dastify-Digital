@@ -1,1 +1,138 @@
-@AGENTS.md
+# Dastify Digital — Agent Guide
+
+Healthcare marketing site for Dastify Solutions. Next.js + Payload CMS 3.x, deployed on Vercel + Neon (Postgres). Local dev uses SQLite.
+
+> ⚠️ This project uses a **non-standard Next.js build** with breaking changes from the public release. Before writing code, check `node_modules/next/dist/docs/` for the actual API surface. Deprecation warnings in the local Next.js are authoritative.
+
+---
+
+## Architecture at a glance
+
+```
+src/
+├── app/
+│   ├── (site)/          # Public routes — per-page content.ts + components/
+│   ├── api/             # API routes (revalidate, preview, admin, payload proxy)
+│   └── components/home/ # Home page sections
+├── payload/
+│   ├── collections/     # Pages, Blog, Services, Media, etc.
+│   ├── globals/         # Navigation, Footer, Homepage, SiteSettings
+│   ├── blocks/          # Block definitions for the visual editor (~42 types)
+│   ├── hooks/           # revalidate.ts (ISR webhook dispatcher)
+│   └── views/
+│       ├── PageEditor/        # Visual editor (Zustand + dnd-kit, ~6.7k LOC)
+│       ├── HomepageEditor/
+│       ├── PageConverter/     # AI-powered HTML → blocks importer
+│       └── ConvertedPageEditor/
+├── lib/
+│   ├── cms/queries.ts         # Read helpers for site render
+│   ├── converted-pages/       # Registry + editor-adapter for content.ts pages
+│   └── page-converter/        # AI conversion pipeline
+├── components/         # Global UI (SiteNavbar, SiteFooter, block renderers)
+└── migrations/         # Postgres migrations (Neon / production)
+
+scripts/
+└── migrations/         # SQLite migrations (local dev) — see "Dual migrations" below
+```
+
+---
+
+## Two data-entry patterns (know which you're editing)
+
+### 1. Payload collections (e.g. `Pages`)
+Data lives in the DB. The visual **PageEditor** assembles blocks drag-and-drop. Everything is dynamic.
+
+### 2. "Converted pages" (e.g. `/about`, `/demo`, `/contact-2`)
+Data lives in a TypeScript file: `src/app/(site)/<page>/content.ts`. The file exports:
+- `PageContent` type — the shape
+- `defaultContent` — the actual copy
+
+The page also has `editor-registry.ts` which registers sections with the PageEditor so marketing can edit them. Runtime render uses the TS content directly.
+
+**Source of truth for `PageContent`:** `content.ts`. Any sibling `components/types.ts` should just re-export — do not duplicate the type. (A duplicate type drifting out of sync has already broken Vercel builds.)
+
+---
+
+## Dual migrations: SQLite (local) + Postgres (prod)
+
+**Every schema change must be written TWICE:**
+- `scripts/migrations/YYYYMMDD_*.ts` — SQLite migration for local dev
+- `src/migrations/YYYYMMDD_*.ts` — Postgres migration for Neon
+
+There is no automation that catches drift. If you add a Payload field that requires a migration, confirm both files exist before pushing. Run `npm run db:migrate` locally; Vercel runs Postgres migrations on deploy.
+
+**Current state:** 20 SQLite migrations, 13 Postgres migrations. The two codebases have already diverged in count — they may also have diverged in content. Before any schema change, audit whether both sides agree on the current baseline.
+
+**Open question:** whether to drop SQLite entirely and move local dev to a Neon branch per developer. Needs discussion: how often devs work offline, Neon branch provisioning speed, cost of per-PR CI branches. See "Remaining tech debt" below.
+
+---
+
+## Globals with nested arrays — the orphaned-row trap
+
+Payload 3.x has a known bug with globals that contain **nested** arrays (array inside array/group): `upsertRow` deletes child rows by `_parentID` on save, but orphans accumulate and cause UNIQUE constraint violations.
+
+**Footer** has nested arrays (`columns[].links[]`, `brand.socials[]`, `ctaColumn.links[]`) and uses a `stripIdsFromArray` `beforeChange` hook to force Payload to generate fresh UUIDs each save. See [src/payload/globals/Footer.ts](src/payload/globals/Footer.ts).
+
+**If you add nested arrays to Navigation, SiteSettings, or any new global** — replicate the same pattern or saves will start failing unpredictably.
+
+---
+
+## Revalidation (ISR) contract
+
+When a Payload collection/global saves, `revalidateCollectionChange` / `revalidateGlobalChange` POSTs to `/api/revalidate` with paths/tags. That endpoint calls `revalidatePath` / `revalidateTag`.
+
+- **`REVALIDATE_SECRET` must be set** in every env (local, preview, prod). If unset, saves still succeed but the live site never updates. The hook logs a warning when missing; the endpoint rejects all requests.
+- Secret is passed **header-only** (`x-revalidate-secret`). Query-param secrets are not accepted (they leak to logs).
+- Globals hardcode their revalidation path list. When you add a new public route, update **both** `Navigation.ts` and `Footer.ts` path lists — or marketing will see stale nav/footer on the new page.
+
+---
+
+## Secrets
+
+- `PAYLOAD_SECRET` — Payload admin auth. Never reuse elsewhere.
+- `PREVIEW_SECRET` — signs draft-mode preview URLs. **Must be set separately.** There is intentionally no fallback to `PAYLOAD_SECRET`; fallback would let any leaked preview URL derive from the admin credential.
+- `REVALIDATE_SECRET` — gates `/api/revalidate`.
+
+---
+
+## Common tasks
+
+### Add a new block to the visual editor
+1. Define the block schema in `src/payload/blocks/<YourBlock>.ts`
+2. Register in the blocks array of `payload.config.ts` (or wherever blocks are aggregated)
+3. Add a renderer in `src/components/blocks/<YourBlock>.tsx`
+4. Add field editors to `src/payload/views/PageEditor/ConfigPanel.tsx` if any fields are non-standard (note: this file is ~2k lines; a plugin system is on the backlog)
+
+### Add a new converted page
+1. Create `src/app/(site)/<slug>/content.ts` with `PageContent` type + `defaultContent`
+2. Create `src/app/(site)/<slug>/editor-registry.ts` — map sections to block types
+3. Create `src/app/(site)/<slug>/page.tsx` — render sections from `content.ts`
+4. Components go in `src/app/(site)/<slug>/components/`. **Do not** create a duplicate `PageContent` in `components/types.ts` — if you need the type there, re-export from `../content`.
+
+### Add a schema change
+1. Update the Payload field config
+2. Write SQLite migration → `scripts/migrations/`
+3. Write Postgres migration → `src/migrations/`
+4. `npm run db:migrate` locally
+5. Commit both migration files together
+
+---
+
+## Known tech debt (don't be surprised)
+
+- **PageEditor re-renders**: `ConfigPanel` (~2k LOC) isn't memoized; `Canvas` re-selects the full `sections` tree on every mutation. Laggy on large pages; tolerable on short ones.
+- **CMS queries lack `select` narrowing**: `src/lib/cms/queries.ts` uses `depth: 2` and fetches entire docs. Optimize when a page feels slow.
+- **Page-specific navbar components** (AboutNavbar, DemoNavbar, etc.) predate the `Navigation` global and duplicate its rendering. `SiteNavbar.tsx` is the canonical one.
+- **Editor adapter heuristics**: `src/lib/converted-pages/editor-adapter.ts` infers field types from field *names* (e.g. `*imagefit` → select). Unrecognized names fall back to value-type inference, which can get wrong types for null/undefined initial values.
+- **`as unknown as` casts**: ~16 places across the codebase. Each is a place where real types don't line up; fixing them requires engaging with the actual shapes.
+
+---
+
+## Don't do this
+
+- Don't add a fallback from `PREVIEW_SECRET` to `PAYLOAD_SECRET`. It reuses the admin credential.
+- Don't write only one side of a schema migration (SQLite OR Postgres). Both or neither.
+- Don't silently `.catch(() => {})` on user-facing fetches. At minimum `console.error` it; ideally surface a UI state.
+- Don't duplicate `PageContent` between `content.ts` and `components/types.ts`. Re-export.
+- Don't add nested arrays to a global without the `stripIdsFromArray` hook.
+- Don't hardcode a new public route without adding it to the revalidation path lists in `Navigation.ts` and `Footer.ts`.
