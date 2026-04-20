@@ -24,6 +24,7 @@
     "seed:homepage:node22": "npx -y node@22 --import tsx ./scripts/seed-homepage.ts",
     "db:migrate": "node --import tsx ./scripts/db-migrate.ts",
     "db:verify": "node --import tsx ./scripts/db-verify-schema.ts",
+    "migrations:check": "node --import tsx ./scripts/check-migration-parity.ts",
     "gate:local": "node --import tsx ./scripts/verify-rollout-gates.ts local",
     "gate:runtime": "node --import tsx ./scripts/verify-rollout-gates.ts runtime",
     "gate:full": "node --import tsx ./scripts/verify-rollout-gates.ts full",
