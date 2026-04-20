@@ -55,19 +55,13 @@ function sectionDragId(sectionId: string) {
 type BlockCardProps = {
   sectionId: string;
   columnId: string;
-  blockId: string;
+  block: BlockInstance;
   isSelected: boolean;
   isMatch: boolean;
 };
 
-const BlockCard = memo(function BlockCard({ sectionId, columnId, blockId, isSelected, isMatch }: BlockCardProps) {
-  const block = useEditorStore((s) =>
-    s.sections
-      .find((sec) => sec.id === sectionId)
-      ?.columns.find((col) => col.id === columnId)
-      ?.blocks.find((b) => b.id === blockId),
-  ) as BlockInstance | undefined;
-
+const BlockCard = memo(function BlockCard({ sectionId, columnId, block, isSelected, isMatch }: BlockCardProps) {
+  const blockId = block.id;
   const selectBlock = useEditorStore((s) => s.selectBlock);
   const removeBlock = useEditorStore((s) => s.removeBlock);
   const duplicateBlock = useEditorStore((s) => s.duplicateBlock);
@@ -77,8 +71,6 @@ const BlockCard = memo(function BlockCard({ sectionId, columnId, blockId, isSele
     id: dndId,
     data: { type: 'block', sectionId, columnId, blockId },
   });
-
-  if (!block) return null;
 
   const def = getBlockDefinition(block.blockType);
   const title = (block.data.title as string | undefined) || def?.label || block.blockType;
@@ -176,16 +168,15 @@ const BlockCard = memo(function BlockCard({ sectionId, columnId, blockId, isSele
 type ColumnProps = {
   sectionId: string;
   column: ColumnInstance;
+  totalCols: number;
   selectedBlockId: string | null;
   searchMatchIds: Set<string>;
   addBlock: (blockType: string, sectionId: string, columnId: string) => void;
 };
 
-const Column = memo(function Column({ sectionId, column, selectedBlockId, searchMatchIds, addBlock }: ColumnProps) {
+const Column = memo(function Column({ sectionId, column, totalCols, selectedBlockId, searchMatchIds, addBlock }: ColumnProps) {
   const removeColumn = useEditorStore((s) => s.removeColumnFromSection);
   const updateWidth = useEditorStore((s) => s.updateColumnWidth);
-  const sections = useEditorStore((s) => s.sections);
-  const totalCols = sections.find((s) => s.id === sectionId)?.columns.length ?? 1;
 
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `col-drop:${sectionId}:${column.id}` });
 
@@ -232,7 +223,7 @@ const Column = memo(function Column({ sectionId, column, selectedBlockId, search
               key={block.id}
               sectionId={sectionId}
               columnId={column.id}
-              blockId={block.id}
+              block={block}
               isSelected={block.id === selectedBlockId}
               isMatch={searchMatchIds.has(block.id)}
             />
@@ -337,6 +328,7 @@ const SectionCard = memo(function SectionCard({ section, selectedBlockId, select
                 key={col.id}
                 sectionId={section.id}
                 column={col}
+                totalCols={section.columns.length}
                 selectedBlockId={selectedBlockId}
                 searchMatchIds={searchMatchIds}
                 addBlock={addBlock}
