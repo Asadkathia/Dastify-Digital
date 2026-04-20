@@ -45,6 +45,28 @@ const dbUri = process.env.DATABASE_URI || defaultDbUri;
 const isSqlite = dbUri.startsWith('file:');
 const isPostgres = /^postgres(ql)?:\/\//i.test(dbUri);
 
+// Safety rail: refuse to run against a remote Postgres unless explicitly
+// opted-in. Allows local Postgres (localhost / 127.0.0.1) but blocks Neon
+// production URIs. If you truly need to seed a remote DB, set ALLOW_PROD_SEED=true.
+if (isPostgres) {
+  const host = (() => {
+    try {
+      return new URL(dbUri).hostname;
+    } catch {
+      return '';
+    }
+  })();
+  const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  if (!isLocal && process.env.ALLOW_PROD_SEED !== 'true') {
+    console.error(
+      `[seed:cms-baseline] Refusing to seed remote Postgres host "${host}".\n` +
+        `  This script overwrites CMS baseline data.\n` +
+        `  If this is intentional, set ALLOW_PROD_SEED=true.`,
+    );
+    process.exit(1);
+  }
+}
+
 type DbAdapter = {
   execute: (sql: string, args?: (string | number | null)[]) => Promise<void>;
   queryOne: (sql: string, args?: (string | number | null)[]) => Promise<Record<string, unknown> | null>;

@@ -7,9 +7,22 @@ const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 const projectRoot = path.resolve(dirname, '..');
 const defaultDbUri = `file:${path.resolve(projectRoot, 'payload.db')}`;
+const dbUri = process.env.DATABASE_URI || defaultDbUri;
+
+// Safety rail: this script is SQLite-only (libsql) and intended for local dev.
+// Refuse to run against any Postgres URI unless explicitly forced. Prevents
+// "oops I had NEON_DATABASE_URL exported" from torching production data.
+if (/^postgres(ql)?:\/\//i.test(dbUri) && process.env.ALLOW_PROD_SEED !== 'true') {
+  console.error(
+    `[seed-homepage] Refusing to run against Postgres URI.\n` +
+      `  DATABASE_URI appears to be a remote database.\n` +
+      `  If you truly intend to seed a Postgres instance, set ALLOW_PROD_SEED=true.`,
+  );
+  process.exit(1);
+}
 
 const client = createClient({
-  url: process.env.DATABASE_URI || defaultDbUri,
+  url: dbUri,
 });
 
 async function main() {

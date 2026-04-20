@@ -33,6 +33,12 @@ const databaseURI = process.env.DATABASE_URI || defaultDatabaseURI;
 const isLocalSqlite = databaseURI.startsWith('file:');
 const isPostgres = /^postgres(ql)?:\/\//i.test(databaseURI);
 const enableSchemaPush = process.env.PAYLOAD_SCHEMA_PUSH === 'true';
+// Escape hatch: set PAYLOAD_DISABLE_LEXICAL=true to skip loading
+// @payloadcms/richtext-lexical. Use this when the Lexical import fails at
+// build/boot time (e.g. a dependency version mismatch or a broken
+// deployment that needs to come up without the rich-text editor while the
+// underlying issue is fixed). Rich-text fields render as plain textareas
+// while this is on. Leave unset for normal operation.
 const disableLexical = process.env.PAYLOAD_DISABLE_LEXICAL === 'true';
 
 const rewriteFormBuilderRichTextFields = (value: unknown): unknown => {
@@ -126,13 +132,29 @@ const createConfig = async () => {
   }
 
   const siteURL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SERVER_URL || 'http://localhost:3000';
+  // Vercel exposes the runtime URL as VERCEL_URL (no scheme) and the branch
+  // URL as VERCEL_BRANCH_URL. Admin login POSTs arrive from whichever host the
+  // browser is on — preview deployments, the *.vercel.app system URL, or the
+  // custom domain. All of those must be in the CSRF allowlist or login breaks.
+  const vercelURL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+  const vercelBranchURL = process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : null;
+  const vercelProjectURL = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : null;
+  const csrfOrigins = [siteURL, vercelURL, vercelBranchURL, vercelProjectURL].filter(
+    (v): v is string => Boolean(v),
+  );
 
   return buildConfig({
   secret: process.env.PAYLOAD_SECRET || 'dev-payload-secret-change-me',
-  // CSRF allowlist: Payload rejects admin POSTs whose Origin doesn't match.
-  // Required because our auth cookie is SameSite=Lax by default, but CSRF
-  // provides defense-in-depth for any form that relaxes that.
-  csrf: [siteURL].filter(Boolean),
+  // CSRF allowlist: Payload rejects admin POSTs whose Origin header isn't in
+  // this list. Must include every host the admin UI may be served from.
+  csrf: csrfOrigins,
+  // Hard cap on file upload size — rejects 40 MB raw camera exports before
+  // they ever hit Vercel Blob storage. Payload passes this to express-fileupload.
+  upload: {
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  },
   admin: {
     user: Users.slug,
     livePreview: {
@@ -248,12 +270,12 @@ const createConfig = async () => {
               }
 
               // Origin check: in production, require the request to come from
-              // our own site. Skip in dev so local testing works.
+              // a known host. Reuses the CSRF allowlist so preview and Vercel
+              // system URLs work. Skip in dev so local testing works.
               if (process.env.NODE_ENV === 'production') {
                 const origin = req?.headers?.get?.('origin') ?? '';
                 const host = req?.headers?.get?.('host') ?? '';
-                const siteURL = process.env.NEXT_PUBLIC_SITE_URL ?? '';
-                const allowed = [siteURL, `https://${host}`].filter(Boolean);
+                const allowed = [...csrfOrigins, `https://${host}`].filter(Boolean);
                 if (origin && !allowed.some((a) => origin.startsWith(a))) {
                   throw new Error('Submission rejected');
                 }
