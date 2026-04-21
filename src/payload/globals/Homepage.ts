@@ -4,6 +4,7 @@ import type { HomepageContent } from '../../lib/homepage-content.ts';
 import { resolveHomepageContent } from '../../lib/resolve-homepage-content.ts';
 import { isAdminOrEditor } from '../access.ts';
 import { revalidateGlobalChange } from '../hooks/revalidate.ts';
+import { pageBuilderBlocks } from '../blocks/index.ts';
 
 const linkFields: Field[] = [
   { name: 'label', type: 'text', required: true },
@@ -979,6 +980,16 @@ export const Homepage: GlobalConfig = {
       type: 'json',
       admin: {
         hidden: true,
+      },
+    },
+    {
+      name: 'blocks',
+      type: 'blocks',
+      blocks: pageBuilderBlocks,
+      required: false,
+      admin: {
+        description:
+          'Unified page-builder blocks — same 42-block palette as the Pages collection. When this array is populated, the homepage renders these blocks pixel-perfect and ignores the legacy structured fields above. Leave empty to keep rendering the legacy Navigation/Hero/About/etc. tabs.',
       },
     },
   ],

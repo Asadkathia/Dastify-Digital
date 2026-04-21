@@ -21,6 +21,7 @@ import { migration as footerGlobal } from './20260416_0019_footer_global.ts';
 import { migration as logoImageGlobals } from './20260417_0020_logo_image_globals.ts';
 import { migration as canonicalSectionFields } from './20260420_0021_canonical_section_fields.ts';
 import { migration as collectionBlocksFields } from './20260421_0022_collection_blocks_fields.ts';
+import { migration as homepageBlocksField } from './20260421_0023_homepage_blocks_field.ts';
 
 export const migrations: Migration[] = [
   usersRole,
@@ -45,4 +46,5 @@ export const migrations: Migration[] = [
   logoImageGlobals,
   canonicalSectionFields,
   collectionBlocksFields,
+  homepageBlocksField,
 ];

@@ -969,7 +969,15 @@ function SectionsLayout({
   navData: NavigationData | null;
   onWidgetClick: (widgetId: string) => void;
 }) {
-  const homepage = isHomepageMode ? buildHomepagePreviewContent(sections) : null;
+  // Homepage preview has two paths:
+  //   - hp-* blocks (legacy): build structured content via the adapter and
+  //     hand it to HomepageSectionBlock for rendering.
+  //   - general page-builder blocks (unified): fall through to the generic
+  //     renderer, same as pages.
+  const hasLegacyHpBlocks = isHomepageMode && sections.some((s) =>
+    s.columns.some((c) => c.blocks.some((b) => b.blockType.startsWith('hp-'))),
+  );
+  const homepage = hasLegacyHpBlocks ? buildHomepagePreviewContent(sections) : null;
   const convertedContent = (isConvertedMode && convertedRegistry)
     ? sectionsToConvertedPageContent(convertedRegistry.defaultContent, sections)
     : null;
@@ -982,11 +990,9 @@ function SectionsLayout({
           {isHomepageMode ? '🏠' : isConvertedMode ? '✦' : '📄'}
         </p>
         <p style={{ fontSize: '16px', margin: 0 }}>
-          {isHomepageMode
-            ? 'Homepage sections loading…'
-            : isConvertedMode
-              ? 'Converted page sections loading…'
-              : 'Add blocks to see your page preview'}
+          {isConvertedMode
+            ? 'Converted page sections loading…'
+            : 'Add blocks to see your page preview'}
         </p>
       </div>
     );
@@ -1025,24 +1031,39 @@ function SectionsLayout({
           ? undefined
           : section.columns.map((c) => COL_FRACTION[c.width] ?? '1fr').join(' ');
 
+        // Emit scoped !important CSS targeting the inner block so the preview
+        // can actually reduce the section (overriding the child's class CSS).
+        // Keep all other styling (background, opacity, etc.) as wrapper inline.
+        const innerDecls: string[] = [];
+        if (sectionStyles?.paddingTop != null) innerDecls.push(`padding-top: ${sectionStyles.paddingTop}px !important`);
+        if (sectionStyles?.paddingBottom != null) innerDecls.push(`padding-bottom: ${sectionStyles.paddingBottom}px !important`);
+        if (sectionStyles?.paddingLeft != null) innerDecls.push(`padding-left: ${sectionStyles.paddingLeft}px !important`);
+        if (sectionStyles?.paddingRight != null) innerDecls.push(`padding-right: ${sectionStyles.paddingRight}px !important`);
+        if (sectionStyles?.maxWidth != null) {
+          innerDecls.push(`max-width: ${sectionStyles.maxWidth}px !important`);
+          innerDecls.push('margin-left: auto !important');
+          innerDecls.push('margin-right: auto !important');
+        }
+        const scopedCss = innerDecls.length > 0
+          ? `[data-dnd-section-id="${section.id}"] > div > :is(section, div, article, main) { ${innerDecls.join('; ')}; }`
+          : '';
+
         return (
           <div
             key={section.id}
             data-dnd-section-id={section.id}
             style={{
               position: 'relative',
-              ...(sectionStyles?.paddingTop != null ? { paddingTop: `${sectionStyles.paddingTop}px` } : {}),
-              ...(sectionStyles?.paddingBottom != null ? { paddingBottom: `${sectionStyles.paddingBottom}px` } : {}),
-              ...(sectionStyles?.paddingLeft != null ? { paddingLeft: `${sectionStyles.paddingLeft}px` } : {}),
-              ...(sectionStyles?.paddingRight != null ? { paddingRight: `${sectionStyles.paddingRight}px` } : {}),
+              ...(sectionStyles?.marginTop != null ? { marginTop: `${sectionStyles.marginTop}px` } : {}),
+              ...(sectionStyles?.marginBottom != null ? { marginBottom: `${sectionStyles.marginBottom}px` } : {}),
               ...(sectionStyles?.backgroundColor ? { backgroundColor: sectionStyles.backgroundColor } : {}),
               ...(sectionStyles?.backgroundImage ? { backgroundImage: `url(${sectionStyles.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: sectionStyles.backgroundPosition ?? 'center' } : {}),
               ...(sectionStyles?.opacity != null && sectionStyles.opacity !== 1 ? { opacity: sectionStyles.opacity } : {}),
               ...(sectionStyles?.borderWidth != null ? { borderWidth: `${sectionStyles.borderWidth}px`, borderStyle: 'solid', borderColor: sectionStyles.borderColor ?? '#000' } : {}),
               ...(sectionStyles?.boxShadow ? { boxShadow: sectionStyles.boxShadow } : {}),
-              ...(sectionStyles?.maxWidth != null ? { maxWidth: `${sectionStyles.maxWidth}px`, marginLeft: 'auto', marginRight: 'auto' } : {}),
             }}
           >
+            {scopedCss ? <style dangerouslySetInnerHTML={{ __html: scopedCss }} /> : null}
             <div style={section.columns.length > 1 ? { display: 'grid', gridTemplateColumns: gridTemplate, gap: '0' } : undefined}>
               {section.columns.map((col) => (
                 <div

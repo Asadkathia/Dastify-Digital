@@ -32,6 +32,11 @@ export const SectionBlock: Block = {
     { name: 'label', type: 'text' },
     { name: 'paddingTop', type: 'number' },
     { name: 'paddingBottom', type: 'number' },
+    { name: 'paddingLeft', type: 'number' },
+    { name: 'paddingRight', type: 'number' },
+    { name: 'marginTop', type: 'number' },
+    { name: 'marginBottom', type: 'number' },
+    { name: 'maxWidth', type: 'number', admin: { description: 'If set, the section is capped at this width and centred.' } },
     { name: 'backgroundColor', type: 'text' },
     {
       name: 'columns',

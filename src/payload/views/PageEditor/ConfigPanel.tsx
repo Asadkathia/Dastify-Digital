@@ -592,14 +592,14 @@ function StylesPanel({ styles, onUpdate, label, onLabelChange }: StylePanelProps
     { id: 'typography', label: 'Typography' },
   ];
 
-  function numField(key: keyof BlockStyles, lbl: string, max = 200) {
+  function numField(key: keyof BlockStyles, lbl: string, max = 200, min = 0) {
     const val = styles?.[key] as number | undefined;
     return (
       <div>
         <label style={labelStyle}>{lbl}</label>
         <input
           type="number"
-          min={0}
+          min={min}
           max={max}
           value={val ?? ''}
           onChange={(e) => onUpdate({ [key]: e.target.value === '' ? undefined : Number(e.target.value) })}
@@ -671,8 +671,9 @@ function StylesPanel({ styles, onUpdate, label, onLabelChange }: StylePanelProps
                 {numField('paddingBottom', 'Pad Bottom (px)')}
                 {numField('paddingLeft', 'Pad Left (px)')}
                 {numField('paddingRight', 'Pad Right (px)')}
-                {numField('marginTop', 'Margin Top (px)')}
-                {numField('marginBottom', 'Margin Bottom (px)')}
+                {/* Margins allow negatives so editors can pull sections up/overlap. */}
+                {numField('marginTop', 'Margin Top (px)', 300, -200)}
+                {numField('marginBottom', 'Margin Bottom (px)', 300, -200)}
               </div>
               <div>
                 <label style={labelStyle}>Max Width (px)</label>

@@ -299,6 +299,14 @@ export interface SectionBlock {
   label?: string | null;
   paddingTop?: number | null;
   paddingBottom?: number | null;
+  paddingLeft?: number | null;
+  paddingRight?: number | null;
+  marginTop?: number | null;
+  marginBottom?: number | null;
+  /**
+   * If set, the section is capped at this width and centred.
+   */
+  maxWidth?: number | null;
   backgroundColor?: string | null;
   columns: {
     width?: ('1/1' | '1/2' | '1/3' | '2/3' | '1/4' | '3/4') | null;
@@ -2074,6 +2082,11 @@ export interface SectionBlockSelect<T extends boolean = true> {
   label?: T;
   paddingTop?: T;
   paddingBottom?: T;
+  paddingLeft?: T;
+  paddingRight?: T;
+  marginTop?: T;
+  marginBottom?: T;
+  maxWidth?: T;
   backgroundColor?: T;
   columns?:
     | T
@@ -3584,6 +3597,52 @@ export interface Homepage {
     | number
     | boolean
     | null;
+  /**
+   * Unified page-builder blocks — same 42-block palette as the Pages collection. When this array is populated, the homepage renders these blocks pixel-perfect and ignores the legacy structured fields above. Leave empty to keep rendering the legacy Navigation/Hero/About/etc. tabs.
+   */
+  blocks?:
+    | (
+        | SectionBlock
+        | HeroBlock
+        | RichTextBlock
+        | TextImageBlock
+        | CtaBlock
+        | FaqBlock
+        | StatsBlock
+        | TestimonialsBlock
+        | TwoColBlock
+        | ThreeColBlock
+        | PricingBlock
+        | LogoCarouselBlock
+        | VideoEmbedBlock
+        | SpacerBlock
+        | AccordionBlock
+        | CardGridBlock
+        | ButtonBlock
+        | HeadingBlock
+        | ImageBlock
+        | AlertBlock
+        | TabsBlock
+        | SocialIconsBlock
+        | CustomHtmlBlock
+        | CounterBlock
+        | ProgressBarBlock
+        | ImageGalleryBlock
+        | FormBlock
+        | QuoteBlock
+        | DividerBlock
+        | IconBlock
+        | FeatureListBlock
+        | TeamGridBlock
+        | BlogFeedBlock
+        | MapBlock
+        | CountdownBlock
+        | TableBlock
+        | TimelineBlock
+        | StepsBlock
+        | AnnouncementBarBlock
+      )[]
+    | null;
   _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -4071,6 +4130,49 @@ export interface HomepageSelect<T extends boolean = true> {
         keywords?: T;
       };
   content?: T;
+  blocks?:
+    | T
+    | {
+        'section-block'?: T | SectionBlockSelect<T>;
+        'hero-block'?: T | HeroBlockSelect<T>;
+        'rich-text-block'?: T | RichTextBlockSelect<T>;
+        'text-image-block'?: T | TextImageBlockSelect<T>;
+        'cta-block'?: T | CtaBlockSelect<T>;
+        'faq-block'?: T | FaqBlockSelect<T>;
+        'stats-block'?: T | StatsBlockSelect<T>;
+        'testimonials-block'?: T | TestimonialsBlockSelect<T>;
+        'two-col-block'?: T | TwoColBlockSelect<T>;
+        'three-col-block'?: T | ThreeColBlockSelect<T>;
+        'pricing-block'?: T | PricingBlockSelect<T>;
+        'logo-carousel-block'?: T | LogoCarouselBlockSelect<T>;
+        'video-embed-block'?: T | VideoEmbedBlockSelect<T>;
+        'spacer-block'?: T | SpacerBlockSelect<T>;
+        'accordion-block'?: T | AccordionBlockSelect<T>;
+        'card-grid-block'?: T | CardGridBlockSelect<T>;
+        'button-block'?: T | ButtonBlockSelect<T>;
+        'heading-block'?: T | HeadingBlockSelect<T>;
+        'image-block'?: T | ImageBlockSelect<T>;
+        'alert-block'?: T | AlertBlockSelect<T>;
+        'tabs-block'?: T | TabsBlockSelect<T>;
+        'social-icons-block'?: T | SocialIconsBlockSelect<T>;
+        'custom-html-block'?: T | CustomHtmlBlockSelect<T>;
+        'counter-block'?: T | CounterBlockSelect<T>;
+        'progress-bar-block'?: T | ProgressBarBlockSelect<T>;
+        'image-gallery-block'?: T | ImageGalleryBlockSelect<T>;
+        'form-block'?: T | FormBlockSelect<T>;
+        'quote-block'?: T | QuoteBlockSelect<T>;
+        'divider-block'?: T | DividerBlockSelect<T>;
+        'icon-block'?: T | IconBlockSelect<T>;
+        'feature-list-block'?: T | FeatureListBlockSelect<T>;
+        'team-grid-block'?: T | TeamGridBlockSelect<T>;
+        'blog-feed-block'?: T | BlogFeedBlockSelect<T>;
+        'map-block'?: T | MapBlockSelect<T>;
+        'countdown-block'?: T | CountdownBlockSelect<T>;
+        'table-block'?: T | TableBlockSelect<T>;
+        'timeline-block'?: T | TimelineBlockSelect<T>;
+        'steps-block'?: T | StepsBlockSelect<T>;
+        'announcement-bar-block'?: T | AnnouncementBarBlockSelect<T>;
+      };
   _status?: T;
   updatedAt?: T;
   createdAt?: T;

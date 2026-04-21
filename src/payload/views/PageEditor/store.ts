@@ -953,6 +953,11 @@ export function serializeSectionsForPayload(sections: SectionInstance[]): Record
     label: section.label,
     paddingTop: section.styles?.paddingTop,
     paddingBottom: section.styles?.paddingBottom,
+    paddingLeft: section.styles?.paddingLeft,
+    paddingRight: section.styles?.paddingRight,
+    marginTop: section.styles?.marginTop,
+    marginBottom: section.styles?.marginBottom,
+    maxWidth: section.styles?.maxWidth,
     backgroundColor: section.styles?.backgroundColor,
     columns: section.columns.map((col) => ({
       id: col.id,
@@ -1032,6 +1037,11 @@ export function deserializeSectionsFromPayload(payloadBlocks: PayloadBlock[]): S
         styles: {
           paddingTop: typeof raw.paddingTop === 'number' ? raw.paddingTop : undefined,
           paddingBottom: typeof raw.paddingBottom === 'number' ? raw.paddingBottom : undefined,
+          paddingLeft: typeof raw.paddingLeft === 'number' ? raw.paddingLeft : undefined,
+          paddingRight: typeof raw.paddingRight === 'number' ? raw.paddingRight : undefined,
+          marginTop: typeof raw.marginTop === 'number' ? raw.marginTop : undefined,
+          marginBottom: typeof raw.marginBottom === 'number' ? raw.marginBottom : undefined,
+          maxWidth: typeof raw.maxWidth === 'number' ? raw.maxWidth : undefined,
           backgroundColor: typeof raw.backgroundColor === 'string' ? raw.backgroundColor : undefined,
         },
       });

@@ -5,10 +5,12 @@ import * as migration_20260411_003000_pages_converted_fields_sync from './202604
 import * as migration_20260414_navigation_global from './20260414_navigation_global';
 import * as migration_20260416_141218 from './20260416_141218';
 import * as migration_20260416_footer_global from './20260416_footer_global';
-import * as migration_20260417_logo_image_globals from './20260417_logo_image_globals';
 import * as migration_20260417_fix_globals_id_sequences from './20260417_fix_globals_id_sequences';
+import * as migration_20260417_logo_image_globals from './20260417_logo_image_globals';
 import * as migration_20260417_sync_globals_id_sequences from './20260417_sync_globals_id_sequences';
 import * as migration_20260421_141934_collection_blocks_fields from './20260421_141934_collection_blocks_fields';
+import * as migration_20260421_152927_homepage_blocks_field from './20260421_152927_homepage_blocks_field';
+import * as migration_20260421_195925_section_block_spacing_fields from './20260421_195925_section_block_spacing_fields';
 
 export const migrations = [
   {
@@ -47,25 +49,33 @@ export const migrations = [
     name: '20260416_footer_global',
   },
   {
-    up: migration_20260417_logo_image_globals.up,
-    down: migration_20260417_logo_image_globals.down,
-    name: '20260417_logo_image_globals',
-  },
-  {
     up: migration_20260417_fix_globals_id_sequences.up,
     down: migration_20260417_fix_globals_id_sequences.down,
     name: '20260417_fix_globals_id_sequences',
+  },
+  {
+    up: migration_20260417_logo_image_globals.up,
+    down: migration_20260417_logo_image_globals.down,
+    name: '20260417_logo_image_globals',
   },
   {
     up: migration_20260417_sync_globals_id_sequences.up,
     down: migration_20260417_sync_globals_id_sequences.down,
     name: '20260417_sync_globals_id_sequences',
   },
-  // Note: 20260420_canonical_section_fields was never applied to prod;
-  // its schema changes were bundled into 20260421_141934 by migrate:create.
   {
     up: migration_20260421_141934_collection_blocks_fields.up,
     down: migration_20260421_141934_collection_blocks_fields.down,
     name: '20260421_141934_collection_blocks_fields',
+  },
+  {
+    up: migration_20260421_152927_homepage_blocks_field.up,
+    down: migration_20260421_152927_homepage_blocks_field.down,
+    name: '20260421_152927_homepage_blocks_field',
+  },
+  {
+    up: migration_20260421_195925_section_block_spacing_fields.up,
+    down: migration_20260421_195925_section_block_spacing_fields.down,
+    name: '20260421_195925_section_block_spacing_fields'
   },
 ];

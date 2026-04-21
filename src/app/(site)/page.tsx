@@ -22,6 +22,8 @@ import { buildFAQJsonLd, buildOrganizationJsonLd, buildWebsiteJsonLd } from '@/l
 import { buildMetadata } from '@/lib/seo/metadata';
 import { getSiteSettings } from '@/lib/site-settings';
 import { getPayloadClient } from '@/lib/payload';
+import { PageBlocksRenderer } from '@/components/blocks/PageBlocksRenderer';
+import type { PageBuilderBlock } from '@/components/blocks/types';
 import type { Metadata } from 'next';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -69,16 +71,48 @@ export default async function Home() {
   const { isEnabled } = await draftMode();
   noStore();
 
-  const [homepageContent, settings, nav, footer] = await Promise.all([
+  const [homepageContent, settings, nav, footer, rawHomepage] = await Promise.all([
     withManagedMenus(await getHomepageContent({ draft: isEnabled })),
     getSiteSettings(),
     getNavigation(),
     getFooter(),
+    // Read the Homepage global directly so we can check the new `blocks` field.
+    // withManagedMenus strips unknown fields, so we fetch it again via the client.
+    (async () => {
+      try {
+        const client = await getPayloadClient();
+        return await client.findGlobal({ slug: 'homepage', draft: isEnabled, depth: 1 });
+      } catch {
+        return null;
+      }
+    })(),
   ]);
 
   const organizationJsonLd = buildOrganizationJsonLd(settings);
   const websiteJsonLd = buildWebsiteJsonLd(settings);
   const faqJsonLd = buildFAQJsonLd(homepageContent.faq?.items ?? []);
+
+  // Unified path: when the homepage has been authored with the new page-builder
+  // blocks, render those instead of the legacy structured sections. Editors who
+  // haven't migrated keep seeing the original layout — zero behaviour change.
+  const homepageBlocks = rawHomepage && Array.isArray((rawHomepage as { blocks?: unknown[] }).blocks)
+    ? ((rawHomepage as { blocks?: unknown[] }).blocks as PageBuilderBlock[])
+    : [];
+  const hasBlocks = homepageBlocks.length > 0;
+
+  if (hasBlocks) {
+    return (
+      <>
+        <LivePreviewSync enabled={isEnabled} />
+        <ScrollRevealController />
+        <SiteNavbar nav={nav} activePath="/" scrolledClass="solid" linkListClassName="nav-links" ctaClassName="btn-dk nav-cta" />
+        <PageBlocksRenderer blocks={homepageBlocks} />
+        <SiteFooter footer={footer} />
+        <JsonLd data={organizationJsonLd} />
+        <JsonLd data={websiteJsonLd} />
+      </>
+    );
+  }
 
   return (
     <>

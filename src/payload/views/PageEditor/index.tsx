@@ -35,6 +35,9 @@ import { ToastContainer, useToast } from './Toast';
 import { EditorSkeleton } from './Skeleton';
 import { ErrorBoundary } from './ErrorBoundary';
 import { RevisionHistory } from './RevisionHistory';
+// Legacy homepage adapter — kept for backward compat on load and for saving
+// when the editor contains hp-* blocks. New page-builder blocks save to the
+// blocks[] field instead (same path as Pages).
 import { homepageDocToSections, sectionsToHomepagePatch } from '../HomepageEditor/homepage-adapter';
 import { buildConvertedBlockDefinition, convertedPageContentToSections, sectionsToConvertedPageContent } from '@/lib/converted-pages/editor-adapter';
 import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
@@ -719,7 +722,21 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         const res = await fetch('/api/globals/homepage?draft=true', { credentials: 'include' });
         const doc = (await res.json()) as Record<string, unknown>;
         if (cancelled) return;
-        setSections(homepageDocToSections(doc));
+        // Load precedence:
+        //   1) blocks[] populated → unified path (same as Pages) → deserialize
+        //   2) blocks[] empty + legacy structured fields populated → load via
+        //      homepageDocToSections so editors see their existing content as
+        //      hp-* blocks they can edit. Saving hp-* blocks writes back to
+        //      the structured fields; adding general page-builder blocks
+        //      (hero-block, cta-block, etc.) migrates the homepage to blocks[].
+        //   3) both empty → empty canvas, start from scratch.
+        if (Array.isArray(doc.blocks) && doc.blocks.length > 0) {
+          const parsedSections = deserializeSectionsFromPayload(doc.blocks as Record<string, unknown>[]);
+          setSections(parsedSections);
+        } else {
+          const legacySections = homepageDocToSections(doc);
+          setSections(legacySections);
+        }
         useEditorStore.temporal.getState().clear();
       } catch {
         if (!cancelled) {
@@ -880,16 +897,24 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         let res: Response;
 
         if (editorMode === 'homepage') {
-          const patch = sectionsToHomepagePatch(sections);
+          // Route based on the block types currently in the editor:
+          //   - Any hp-* block present → legacy path: serialize to structured
+          //     fields via sectionsToHomepagePatch. Keeps blocks[] empty so
+          //     the public render falls through to the legacy components.
+          //   - No hp-* blocks (fully migrated to page-builder blocks) →
+          //     unified path: write to blocks[], same as Pages.
+          const hasLegacyHpBlocks = sections.some((s) =>
+            s.columns.some((c) => c.blocks.some((b) => b.blockType.startsWith('hp-'))),
+          );
           // Payload v3 globals use POST for updates (collections use PATCH).
+          const body = hasLegacyHpBlocks
+            ? { ...sectionsToHomepagePatch(sections), _status: status }
+            : { blocks: serializeSectionsForPayload(sections), _status: status };
           res = await fetch('/api/globals/homepage', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({
-              ...patch,
-              _status: status,
-            }),
+            body: JSON.stringify(body),
           });
         } else if (editorMode === 'converted' || (editorMode === 'pages' && convertedPageName)) {
           const base = convertedBaseContent ?? {};

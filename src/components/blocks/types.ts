@@ -72,8 +72,14 @@ export type PageBuilderBlock =
     }
   | {
       type: 'section';
+      id?: string;
       paddingTop?: number;
       paddingBottom?: number;
+      paddingLeft?: number;
+      paddingRight?: number;
+      marginTop?: number;
+      marginBottom?: number;
+      maxWidth?: number;
       backgroundColor?: string;
       columns: Array<{
         width: '1/1' | '1/2' | '1/3' | '2/3' | '1/4' | '3/4';
@@ -362,8 +368,14 @@ function mapSingleBlock(rawBlock: unknown): PageBuilderBlock[] {
       return [
         {
           type: 'section',
+          id: typeof b.id === 'string' ? b.id : undefined,
           paddingTop: b.paddingTop as number | undefined,
           paddingBottom: b.paddingBottom as number | undefined,
+          paddingLeft: b.paddingLeft as number | undefined,
+          paddingRight: b.paddingRight as number | undefined,
+          marginTop: b.marginTop as number | undefined,
+          marginBottom: b.marginBottom as number | undefined,
+          maxWidth: b.maxWidth as number | undefined,
           backgroundColor: b.backgroundColor as string | undefined,
           columns: cols.map((col) => ({
             width: (col.width ?? '1/1') as ColWidth,
