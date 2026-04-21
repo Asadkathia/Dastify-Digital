@@ -307,6 +307,22 @@ export interface SectionBlock {
    * If set, the section is capped at this width and centred.
    */
   maxWidth?: number | null;
+  /**
+   * Minimum section height in px. The one-control way to make a section taller. Content grows past this if needed.
+   */
+  minHeight?: number | null;
+  /**
+   * Per-breakpoint overrides for tablet and mobile. Shape: { tablet?: BreakpointOverrides, mobile?: BreakpointOverrides }. Edited via the Spacing tab's breakpoint tabs.
+   */
+  breakpointStyles?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   backgroundColor?: string | null;
   columns: {
     width?: ('1/1' | '1/2' | '1/3' | '2/3' | '1/4' | '3/4') | null;
@@ -2087,6 +2103,8 @@ export interface SectionBlockSelect<T extends boolean = true> {
   marginTop?: T;
   marginBottom?: T;
   maxWidth?: T;
+  minHeight?: T;
+  breakpointStyles?: T;
   backgroundColor?: T;
   columns?:
     | T

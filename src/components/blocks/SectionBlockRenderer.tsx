@@ -24,40 +24,85 @@ const COL_GRID: Record<string, string> = {
  * saved yet), overrides degrade to an inline style on the wrapper — still
  * visible in the editor preview, just not as aggressive on the live page.
  */
-function buildScopedCss(sectionId: string, props: SectionBlockProps): string {
-  const targetDecls: string[] = [];
-  const wrapperDecls: string[] = [];
+type SpacingSource = {
+  paddingTop?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+  paddingRight?: number;
+  marginTop?: number;
+  marginBottom?: number;
+  maxWidth?: number;
+  minHeight?: number;
+};
 
-  // Padding/max-width apply to the INNER block (targeting its own element).
-  // That's what makes "reduce" work — we override the child's class CSS.
-  if (props.paddingTop != null) targetDecls.push(`padding-top: ${props.paddingTop}px !important`);
-  if (props.paddingBottom != null) targetDecls.push(`padding-bottom: ${props.paddingBottom}px !important`);
-  if (props.paddingLeft != null) targetDecls.push(`padding-left: ${props.paddingLeft}px !important`);
-  if (props.paddingRight != null) targetDecls.push(`padding-right: ${props.paddingRight}px !important`);
-  if (props.maxWidth != null) {
-    targetDecls.push(`max-width: ${props.maxWidth}px !important`);
-    targetDecls.push('margin-left: auto !important');
-    targetDecls.push('margin-right: auto !important');
+function collectDecls(src: SpacingSource): { target: string[]; wrapper: string[] } {
+  const target: string[] = [];
+  const wrapper: string[] = [];
+  if (src.paddingTop != null) target.push(`padding-top: ${src.paddingTop}px !important`);
+  if (src.paddingBottom != null) target.push(`padding-bottom: ${src.paddingBottom}px !important`);
+  if (src.paddingLeft != null) target.push(`padding-left: ${src.paddingLeft}px !important`);
+  if (src.paddingRight != null) target.push(`padding-right: ${src.paddingRight}px !important`);
+  if (src.maxWidth != null) {
+    target.push(`max-width: ${src.maxWidth}px !important`);
+    target.push('margin-left: auto !important');
+    target.push('margin-right: auto !important');
   }
+  if (src.minHeight != null) {
+    target.push(`min-height: ${src.minHeight}px !important`);
+    target.push('display: flex !important');
+    target.push('flex-direction: column !important');
+    target.push('justify-content: center !important');
+  }
+  if (src.marginTop != null) wrapper.push(`margin-top: ${src.marginTop}px !important`);
+  if (src.marginBottom != null) wrapper.push(`margin-bottom: ${src.marginBottom}px !important`);
+  return { target, wrapper };
+}
 
-  // Margin goes on the outer wrapper — you need negative values to visually
-  // pull up adjacent sections, and the wrapper is the right place for that.
-  if (props.marginTop != null) wrapperDecls.push(`margin-top: ${props.marginTop}px !important`);
-  if (props.marginBottom != null) wrapperDecls.push(`margin-bottom: ${props.marginBottom}px !important`);
+/** Selectors that reach into the section to override block-level padding. */
+function targetSelector(sectionId: string): string {
+  return (
+    `[data-section-id="${sectionId}"] .sp, ` +
+    `[data-section-id="${sectionId}"] > div > div > :is(section, div, article, main)`
+  );
+}
+
+/** Baseline (desktop) CSS plus optional @media blocks for tablet/mobile. */
+function buildScopedCss(sectionId: string, props: SectionBlockProps): string {
+  const desktop = collectDecls(props);
+  const tablet = collectDecls(props.breakpointStyles?.tablet ?? {});
+  const mobile = collectDecls(props.breakpointStyles?.mobile ?? {});
 
   const parts: string[] = [];
-  if (targetDecls.length > 0) {
-    // Target direct child that's likely a block root (section/div/article/main).
-    parts.push(`[data-section-id="${sectionId}"] > :is(section, div, article, main) { ${targetDecls.join('; ')}; }`);
+
+  if (desktop.target.length > 0) {
+    parts.push(`${targetSelector(sectionId)} { ${desktop.target.join('; ')}; }`);
   }
-  if (wrapperDecls.length > 0) {
-    parts.push(`[data-section-id="${sectionId}"] { ${wrapperDecls.join('; ')}; }`);
+  if (desktop.wrapper.length > 0) {
+    parts.push(`[data-section-id="${sectionId}"] { ${desktop.wrapper.join('; ')}; }`);
   }
+
+  if (tablet.target.length > 0 || tablet.wrapper.length > 0) {
+    const mediaParts: string[] = [];
+    if (tablet.target.length > 0) mediaParts.push(`${targetSelector(sectionId)} { ${tablet.target.join('; ')}; }`);
+    if (tablet.wrapper.length > 0) mediaParts.push(`[data-section-id="${sectionId}"] { ${tablet.wrapper.join('; ')}; }`);
+    parts.push(`@media (max-width: 1100px) { ${mediaParts.join(' ')} }`);
+  }
+
+  if (mobile.target.length > 0 || mobile.wrapper.length > 0) {
+    const mediaParts: string[] = [];
+    if (mobile.target.length > 0) mediaParts.push(`${targetSelector(sectionId)} { ${mobile.target.join('; ')}; }`);
+    if (mobile.wrapper.length > 0) mediaParts.push(`[data-section-id="${sectionId}"] { ${mobile.wrapper.join('; ')}; }`);
+    parts.push(`@media (max-width: 768px) { ${mediaParts.join(' ')} }`);
+  }
+
   return parts.join('\n');
 }
 
 export function SectionBlockRenderer(props: SectionBlockProps) {
   const sectionId = props.id;
+  const hasBreakpointOverride =
+    (props.breakpointStyles?.tablet && Object.values(props.breakpointStyles.tablet).some((v) => v != null)) ||
+    (props.breakpointStyles?.mobile && Object.values(props.breakpointStyles.mobile).some((v) => v != null));
   const hasAnySpacing =
     props.paddingTop != null ||
     props.paddingBottom != null ||
@@ -65,7 +110,9 @@ export function SectionBlockRenderer(props: SectionBlockProps) {
     props.paddingRight != null ||
     props.marginTop != null ||
     props.marginBottom != null ||
-    props.maxWidth != null;
+    props.maxWidth != null ||
+    props.minHeight != null ||
+    hasBreakpointOverride;
 
   const inner = (
     <div
@@ -121,6 +168,7 @@ export function SectionBlockRenderer(props: SectionBlockProps) {
         ...(props.marginTop != null ? { marginTop: props.marginTop } : {}),
         ...(props.marginBottom != null ? { marginBottom: props.marginBottom } : {}),
         ...(props.maxWidth != null ? { maxWidth: props.maxWidth, marginLeft: 'auto', marginRight: 'auto' } : {}),
+        ...(props.minHeight != null ? { minHeight: props.minHeight, display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' } : {}),
         ...(props.backgroundColor ? { backgroundColor: props.backgroundColor } : {}),
       }}
     >

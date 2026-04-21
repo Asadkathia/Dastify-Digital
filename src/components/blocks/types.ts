@@ -80,7 +80,31 @@ export type PageBuilderBlock =
       marginTop?: number;
       marginBottom?: number;
       maxWidth?: number;
+      minHeight?: number;
       backgroundColor?: string;
+      /** Per-breakpoint overrides: { tablet?: {...}, mobile?: {...} }. Each accepts the same spacing keys. */
+      breakpointStyles?: {
+        tablet?: {
+          paddingTop?: number;
+          paddingBottom?: number;
+          paddingLeft?: number;
+          paddingRight?: number;
+          marginTop?: number;
+          marginBottom?: number;
+          maxWidth?: number;
+          minHeight?: number;
+        };
+        mobile?: {
+          paddingTop?: number;
+          paddingBottom?: number;
+          paddingLeft?: number;
+          paddingRight?: number;
+          marginTop?: number;
+          marginBottom?: number;
+          maxWidth?: number;
+          minHeight?: number;
+        };
+      };
       columns: Array<{
         width: '1/1' | '1/2' | '1/3' | '2/3' | '1/4' | '3/4';
         blocks: PageBuilderBlock[];
@@ -376,6 +400,10 @@ function mapSingleBlock(rawBlock: unknown): PageBuilderBlock[] {
           marginTop: b.marginTop as number | undefined,
           marginBottom: b.marginBottom as number | undefined,
           maxWidth: b.maxWidth as number | undefined,
+          minHeight: b.minHeight as number | undefined,
+          breakpointStyles: b.breakpointStyles as
+            | { tablet?: Record<string, number | undefined>; mobile?: Record<string, number | undefined> }
+            | undefined,
           backgroundColor: b.backgroundColor as string | undefined,
           columns: cols.map((col) => ({
             width: (col.width ?? '1/1') as ColWidth,

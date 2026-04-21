@@ -572,6 +572,216 @@ function FieldEditor({ blockId, field, value }: FieldEditorProps) {
   return <TextFieldEditor blockId={blockId} field={field} value={value} />;
 }
 
+// ─── Section Height panel — unified bidirectional slider ──────────────────────
+// One control for "make this section taller or shorter", driven by a single
+// signed value:
+//    v < 0  → shrink by overriding the block's built-in padding (reduces height)
+//    v = 0  → no override (natural section height)
+//    v > 0  → grow by setting min-height
+// Tabs switch which breakpoint the value targets (desktop / tablet / mobile).
+
+type BreakpointKey = 'desktop' | 'tablet' | 'mobile';
+
+const SECTION_HEIGHT_MIN = -240;
+const SECTION_HEIGHT_MAX = 800;
+const SECTION_HEIGHT_STEP = 10;
+/** Assumed default top/bottom padding of most brand-book .sp blocks — used
+ *  when translating the slider's negative zone into padding overrides. */
+const APPROX_DEFAULT_PAD = 120;
+/** Baseline min-height when the slider is in the positive zone (the user's
+ *  grow delta is added on top). Picked to feel like "make it at least big
+ *  enough to fill a reasonable hero". */
+const GROW_BASELINE = 400;
+
+type SectionHeightValues = {
+  paddingTop?: number;
+  paddingBottom?: number;
+  minHeight?: number;
+};
+
+function readSectionHeight(values: SectionHeightValues | undefined | null): number {
+  if (!values) return 0;
+  if (values.minHeight != null && values.minHeight > 0) {
+    // Grow zone.
+    return Math.max(1, values.minHeight - GROW_BASELINE);
+  }
+  const pt = values.paddingTop;
+  const pb = values.paddingBottom;
+  // Treat symmetric padding overrides as shrink.
+  if (pt != null && pb != null && pt === pb) {
+    if (pt >= APPROX_DEFAULT_PAD) return 0;
+    // v = 2 * (pad - default). At pad=0: v=-240. At pad=120: v=0.
+    return Math.max(SECTION_HEIGHT_MIN, Math.round(2 * (pt - APPROX_DEFAULT_PAD)));
+  }
+  return 0;
+}
+
+function writeSectionHeight(v: number): SectionHeightValues {
+  if (v === 0) return {};
+  if (v < 0) {
+    // Shrink: symmetric padding override. pad = max(0, default + v/2).
+    // At v=-240: pad=0. At v=-120: pad=60. At v=0: pad=120 (default).
+    const pad = Math.max(0, APPROX_DEFAULT_PAD + Math.floor(v / 2));
+    return { paddingTop: pad, paddingBottom: pad, minHeight: undefined };
+  }
+  // Grow: min-height baseline + delta.
+  return { paddingTop: undefined, paddingBottom: undefined, minHeight: GROW_BASELINE + v };
+}
+
+type SectionHeightPanelProps = {
+  styles?: BlockStyles;
+  onUpdate: (styles: Partial<BlockStyles>) => void;
+};
+
+function SectionHeightPanel({ styles, onUpdate }: SectionHeightPanelProps) {
+  const [activeBp, setActiveBp] = useState<BreakpointKey>('desktop');
+
+  // Read the raw per-breakpoint values for the active tab.
+  const activeValues: SectionHeightValues = (() => {
+    if (activeBp === 'desktop') {
+      return {
+        paddingTop: styles?.paddingTop,
+        paddingBottom: styles?.paddingBottom,
+        minHeight: styles?.minHeight,
+      };
+    }
+    const bp = activeBp === 'tablet' ? styles?.tablet : styles?.mobile;
+    return {
+      paddingTop: bp?.paddingTop,
+      paddingBottom: bp?.paddingBottom,
+      minHeight: bp?.minHeight,
+    };
+  })();
+
+  const sliderValue = readSectionHeight(activeValues);
+
+  function applyValue(v: number) {
+    const next = writeSectionHeight(v);
+    if (activeBp === 'desktop') {
+      onUpdate({
+        paddingTop: next.paddingTop,
+        paddingBottom: next.paddingBottom,
+        minHeight: next.minHeight,
+      });
+      return;
+    }
+    // Write into the tablet / mobile sub-object. Merge with existing overrides
+    // so other fields (paddingLeft, marginTop, etc.) aren't clobbered.
+    const existing = activeBp === 'tablet' ? styles?.tablet : styles?.mobile;
+    const merged = { ...existing, ...next };
+    // Strip undefined so BreakpointOverrides stays clean.
+    const cleaned: Record<string, number | string | undefined> = {};
+    for (const [key, val] of Object.entries(merged)) {
+      if (val !== undefined) cleaned[key] = val;
+    }
+    onUpdate({ [activeBp]: Object.keys(cleaned).length > 0 ? cleaned : undefined } as Partial<BlockStyles>);
+  }
+
+  const readout = (() => {
+    if (sliderValue === 0) return 'default';
+    if (sliderValue < 0) {
+      const pad = Math.max(0, APPROX_DEFAULT_PAD + Math.floor(sliderValue / 2));
+      return pad === 0 ? 'shrink: tightest' : `shrink: pad ${pad}px`;
+    }
+    return `grow: min ${GROW_BASELINE + sliderValue}px`;
+  })();
+
+  const hasOverrideOnOtherBreakpoint = (key: BreakpointKey): boolean => {
+    if (key === 'desktop') {
+      return styles?.paddingTop != null || styles?.paddingBottom != null || styles?.minHeight != null;
+    }
+    const bp = key === 'tablet' ? styles?.tablet : styles?.mobile;
+    return bp?.paddingTop != null || bp?.paddingBottom != null || bp?.minHeight != null;
+  };
+
+  return (
+    <div
+      style={{
+        padding: '10px',
+        border: '1px solid #1e3a5f',
+        borderRadius: '6px',
+        background: '#0c1a24',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+      }}
+    >
+      {/* Breakpoint tabs */}
+      <div style={{ display: 'flex', gap: '4px' }}>
+        {(['desktop', 'tablet', 'mobile'] as const).map((bp) => {
+          const active = activeBp === bp;
+          const hasOverride = hasOverrideOnOtherBreakpoint(bp);
+          return (
+            <button
+              key={bp}
+              onClick={() => setActiveBp(bp)}
+              style={{
+                flex: 1,
+                padding: '6px 8px',
+                border: `1px solid ${active ? '#0ea5e9' : '#1e3a5f'}`,
+                background: active ? '#1e3a5f' : 'transparent',
+                color: active ? '#7dd3fc' : '#64748b',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: 600,
+                textTransform: 'capitalize',
+                cursor: 'pointer',
+                position: 'relative',
+              }}
+            >
+              {bp === 'desktop' ? '🖥 Desktop' : bp === 'tablet' ? '📱 Tablet' : '📲 Mobile'}
+              {hasOverride ? (
+                <span style={{ marginLeft: 4, color: '#0ea5e9' }}>●</span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+          <label style={{ ...labelStyle, color: '#7dd3fc', margin: 0 }}>Section Height</label>
+          <span style={{ color: '#7dd3fc', fontFamily: 'var(--admin-font-mono, monospace)', fontSize: 10 }}>
+            {readout}
+          </span>
+        </div>
+        <input
+          type="range"
+          min={SECTION_HEIGHT_MIN}
+          max={SECTION_HEIGHT_MAX}
+          step={SECTION_HEIGHT_STEP}
+          value={sliderValue}
+          onChange={(e) => applyValue(Number(e.target.value))}
+          style={{ width: '100%', accentColor: '#0ea5e9' }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#555', marginTop: 2 }}>
+          <span>shrink</span>
+          <span>default</span>
+          <span>grow</span>
+        </div>
+      </div>
+
+      {sliderValue !== 0 && (
+        <button
+          onClick={() => applyValue(0)}
+          style={{
+            padding: '4px 8px',
+            background: 'transparent',
+            border: '1px solid #1e3a5f',
+            color: '#64748b',
+            borderRadius: '4px',
+            fontSize: '10px',
+            cursor: 'pointer',
+          }}
+          title={`Reset ${activeBp} section height to default`}
+        >
+          Reset {activeBp}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── Shared style panel ───────────────────────────────────────────────────────
 
 type StylePanelProps = {
@@ -666,6 +876,8 @@ function StylesPanel({ styles, onUpdate, label, onLabelChange }: StylePanelProps
           {/* Spacing tab */}
           {tab === 'spacing' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <SectionHeightPanel styles={styles} onUpdate={onUpdate} />
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 {numField('paddingTop', 'Pad Top (px)')}
                 {numField('paddingBottom', 'Pad Bottom (px)')}

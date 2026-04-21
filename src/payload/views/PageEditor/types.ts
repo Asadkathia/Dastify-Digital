@@ -49,6 +49,7 @@ export type BreakpointOverrides = {
   fontSize?: number;
   textAlign?: 'left' | 'center' | 'right';
   maxWidth?: number;
+  minHeight?: number;
 };
 
 export type BlockStyles = {
@@ -78,6 +79,9 @@ export type BlockStyles = {
   hiddenOn?: Array<'desktop' | 'tablet' | 'mobile'>;
   // Max width
   maxWidth?: number;
+  // Min height — the simplest "make this section taller/shorter" control.
+  // Applied as CSS min-height so content can still grow past it.
+  minHeight?: number;
   // Background position (focal point for background images)
   backgroundPosition?: string;
   // Per-breakpoint overrides (applied on top of base values)

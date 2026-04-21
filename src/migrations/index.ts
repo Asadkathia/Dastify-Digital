@@ -11,6 +11,8 @@ import * as migration_20260417_sync_globals_id_sequences from './20260417_sync_g
 import * as migration_20260421_141934_collection_blocks_fields from './20260421_141934_collection_blocks_fields';
 import * as migration_20260421_152927_homepage_blocks_field from './20260421_152927_homepage_blocks_field';
 import * as migration_20260421_195925_section_block_spacing_fields from './20260421_195925_section_block_spacing_fields';
+import * as migration_20260421_201250_section_block_min_height from './20260421_201250_section_block_min_height';
+import * as migration_20260421_204703_section_block_breakpoint_styles from './20260421_204703_section_block_breakpoint_styles';
 
 export const migrations = [
   {
@@ -76,6 +78,16 @@ export const migrations = [
   {
     up: migration_20260421_195925_section_block_spacing_fields.up,
     down: migration_20260421_195925_section_block_spacing_fields.down,
-    name: '20260421_195925_section_block_spacing_fields'
+    name: '20260421_195925_section_block_spacing_fields',
+  },
+  {
+    up: migration_20260421_201250_section_block_min_height.up,
+    down: migration_20260421_201250_section_block_min_height.down,
+    name: '20260421_201250_section_block_min_height',
+  },
+  {
+    up: migration_20260421_204703_section_block_breakpoint_styles.up,
+    down: migration_20260421_204703_section_block_breakpoint_styles.down,
+    name: '20260421_204703_section_block_breakpoint_styles'
   },
 ];

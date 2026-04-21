@@ -22,6 +22,8 @@ import { migration as logoImageGlobals } from './20260417_0020_logo_image_global
 import { migration as canonicalSectionFields } from './20260420_0021_canonical_section_fields.ts';
 import { migration as collectionBlocksFields } from './20260421_0022_collection_blocks_fields.ts';
 import { migration as homepageBlocksField } from './20260421_0023_homepage_blocks_field.ts';
+import { migration as sectionBlockSpacingFields } from './20260421_0024_section_block_spacing_fields.ts';
+import { migration as sectionBlockBreakpointStyles } from './20260421_0025_section_block_breakpoint_styles.ts';
 
 export const migrations: Migration[] = [
   usersRole,
@@ -47,4 +49,6 @@ export const migrations: Migration[] = [
   canonicalSectionFields,
   collectionBlocksFields,
   homepageBlocksField,
+  sectionBlockSpacingFields,
+  sectionBlockBreakpointStyles,
 ];

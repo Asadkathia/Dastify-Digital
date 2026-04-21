@@ -37,6 +37,14 @@ export const SectionBlock: Block = {
     { name: 'marginTop', type: 'number' },
     { name: 'marginBottom', type: 'number' },
     { name: 'maxWidth', type: 'number', admin: { description: 'If set, the section is capped at this width and centred.' } },
+    { name: 'minHeight', type: 'number', admin: { description: 'Minimum section height in px. The one-control way to make a section taller. Content grows past this if needed.' } },
+    {
+      name: 'breakpointStyles',
+      type: 'json',
+      admin: {
+        description: 'Per-breakpoint overrides for tablet and mobile. Shape: { tablet?: BreakpointOverrides, mobile?: BreakpointOverrides }. Edited via the Spacing tab\'s breakpoint tabs.',
+      },
+    },
     { name: 'backgroundColor', type: 'text' },
     {
       name: 'columns',

@@ -5,6 +5,7 @@ import { temporal } from 'zundo';
 import type {
   BlockInstance,
   BlockStyles,
+  BreakpointOverrides,
   ColumnInstance,
   ColumnWidth,
   ResponsiveMode,
@@ -958,6 +959,12 @@ export function serializeSectionsForPayload(sections: SectionInstance[]): Record
     marginTop: section.styles?.marginTop,
     marginBottom: section.styles?.marginBottom,
     maxWidth: section.styles?.maxWidth,
+    minHeight: section.styles?.minHeight,
+    // Per-breakpoint overrides — persisted as one JSON blob so future fields
+    // can be added without schema migrations.
+    breakpointStyles: (section.styles?.tablet || section.styles?.mobile)
+      ? { tablet: section.styles?.tablet, mobile: section.styles?.mobile }
+      : undefined,
     backgroundColor: section.styles?.backgroundColor,
     columns: section.columns.map((col) => ({
       id: col.id,
@@ -1042,6 +1049,13 @@ export function deserializeSectionsFromPayload(payloadBlocks: PayloadBlock[]): S
           marginTop: typeof raw.marginTop === 'number' ? raw.marginTop : undefined,
           marginBottom: typeof raw.marginBottom === 'number' ? raw.marginBottom : undefined,
           maxWidth: typeof raw.maxWidth === 'number' ? raw.maxWidth : undefined,
+          minHeight: typeof raw.minHeight === 'number' ? raw.minHeight : undefined,
+          ...(raw.breakpointStyles && typeof raw.breakpointStyles === 'object'
+            ? {
+                tablet: (raw.breakpointStyles as Record<string, unknown>).tablet as BreakpointOverrides | undefined,
+                mobile: (raw.breakpointStyles as Record<string, unknown>).mobile as BreakpointOverrides | undefined,
+              }
+            : {}),
           backgroundColor: typeof raw.backgroundColor === 'string' ? raw.backgroundColor : undefined,
         },
       });

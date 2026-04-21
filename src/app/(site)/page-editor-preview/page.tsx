@@ -1031,22 +1031,46 @@ function SectionsLayout({
           ? undefined
           : section.columns.map((c) => COL_FRACTION[c.width] ?? '1fr').join(' ');
 
-        // Emit scoped !important CSS targeting the inner block so the preview
-        // can actually reduce the section (overriding the child's class CSS).
-        // Keep all other styling (background, opacity, etc.) as wrapper inline.
-        const innerDecls: string[] = [];
-        if (sectionStyles?.paddingTop != null) innerDecls.push(`padding-top: ${sectionStyles.paddingTop}px !important`);
-        if (sectionStyles?.paddingBottom != null) innerDecls.push(`padding-bottom: ${sectionStyles.paddingBottom}px !important`);
-        if (sectionStyles?.paddingLeft != null) innerDecls.push(`padding-left: ${sectionStyles.paddingLeft}px !important`);
-        if (sectionStyles?.paddingRight != null) innerDecls.push(`padding-right: ${sectionStyles.paddingRight}px !important`);
-        if (sectionStyles?.maxWidth != null) {
-          innerDecls.push(`max-width: ${sectionStyles.maxWidth}px !important`);
-          innerDecls.push('margin-left: auto !important');
-          innerDecls.push('margin-right: auto !important');
+        // Collect padding/maxWidth/minHeight → "inner" (scoped !important CSS
+        // targeting .sp). Collect margin → wrapper style. This lets the preview
+        // actually REDUCE a section's size the same way the live page does.
+        function collectFromSource(src: Partial<typeof sectionStyles> | undefined): string[] {
+          const decls: string[] = [];
+          if (!src) return decls;
+          if (src.paddingTop != null) decls.push(`padding-top: ${src.paddingTop}px !important`);
+          if (src.paddingBottom != null) decls.push(`padding-bottom: ${src.paddingBottom}px !important`);
+          if (src.paddingLeft != null) decls.push(`padding-left: ${src.paddingLeft}px !important`);
+          if (src.paddingRight != null) decls.push(`padding-right: ${src.paddingRight}px !important`);
+          if (src.maxWidth != null) {
+            decls.push(`max-width: ${src.maxWidth}px !important`);
+            decls.push('margin-left: auto !important');
+            decls.push('margin-right: auto !important');
+          }
+          if (src.minHeight != null) {
+            decls.push(`min-height: ${src.minHeight}px !important`);
+            decls.push('display: flex !important');
+            decls.push('flex-direction: column !important');
+            decls.push('justify-content: center !important');
+          }
+          return decls;
         }
-        const scopedCss = innerDecls.length > 0
-          ? `[data-dnd-section-id="${section.id}"] > div > :is(section, div, article, main) { ${innerDecls.join('; ')}; }`
-          : '';
+
+        const innerDesktop = collectFromSource(sectionStyles);
+        const innerTablet = collectFromSource(sectionStyles?.tablet);
+        const innerMobile = collectFromSource(sectionStyles?.mobile);
+
+        const selector = `[data-dnd-section-id="${section.id}"] .sp, ` +
+          `[data-dnd-section-id="${section.id}"] > div > div > :is(section, div, article, main)`;
+
+        const cssParts: string[] = [];
+        if (innerDesktop.length > 0) cssParts.push(`${selector} { ${innerDesktop.join('; ')}; }`);
+        if (innerTablet.length > 0) {
+          cssParts.push(`@media (max-width: 1100px) { ${selector} { ${innerTablet.join('; ')}; } }`);
+        }
+        if (innerMobile.length > 0) {
+          cssParts.push(`@media (max-width: 768px) { ${selector} { ${innerMobile.join('; ')}; } }`);
+        }
+        const scopedCss = cssParts.join('\n');
 
         return (
           <div
