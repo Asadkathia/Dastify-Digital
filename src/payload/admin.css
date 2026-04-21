@@ -1,0 +1,33 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * Admin UI global styles for custom views (PageEditor, PageConverter,
+ * ConvertedPages, etc.). Layered on top of Payload's built-in admin styles.
+ *
+ * Focus states: most custom views use `outline: none` on inputs/buttons which
+ * removes the browser default without providing a replacement. This file adds
+ * a consistent cyan focus ring to every focusable element inside a
+ * `data-admin-view` scope so keyboard users can see where they are.
+ *
+ * Design tokens (--admin-*) are defined in ./views/_shared/theme.css.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+@import url("./views/_shared/theme.css");
+
+[data-admin-view] button:focus-visible,
+[data-admin-view] a:focus-visible,
+[data-admin-view] input:focus-visible,
+[data-admin-view] textarea:focus-visible,
+[data-admin-view] select:focus-visible,
+[data-admin-view] summary:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 2px;
+  border-radius: var(--admin-radius-sm);
+}
+
+/* Inputs: give the whole input a visible focus ring, not just the outline. */
+[data-admin-view] input:focus,
+[data-admin-view] textarea:focus,
+[data-admin-view] select:focus {
+  border-color: var(--admin-accent) !important;
+  outline: 1px solid rgba(14, 165, 233, 0.4);
+  outline-offset: 0;
+}

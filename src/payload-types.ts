@@ -1260,14 +1260,112 @@ export interface AnnouncementBarBlock {
  */
 export interface Service {
   id: number;
+  /**
+   * Service name shown in the accordion header (e.g. "Healthcare SEO").
+   */
   title: string;
   /**
    * URL-safe identifier. Lowercase letters, numbers, and hyphens only. Example: about-us
    */
   slug: string;
+  /**
+   * Sort order in the services accordion. Lower numbers appear first. The "01 / 02 / 03" prefix on the page is auto-derived from this.
+   */
+  displayOrder: number;
+  /**
+   * One-line summary shown under the service name in the accordion row.
+   */
+  tagline?: string | null;
   excerpt?: string | null;
+  /**
+   * Heading above the outcomes list in the expanded panel.
+   */
+  outcomesTitle?: string | null;
+  /**
+   * Bullet list of deliverables or results shown when the accordion row is expanded.
+   */
+  outcomes?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Call-to-action shown inside the expanded panel.
+   */
+  cta?: {
+    label?: string | null;
+    href?: string | null;
+  };
+  /**
+   * Used on the standalone /services/[slug] detail page as the hero.
+   */
   heroImage?: (number | null) | Media;
-  content: string;
+  /**
+   * Preview image revealed on hover inside the services accordion (brand book §06).
+   */
+  hoverImage?: (number | null) | Media;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Full converted page layout. When populated, /services/[slug] renders these blocks pixel-perfect instead of the default layout. Imported automatically via the Service Converter.
+   */
+  blocks?:
+    | (
+        | SectionBlock
+        | HeroBlock
+        | RichTextBlock
+        | TextImageBlock
+        | CtaBlock
+        | FaqBlock
+        | StatsBlock
+        | TestimonialsBlock
+        | TwoColBlock
+        | ThreeColBlock
+        | PricingBlock
+        | LogoCarouselBlock
+        | VideoEmbedBlock
+        | SpacerBlock
+        | AccordionBlock
+        | CardGridBlock
+        | ButtonBlock
+        | HeadingBlock
+        | ImageBlock
+        | AlertBlock
+        | TabsBlock
+        | SocialIconsBlock
+        | CustomHtmlBlock
+        | CounterBlock
+        | ProgressBarBlock
+        | ImageGalleryBlock
+        | FormBlock
+        | QuoteBlock
+        | DividerBlock
+        | IconBlock
+        | FeatureListBlock
+        | TeamGridBlock
+        | BlogFeedBlock
+        | MapBlock
+        | CountdownBlock
+        | TableBlock
+        | TimelineBlock
+        | StepsBlock
+        | AnnouncementBarBlock
+      )[]
+    | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1300,10 +1398,97 @@ export interface CaseStudy {
    * URL-safe identifier. Lowercase letters, numbers, and hyphens only. Example: about-us
    */
   slug: string;
-  excerpt?: string | null;
+  /**
+   * Client / practice name shown prominently on the case-study card.
+   */
   client?: string | null;
+  excerpt?: string | null;
+  /**
+   * When true, this case study occupies the large featured slot in the section layout (brand book §05).
+   */
+  featured?: boolean | null;
+  /**
+   * Lowercase slug used by the case-studies section tabbed filter (e.g. "dental", "fertility"). Leave blank for untagged.
+   */
+  filterTag?: string | null;
   featuredImage?: (number | null) | Media;
-  content: string;
+  /**
+   * Up to 5 prominently-displayed metrics (e.g. "$2.4M new patient revenue"). Drives the "Stats prominently displayed" treatment from brand book §05.
+   */
+  stats?:
+    | {
+        /**
+         * Big number (e.g. "$2.4M", "47", "95%").
+         */
+        value: string;
+        /**
+         * Short caption under the number (e.g. "New patient revenue").
+         */
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Full converted page layout. When populated, /case-studies/[slug] renders these blocks pixel-perfect instead of the default layout. Imported automatically via the Case Study Converter.
+   */
+  blocks?:
+    | (
+        | SectionBlock
+        | HeroBlock
+        | RichTextBlock
+        | TextImageBlock
+        | CtaBlock
+        | FaqBlock
+        | StatsBlock
+        | TestimonialsBlock
+        | TwoColBlock
+        | ThreeColBlock
+        | PricingBlock
+        | LogoCarouselBlock
+        | VideoEmbedBlock
+        | SpacerBlock
+        | AccordionBlock
+        | CardGridBlock
+        | ButtonBlock
+        | HeadingBlock
+        | ImageBlock
+        | AlertBlock
+        | TabsBlock
+        | SocialIconsBlock
+        | CustomHtmlBlock
+        | CounterBlock
+        | ProgressBarBlock
+        | ImageGalleryBlock
+        | FormBlock
+        | QuoteBlock
+        | DividerBlock
+        | IconBlock
+        | FeatureListBlock
+        | TeamGridBlock
+        | BlogFeedBlock
+        | MapBlock
+        | CountdownBlock
+        | TableBlock
+        | TimelineBlock
+        | StepsBlock
+        | AnnouncementBarBlock
+      )[]
+    | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1372,7 +1557,67 @@ export interface BlogPost {
   featuredImage?: (number | null) | Media;
   categories?: (number | BlogCategory)[] | null;
   tags?: (number | Tag)[] | null;
-  content: string;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Full converted page layout. When populated, /blog/[slug] renders these blocks pixel-perfect instead of the default layout. Imported automatically via the Blog Post Converter.
+   */
+  blocks?:
+    | (
+        | SectionBlock
+        | HeroBlock
+        | RichTextBlock
+        | TextImageBlock
+        | CtaBlock
+        | FaqBlock
+        | StatsBlock
+        | TestimonialsBlock
+        | TwoColBlock
+        | ThreeColBlock
+        | PricingBlock
+        | LogoCarouselBlock
+        | VideoEmbedBlock
+        | SpacerBlock
+        | AccordionBlock
+        | CardGridBlock
+        | ButtonBlock
+        | HeadingBlock
+        | ImageBlock
+        | AlertBlock
+        | TabsBlock
+        | SocialIconsBlock
+        | CustomHtmlBlock
+        | CounterBlock
+        | ProgressBarBlock
+        | ImageGalleryBlock
+        | FormBlock
+        | QuoteBlock
+        | DividerBlock
+        | IconBlock
+        | FeatureListBlock
+        | TeamGridBlock
+        | BlogFeedBlock
+        | MapBlock
+        | CountdownBlock
+        | TableBlock
+        | TimelineBlock
+        | StepsBlock
+        | AnnouncementBarBlock
+      )[]
+    | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -2493,9 +2738,68 @@ export interface AnnouncementBarBlockSelect<T extends boolean = true> {
 export interface ServicesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
+  displayOrder?: T;
+  tagline?: T;
   excerpt?: T;
+  outcomesTitle?: T;
+  outcomes?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  cta?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+      };
   heroImage?: T;
+  hoverImage?: T;
   content?: T;
+  blocks?:
+    | T
+    | {
+        'section-block'?: T | SectionBlockSelect<T>;
+        'hero-block'?: T | HeroBlockSelect<T>;
+        'rich-text-block'?: T | RichTextBlockSelect<T>;
+        'text-image-block'?: T | TextImageBlockSelect<T>;
+        'cta-block'?: T | CtaBlockSelect<T>;
+        'faq-block'?: T | FaqBlockSelect<T>;
+        'stats-block'?: T | StatsBlockSelect<T>;
+        'testimonials-block'?: T | TestimonialsBlockSelect<T>;
+        'two-col-block'?: T | TwoColBlockSelect<T>;
+        'three-col-block'?: T | ThreeColBlockSelect<T>;
+        'pricing-block'?: T | PricingBlockSelect<T>;
+        'logo-carousel-block'?: T | LogoCarouselBlockSelect<T>;
+        'video-embed-block'?: T | VideoEmbedBlockSelect<T>;
+        'spacer-block'?: T | SpacerBlockSelect<T>;
+        'accordion-block'?: T | AccordionBlockSelect<T>;
+        'card-grid-block'?: T | CardGridBlockSelect<T>;
+        'button-block'?: T | ButtonBlockSelect<T>;
+        'heading-block'?: T | HeadingBlockSelect<T>;
+        'image-block'?: T | ImageBlockSelect<T>;
+        'alert-block'?: T | AlertBlockSelect<T>;
+        'tabs-block'?: T | TabsBlockSelect<T>;
+        'social-icons-block'?: T | SocialIconsBlockSelect<T>;
+        'custom-html-block'?: T | CustomHtmlBlockSelect<T>;
+        'counter-block'?: T | CounterBlockSelect<T>;
+        'progress-bar-block'?: T | ProgressBarBlockSelect<T>;
+        'image-gallery-block'?: T | ImageGalleryBlockSelect<T>;
+        'form-block'?: T | FormBlockSelect<T>;
+        'quote-block'?: T | QuoteBlockSelect<T>;
+        'divider-block'?: T | DividerBlockSelect<T>;
+        'icon-block'?: T | IconBlockSelect<T>;
+        'feature-list-block'?: T | FeatureListBlockSelect<T>;
+        'team-grid-block'?: T | TeamGridBlockSelect<T>;
+        'blog-feed-block'?: T | BlogFeedBlockSelect<T>;
+        'map-block'?: T | MapBlockSelect<T>;
+        'countdown-block'?: T | CountdownBlockSelect<T>;
+        'table-block'?: T | TableBlockSelect<T>;
+        'timeline-block'?: T | TimelineBlockSelect<T>;
+        'steps-block'?: T | StepsBlockSelect<T>;
+        'announcement-bar-block'?: T | AnnouncementBarBlockSelect<T>;
+      };
   meta?:
     | T
     | {
@@ -2517,10 +2821,62 @@ export interface ServicesSelect<T extends boolean = true> {
 export interface CaseStudiesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
-  excerpt?: T;
   client?: T;
+  excerpt?: T;
+  featured?: T;
+  filterTag?: T;
   featuredImage?: T;
+  stats?:
+    | T
+    | {
+        value?: T;
+        label?: T;
+        id?: T;
+      };
   content?: T;
+  blocks?:
+    | T
+    | {
+        'section-block'?: T | SectionBlockSelect<T>;
+        'hero-block'?: T | HeroBlockSelect<T>;
+        'rich-text-block'?: T | RichTextBlockSelect<T>;
+        'text-image-block'?: T | TextImageBlockSelect<T>;
+        'cta-block'?: T | CtaBlockSelect<T>;
+        'faq-block'?: T | FaqBlockSelect<T>;
+        'stats-block'?: T | StatsBlockSelect<T>;
+        'testimonials-block'?: T | TestimonialsBlockSelect<T>;
+        'two-col-block'?: T | TwoColBlockSelect<T>;
+        'three-col-block'?: T | ThreeColBlockSelect<T>;
+        'pricing-block'?: T | PricingBlockSelect<T>;
+        'logo-carousel-block'?: T | LogoCarouselBlockSelect<T>;
+        'video-embed-block'?: T | VideoEmbedBlockSelect<T>;
+        'spacer-block'?: T | SpacerBlockSelect<T>;
+        'accordion-block'?: T | AccordionBlockSelect<T>;
+        'card-grid-block'?: T | CardGridBlockSelect<T>;
+        'button-block'?: T | ButtonBlockSelect<T>;
+        'heading-block'?: T | HeadingBlockSelect<T>;
+        'image-block'?: T | ImageBlockSelect<T>;
+        'alert-block'?: T | AlertBlockSelect<T>;
+        'tabs-block'?: T | TabsBlockSelect<T>;
+        'social-icons-block'?: T | SocialIconsBlockSelect<T>;
+        'custom-html-block'?: T | CustomHtmlBlockSelect<T>;
+        'counter-block'?: T | CounterBlockSelect<T>;
+        'progress-bar-block'?: T | ProgressBarBlockSelect<T>;
+        'image-gallery-block'?: T | ImageGalleryBlockSelect<T>;
+        'form-block'?: T | FormBlockSelect<T>;
+        'quote-block'?: T | QuoteBlockSelect<T>;
+        'divider-block'?: T | DividerBlockSelect<T>;
+        'icon-block'?: T | IconBlockSelect<T>;
+        'feature-list-block'?: T | FeatureListBlockSelect<T>;
+        'team-grid-block'?: T | TeamGridBlockSelect<T>;
+        'blog-feed-block'?: T | BlogFeedBlockSelect<T>;
+        'map-block'?: T | MapBlockSelect<T>;
+        'countdown-block'?: T | CountdownBlockSelect<T>;
+        'table-block'?: T | TableBlockSelect<T>;
+        'timeline-block'?: T | TimelineBlockSelect<T>;
+        'steps-block'?: T | StepsBlockSelect<T>;
+        'announcement-bar-block'?: T | AnnouncementBarBlockSelect<T>;
+      };
   meta?:
     | T
     | {
@@ -2571,6 +2927,49 @@ export interface BlogPostsSelect<T extends boolean = true> {
   categories?: T;
   tags?: T;
   content?: T;
+  blocks?:
+    | T
+    | {
+        'section-block'?: T | SectionBlockSelect<T>;
+        'hero-block'?: T | HeroBlockSelect<T>;
+        'rich-text-block'?: T | RichTextBlockSelect<T>;
+        'text-image-block'?: T | TextImageBlockSelect<T>;
+        'cta-block'?: T | CtaBlockSelect<T>;
+        'faq-block'?: T | FaqBlockSelect<T>;
+        'stats-block'?: T | StatsBlockSelect<T>;
+        'testimonials-block'?: T | TestimonialsBlockSelect<T>;
+        'two-col-block'?: T | TwoColBlockSelect<T>;
+        'three-col-block'?: T | ThreeColBlockSelect<T>;
+        'pricing-block'?: T | PricingBlockSelect<T>;
+        'logo-carousel-block'?: T | LogoCarouselBlockSelect<T>;
+        'video-embed-block'?: T | VideoEmbedBlockSelect<T>;
+        'spacer-block'?: T | SpacerBlockSelect<T>;
+        'accordion-block'?: T | AccordionBlockSelect<T>;
+        'card-grid-block'?: T | CardGridBlockSelect<T>;
+        'button-block'?: T | ButtonBlockSelect<T>;
+        'heading-block'?: T | HeadingBlockSelect<T>;
+        'image-block'?: T | ImageBlockSelect<T>;
+        'alert-block'?: T | AlertBlockSelect<T>;
+        'tabs-block'?: T | TabsBlockSelect<T>;
+        'social-icons-block'?: T | SocialIconsBlockSelect<T>;
+        'custom-html-block'?: T | CustomHtmlBlockSelect<T>;
+        'counter-block'?: T | CounterBlockSelect<T>;
+        'progress-bar-block'?: T | ProgressBarBlockSelect<T>;
+        'image-gallery-block'?: T | ImageGalleryBlockSelect<T>;
+        'form-block'?: T | FormBlockSelect<T>;
+        'quote-block'?: T | QuoteBlockSelect<T>;
+        'divider-block'?: T | DividerBlockSelect<T>;
+        'icon-block'?: T | IconBlockSelect<T>;
+        'feature-list-block'?: T | FeatureListBlockSelect<T>;
+        'team-grid-block'?: T | TeamGridBlockSelect<T>;
+        'blog-feed-block'?: T | BlogFeedBlockSelect<T>;
+        'map-block'?: T | MapBlockSelect<T>;
+        'countdown-block'?: T | CountdownBlockSelect<T>;
+        'table-block'?: T | TableBlockSelect<T>;
+        'timeline-block'?: T | TimelineBlockSelect<T>;
+        'steps-block'?: T | StepsBlockSelect<T>;
+        'announcement-bar-block'?: T | AnnouncementBarBlockSelect<T>;
+      };
   meta?:
     | T
     | {

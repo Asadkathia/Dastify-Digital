@@ -1,4 +1,5 @@
 import type { ConvertedSectionEditorState } from '@/lib/converted-pages/types';
+import type { SectionType } from '@/lib/converted-pages/section-types';
 
 type EditableSection<T> = T & {
   editor?: ConvertedSectionEditorState;
@@ -49,6 +50,8 @@ export type PageContent = {
     marqueeItems: string[];
   }>;
   services: EditableSection<{
+    sectionType?: SectionType;
+    sourceLimit?: number;
     chip: string;
     title: string;
     titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
@@ -206,6 +209,8 @@ export const defaultContent: PageContent = {
     ]
   },
   "services": {
+    "sectionType": "auto",
+    "sourceLimit": 10,
     "chip": "What We Do",
     "title": "Full-funnel healthcare marketing—built for compliance.",
     "intro": "Click any service to see what's included and the outcomes we deliver.",

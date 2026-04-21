@@ -1,5 +1,6 @@
 'use client';
 
+import '../../admin.css';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RedirectsPanel } from './RedirectsPanel';
@@ -1051,6 +1052,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
 
   return (
     <div
+      data-admin-view="page-editor"
       style={{
         display: 'flex',
         flexDirection: 'column',

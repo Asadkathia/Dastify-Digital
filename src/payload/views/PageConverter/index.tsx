@@ -1,5 +1,6 @@
 'use client';
 
+import '../../admin.css';
 import { useState, useMemo } from 'react';
 import type { AIProvider } from '@/lib/import-agent/types';
 import { resolveModel } from '@/lib/ai/default-models';
@@ -122,7 +123,7 @@ export default function PageConverterView() {
   }
 
   return (
-    <div style={{ padding: 24, color: '#ddd', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', minHeight: '100vh' }}>
+    <div data-admin-view="page-converter" style={{ padding: 24, color: '#ddd', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', minHeight: '100vh' }}>
       <h1 style={{ marginTop: 0, fontSize: 22, marginBottom: 4 }}>Page Converter</h1>
       <p style={{ margin: '0 0 20px', color: '#888', fontSize: 13, maxWidth: 800 }}>
         Converts raw HTML into pixel-perfect Next.js TSX components — same pattern as the homepage.
@@ -143,7 +144,7 @@ export default function PageConverterView() {
               placeholder="services"
               style={inputStyle}
             />
-            <p style={{ margin: '4px 0 10px', fontSize: 11, color: '#555' }}>
+            <p style={{ margin: '4px 0 10px', fontSize: 11, color: '#9ca3af' }}>
               Creates <code style={{ color: '#93c5fd' }}>src/app/(site)/{'{pageName}'}/page.tsx</code>
             </p>
 
@@ -227,7 +228,7 @@ export default function PageConverterView() {
 
             {raw && (
               <details style={{ marginTop: 10 }}>
-                <summary style={{ cursor: 'pointer', color: '#666', fontSize: 12 }}>Raw AI response</summary>
+                <summary style={{ cursor: 'pointer', color: '#9ca3af', fontSize: 12 }}>Raw AI response</summary>
                 <pre style={{ whiteSpace: 'pre-wrap', fontSize: 10, color: '#888', marginTop: 6 }}>{raw}</pre>
               </details>
             )}
@@ -243,7 +244,7 @@ export default function PageConverterView() {
                 <span style={{ fontSize: 13, color: '#86efac', fontWeight: 600 }}>
                   ✓ {result.files.length} files generated
                 </span>
-                <span style={{ fontSize: 12, color: '#555', marginLeft: 12 }}>
+                <span style={{ fontSize: 12, color: '#9ca3af', marginLeft: 12 }}>
                   /{result.pageName}/
                 </span>
               </div>
@@ -361,7 +362,7 @@ const panelStyle: React.CSSProperties = {
 const panelTitle: React.CSSProperties = {
   margin: '0 0 14px',
   fontSize: 11,
-  color: '#555',
+  color: '#9ca3af',
   textTransform: 'uppercase',
   letterSpacing: '0.10em',
 };
@@ -369,7 +370,7 @@ const panelTitle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: 12,
-  color: '#777',
+  color: '#9ca3af',
   marginBottom: 5,
   marginTop: 12,
 };

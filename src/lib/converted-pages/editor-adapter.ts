@@ -116,6 +116,25 @@ const FIELD_BUILDERS_BY_TAIL: Record<string, FieldBuilder> = {
   image: (name, label) => ({ name, type: 'upload', label }),
   logoimage: (name, label) => ({ name, type: 'upload', label }),
   icon: (name, label) => ({ name, type: 'icon-upload', label }),
+  // Section-type selector: picks which collection backs this card-shaped
+  // section. Matches the Dastify brand book canonical section types
+  // (blog-posts §08, services §06, case-studies §05). 'auto' uses convention
+  // detection from the section key. 'static' falls back to hand-entered data
+  // (brand book Rule 01 default). See src/lib/converted-pages/section-types.ts.
+  sectiontype: buildSelectField([
+    { label: 'Auto-detect from section key', value: 'auto' },
+    { label: 'Blog Posts (collection)', value: 'blog-posts' },
+    { label: 'Services (collection)', value: 'services' },
+    { label: 'Case Studies (collection)', value: 'case-studies' },
+    { label: 'Static (hand-entered below)', value: 'static' },
+  ]),
+  // `source` is a secondary filter mode within a collection-backed section.
+  // Only relevant when sectionType is a collection (not 'static'/'auto').
+  source: buildSelectField([
+    { label: 'Latest', value: 'latest' },
+    { label: 'By category slug', value: 'category' },
+    { label: 'By tag slug', value: 'tag' },
+  ]),
   imagefit: buildSelectField([
     { label: 'Cover', value: 'cover' },
     { label: 'Contain', value: 'contain' },

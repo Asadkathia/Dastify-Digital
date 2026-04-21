@@ -147,6 +147,9 @@ const createConfig = async () => {
 
   return buildConfig({
   secret: process.env.PAYLOAD_SECRET || 'dev-payload-secret-change-me',
+  // Default Lexical editor for any richText field in any collection. Disabled
+  // via PAYLOAD_DISABLE_LEXICAL for emergency boot recovery; see flag comment.
+  ...(createRichTextEditor ? { editor: createRichTextEditor() as never } : {}),
   // CSRF allowlist: Payload rejects admin POSTs whose Origin header isn't in
   // this list. Must include every host the admin UI may be served from.
   csrf: csrfOrigins,
@@ -164,6 +167,9 @@ const createConfig = async () => {
     components: {
       beforeNavLinks: [
         '/src/payload/components/PageConverterNavLink#PageConverterNavLink',
+        '/src/payload/components/BlogPostConverterNavLink#BlogPostConverterNavLink',
+        '/src/payload/components/ServiceConverterNavLink#ServiceConverterNavLink',
+        '/src/payload/components/CaseStudyConverterNavLink#CaseStudyConverterNavLink',
       ],
       views: {
         visualEditor: {
@@ -177,6 +183,18 @@ const createConfig = async () => {
         pageConverter: {
           Component: '/src/payload/views/PageConverter/index#default',
           path: '/convert-page',
+        },
+        blogPostConverter: {
+          Component: '/src/payload/views/BlogPostConverter/index#default',
+          path: '/convert-blog-post',
+        },
+        serviceConverter: {
+          Component: '/src/payload/views/ServiceConverter/index#default',
+          path: '/convert-service',
+        },
+        caseStudyConverter: {
+          Component: '/src/payload/views/CaseStudyConverter/index#default',
+          path: '/convert-case-study',
         },
         convertedPages: {
           Component: '/src/payload/views/ConvertedPages/index#default',

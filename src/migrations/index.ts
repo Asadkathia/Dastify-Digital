@@ -8,6 +8,7 @@ import * as migration_20260416_footer_global from './20260416_footer_global';
 import * as migration_20260417_logo_image_globals from './20260417_logo_image_globals';
 import * as migration_20260417_fix_globals_id_sequences from './20260417_fix_globals_id_sequences';
 import * as migration_20260417_sync_globals_id_sequences from './20260417_sync_globals_id_sequences';
+import * as migration_20260421_141934_collection_blocks_fields from './20260421_141934_collection_blocks_fields';
 
 export const migrations = [
   {
@@ -59,5 +60,12 @@ export const migrations = [
     up: migration_20260417_sync_globals_id_sequences.up,
     down: migration_20260417_sync_globals_id_sequences.down,
     name: '20260417_sync_globals_id_sequences',
+  },
+  // Note: 20260420_canonical_section_fields was never applied to prod;
+  // its schema changes were bundled into 20260421_141934 by migrate:create.
+  {
+    up: migration_20260421_141934_collection_blocks_fields.up,
+    down: migration_20260421_141934_collection_blocks_fields.down,
+    name: '20260421_141934_collection_blocks_fields',
   },
 ];

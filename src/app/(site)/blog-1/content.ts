@@ -40,6 +40,21 @@ export type PageContent = {
     title: string;
     titleTag?: "h2" | "h3" | "h4";
     viewAll: { label: string; href: string };
+    /**
+     * Which collection feeds this section's cards.
+     *   "auto"         — convention-detect from section key (default; resolves to blog-posts here).
+     *   "blog-posts"   — pull from Blog Posts collection (brand book §08).
+     *   "services"     — pull from Services collection (brand book §06).
+     *   "case-studies" — pull from Case Studies collection (brand book §05).
+     *   "static"       — use hand-entered posts[] below (preserves brand book Rule 01).
+     * When not "static", posts[] is ignored; cards are fetched from the collection.
+     */
+    sectionType?: "auto" | "blog-posts" | "services" | "case-studies" | "static";
+    /** Secondary filter (only used with blog-posts / case-studies). */
+    source?: "latest" | "category" | "tag";
+    sourceLimit?: number;
+    sourceCategory?: string;
+    sourceTag?: string;
     posts: (PlaceholderMedia & { href: string; category: string; date: string; title: string; excerpt: string; linkLabel: string })[];
     pagination: { label: string; active?: boolean; isArrow?: boolean }[];
     editor?: EditorMeta;
@@ -231,6 +246,10 @@ export const defaultContent: PageContent = {
       "label": "View All Articles →",
       "href": "/blog"
     },
+    "sectionType": "auto",
+    "sourceLimit": 6,
+    "sourceCategory": "",
+    "sourceTag": "",
     "posts": [
       {
         "href": "/blog/hipaa-compliant-google-ads",

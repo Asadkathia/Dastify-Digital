@@ -1,5 +1,6 @@
 'use client';
 
+import '../../admin.css';
 import { useMemo, useState } from 'react';
 import type { AIProvider, ImportResponse } from '@/lib/import-agent/types';
 import { MODEL_OPTIONS_BY_PROVIDER, resolveModel } from '@/lib/ai/default-models';
@@ -119,7 +120,7 @@ export default function PageImporterView() {
   const report = result?.report;
 
   return (
-    <div style={{ padding: 24, color: '#ddd', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+    <div data-admin-view="page-importer" style={{ padding: 24, color: '#ddd', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
       <h1 style={{ marginTop: 0, fontSize: 24 }}>Page Importer</h1>
       <p style={{ marginTop: 0, color: '#888', maxWidth: 900 }}>
         Paste HTML (or fetch from URL), choose your AI provider/model, and import as a draft Payload page.
@@ -170,7 +171,7 @@ export default function PageImporterView() {
                 placeholder="about"
                 style={inputStyle}
               />
-              <p style={{ margin: '6px 0 0', fontSize: 11, color: '#666' }}>
+              <p style={{ margin: '6px 0 0', fontSize: 11, color: '#9ca3af' }}>
                 Reserved slugs: {reservedSlugsList().join(', ')}
               </p>
             </div>

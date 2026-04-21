@@ -1,0 +1,82 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * Admin views design system — CSS custom properties
+ *
+ * These variables are the SINGLE SOURCE OF TRUTH for colors, spacing,
+ * typography, and radii across all custom admin views (PageEditor,
+ * PageConverter, ConvertedPages, PageImporter, etc.).
+ *
+ * All new views should use these via var(--admin-*) in inline styles or via
+ * the `adminStyles` helpers in `./styles.ts`.
+ *
+ * Do not add one-off hex codes in view files. Add a new variable here instead.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ─── Backgrounds ──────────────────────────────────────────────────────── */
+  --admin-bg-primary: #0a0a0a;      /* deepest — top-level shell */
+  --admin-bg-secondary: #0f0f0f;    /* default view background */
+  --admin-bg-tertiary: #111;        /* panels */
+  --admin-bg-input: #0b0b0b;        /* inputs (darker than panels) */
+  --admin-bg-hover: #1a1a1a;        /* button/row hover state */
+  --admin-bg-active: #1e1e1e;       /* button/row pressed state */
+
+  /* ─── Text colors ──────────────────────────────────────────────────────── */
+  --admin-text-primary: #e0e0e0;    /* body text */
+  --admin-text-secondary: #cbd5e1;  /* labels, subtle emphasis */
+  --admin-text-tertiary: #9ca3af;   /* help text, secondary labels */
+  --admin-text-muted: #64748b;      /* placeholder, very low priority */
+  --admin-text-disabled: #475569;   /* disabled controls */
+
+  /* ─── Borders ──────────────────────────────────────────────────────────── */
+  --admin-border: #2a2a2a;          /* default border */
+  --admin-border-subtle: #1f1f1f;   /* section dividers */
+  --admin-border-strong: #3a3a3a;   /* emphasized border */
+
+  /* ─── Accent (primary) ────────────────────────────────────────────────── */
+  --admin-accent: #0ea5e9;          /* cyan — primary accent / focus ring */
+  --admin-accent-bg: #0c2533;       /* dark cyan — active tab/button bg */
+  --admin-accent-text: #7dd3fc;     /* light cyan — text on accent bg */
+
+  /* ─── Semantic colors ─────────────────────────────────────────────────── */
+  --admin-success: #10b981;
+  --admin-success-bg: #022c22;
+  --admin-success-text: #6ee7b7;
+
+  --admin-warning: #f59e0b;
+  --admin-warning-bg: #2a1b0a;
+  --admin-warning-text: #fcd34d;
+
+  --admin-danger: #dc2626;
+  --admin-danger-bg: #450a0a;
+  --admin-danger-text: #fecaca;
+
+  /* ─── Typography ──────────────────────────────────────────────────────── */
+  --admin-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --admin-font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --admin-text-xs: 10px;
+  --admin-text-sm: 11px;
+  --admin-text-base: 12px;
+  --admin-text-md: 13px;
+  --admin-text-lg: 14px;
+  --admin-text-xl: 16px;
+  --admin-text-2xl: 22px;
+
+  /* ─── Spacing scale (4px base) ────────────────────────────────────────── */
+  --admin-space-1: 4px;
+  --admin-space-2: 8px;
+  --admin-space-3: 12px;
+  --admin-space-4: 16px;
+  --admin-space-5: 20px;
+  --admin-space-6: 24px;
+
+  /* ─── Border radius ───────────────────────────────────────────────────── */
+  --admin-radius-sm: 4px;
+  --admin-radius-md: 6px;
+  --admin-radius-lg: 8px;
+  --admin-radius-xl: 12px;
+
+  /* ─── Shadows ─────────────────────────────────────────────────────────── */
+  --admin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --admin-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+}

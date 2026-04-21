@@ -24,6 +24,19 @@ export const excerptField: Field = {
   type: 'textarea',
 };
 
+/**
+ * Body-content field that prefers Lexical richText but falls back to textarea
+ * when `PAYLOAD_DISABLE_LEXICAL=true` is set (emergency boot recovery, see
+ * payload.config.ts for the kill-switch rationale).
+ */
+export function bodyContentField(name = 'content', required = true): Field {
+  const disableLexical = process.env.PAYLOAD_DISABLE_LEXICAL === 'true';
+  if (disableLexical) {
+    return { name, type: 'textarea', required };
+  }
+  return { name, type: 'richText', required };
+}
+
 export const publishedAtField: Field = {
   name: 'publishedAt',
   type: 'date',

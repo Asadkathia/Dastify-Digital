@@ -146,6 +146,85 @@ When a Payload collection/global saves, `revalidateCollectionChange` / `revalida
 
 ---
 
+## Brand book is authoritative for section vocabulary
+
+The Dastify brand book (`HTML-PAGES/dastify-brand-book (1).html` §05) defines 11 canonical section types. Every page on the site is a composition of some subset:
+
+1. Navigation · 2. Hero · 3. About · 4. Feature Strip · 5. Case Studies · 6. Services · 7. Mission · 8. Insights/Blog · 9. FAQ · 10. CTA · 11. Footer
+
+Three are **collection-backed** by design: Blog Posts (§08), Services (§06), Case Studies (§05). When a converted page has a card-shaped section matching one of these, the renderer can fetch from the corresponding collection instead of rendering hand-entered content. See `src/lib/converted-pages/section-types.ts`.
+
+### Brand book workflow rules that constrain code
+
+From §09 of the brand book:
+
+- **Rule 01: Preserve Provided Content — No Edits.** When AI converts an HTML page, the content.ts it generates is treated as verbatim client copy. The default `sectionType: "auto"` respects Rule 01 by rendering static posts[] first; marketing must explicitly switch to a collection-backed mode.
+- **Rule 02: Research-first.** No code implication beyond "don't auto-rewrite copy."
+- **Rule 03: Always Use Image Placeholders.** Every collection-backed renderer falls back to the brand's `.iph` placeholder component when an image is missing (see `BlogGrid.tsx`). Don't remove these fallbacks.
+
+### sectionType workflow
+
+On any card-shaped converted section (`BlogGrid`, `ServicesList`, `CaseStudiesGrid`):
+
+- `sectionType: "auto"` (default) → `resolveSectionType()` runs convention detection on the section key (e.g. `grid` → blog-posts, `services` → services, `work` → case-studies). Falls back to static if no match.
+- `sectionType: "blog-posts" | "services" | "case-studies"` → fetch from that collection, ignore static posts[].
+- `sectionType: "static"` → use posts[], don't fetch anything. Brand-book Rule 01 respect.
+
+Secondary filter `source` applies only when sectionType is a collection:
+- `"latest"` — sort descending, no filter
+- `"category"` — filter by `sourceCategory` slug (blog-posts)
+- `"tag"` — filter by `sourceTag` slug (blog-posts)
+
+Marketing can manually override auto-detection via the `sectionType` dropdown in the visual editor (registered in `editor-adapter.ts` field registry).
+
+### When adding a new collection-backed section type
+
+1. Add the collection slug to `CollectionSectionType` in `section-types.ts`.
+2. Add mapping logic to `mapDocToCard()` in `section-cards.ts` (pick category/date/href sensibly for the new type).
+3. Update the `sectiontype` entry in `editor-adapter.ts` `FIELD_BUILDERS_BY_TAIL`.
+4. Add a detection pattern in `CONVENTIONS`.
+5. Regenerate Payload types: `npm run payload:types`.
+
+## Admin UI design system
+
+Custom admin views live in `src/payload/views/`. The design system is in `src/payload/views/_shared/`:
+
+- **[theme.css](src/payload/views/_shared/theme.css)** — CSS custom properties (colors, spacing, typography, radii). Single source of truth. Imported by `src/payload/admin.css`.
+- **[styles.ts](src/payload/views/_shared/styles.ts)** — `adminStyles` object with pre-built `CSSProperties` that reference the tokens.
+- **[Button](src/payload/views/_shared/Button.tsx)** / **[Panel](src/payload/views/_shared/Panel.tsx)** / **[FormField](src/payload/views/_shared/FormField.tsx)** / **[StatusMessage](src/payload/views/_shared/StatusMessage.tsx)** — shared primitives.
+
+### Using the system
+
+Every custom view should:
+1. Start with `import '../../admin.css';` to pull in the focus styles and theme tokens
+2. Wrap its root `<div>` with `data-admin-view="<name>"` so the scoped CSS applies
+3. Use `adminStyles.*` and the shared components instead of hand-rolled hex colors
+
+```tsx
+'use client';
+import '../../admin.css';
+import { adminStyles, Button, StatusMessage } from '../_shared';
+
+export default function MyView() {
+  return (
+    <div data-admin-view="my-view" style={adminStyles.container}>
+      <h1 style={adminStyles.heading1}>My View</h1>
+      <Button variant="primary">Save</Button>
+      <StatusMessage tone="success">Done</StatusMessage>
+    </div>
+  );
+}
+```
+
+### Reference implementation
+
+[ConvertedPages/index.tsx](src/payload/views/ConvertedPages/index.tsx) has been fully migrated and is the pattern to follow. Other views (PageConverter, PageImporter, PageEditor) still mix hardcoded hex codes with the design system — migrate them incrementally as you touch them.
+
+### When to add a new token vs. a new one-off style
+
+- If the color/spacing/radius appears in 2+ places → add a token in `theme.css`
+- If it's truly one-off → inline is fine, but don't add a new hex code without considering whether it's really one-off
+
 ## Don't do this
 
 - Don't add a fallback from `PREVIEW_SECRET` to `PAYLOAD_SECRET`. It reuses the admin credential.
