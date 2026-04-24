@@ -6,7 +6,7 @@ import { Icon } from './_icons';
 import { renderEmHtml } from './_emHtml';
 
 export default function GrowthFunnel({ data }: { data: HomepageContent['growthFunnel'] }) {
-  const [open, setOpen] = useState(0);
+  const [open, setOpen] = useState<number | null>(0);
 
   return (
     <section className="hp2-gf">
@@ -25,7 +25,7 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
             <div
               key={i}
               className={'hp2-gf__step' + (open === i ? ' is-open' : '')}
-              onClick={() => setOpen(i)}
+              onClick={() => setOpen((cur) => (cur === i ? null : i))}
             >
               <div className="hp2-gf__step-head">
                 <span className="hp2-gf__num">{s.num}</span>
