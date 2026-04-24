@@ -33,10 +33,10 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
                   <h3>{s.title}</h3>
                   <p>{s.sub}</p>
                 </div>
-                <span className="hp2-gf__chevron">{open === i ? '−' : '+'}</span>
+                <span className="hp2-gf__chevron" aria-hidden>+</span>
               </div>
-              {open === i && (
-                <div className="hp2-gf__step-body">
+              <div className="hp2-gf__step-body">
+                <div className="hp2-gf__step-body-inner">
                   <p className="hp2-gf__step-desc">{s.desc}</p>
                   <div className="hp2-gf__items">
                     {s.items.map((it, j) => (
@@ -50,7 +50,7 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
                     ))}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           ))}
         </div>

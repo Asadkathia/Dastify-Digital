@@ -3410,8 +3410,34 @@ body.mobile-menu-open {
   color: var(--ink-900);
 }
 .hp2-gf__step-title p { margin: 2px 0 0; font-size: 13px; color: var(--ink-500); }
-.hp2-gf__chevron { font-size: 22px; color: var(--ink-400); width: 32px; text-align: center; flex-shrink: 0; }
-.hp2-gf__step-body { padding: 0 24px 24px; }
+.hp2-gf__chevron {
+  font-size: 22px;
+  color: var(--ink-400);
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+  transition: transform .35s var(--expo), color .2s;
+}
+.hp2-gf__step.is-open .hp2-gf__chevron { transform: rotate(45deg); color: var(--primary); }
+
+.hp2-gf__step-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows .4s var(--expo);
+}
+.hp2-gf__step.is-open .hp2-gf__step-body { grid-template-rows: 1fr; }
+.hp2-gf__step-body-inner {
+  overflow: hidden;
+  padding: 0 24px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity .35s ease .05s, transform .35s var(--expo) .05s, padding-bottom .35s var(--expo);
+}
+.hp2-gf__step.is-open .hp2-gf__step-body-inner {
+  opacity: 1;
+  transform: translateY(0);
+  padding-bottom: 24px;
+}
 .hp2-gf__step-desc {
   margin: 0 0 16px;
   font-size: 15px;
