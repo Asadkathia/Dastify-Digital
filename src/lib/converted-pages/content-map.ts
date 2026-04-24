@@ -1,6 +1,22 @@
 import type { ConvertedPageContentConfig } from './types';
 
 const CONTENT_CONFIG: Record<string, ConvertedPageContentConfig> = {
+  home: {
+    pageName: 'home',
+    contentFile: 'src/app/(site)/home/content.ts',
+    sections: [
+      { key: 'hero',         label: 'Hero',          icon: '🦸' },
+      { key: 'trustBar',     label: 'Trust Bar',     icon: '🛡️' },
+      { key: 'services',     label: 'Services',      icon: '🧩' },
+      { key: 'results',      label: 'Results',       icon: '📈' },
+      { key: 'testimonial',  label: 'Testimonial',   icon: '💬' },
+      { key: 'weServe',      label: 'We Serve',      icon: '🩺' },
+      { key: 'aboutPreview', label: 'About Preview', icon: '📖' },
+      { key: 'pricing',      label: 'Pricing',       icon: '💰' },
+      { key: 'blogPreview',  label: 'Blog Preview',  icon: '📰' },
+      { key: 'finalCta',     label: 'Final CTA',     icon: '📢' },
+    ],
+  },
   demo: {
     pageName: 'demo',
     contentFile: 'src/app/(site)/demo/content.ts',
