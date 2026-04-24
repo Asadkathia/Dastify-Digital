@@ -2535,8 +2535,8 @@ body.mobile-menu-open {
 }
 .hp2-btn--md { padding: 12px 22px; font-size: 14px; }
 .hp2-btn--lg { padding: 15px 28px; font-size: 15px; }
-.hp2-btn--primary { background: var(--primary); color: #fff; }
-.hp2-btn--primary:hover { background: var(--primary-ink); transform: translateY(-1px); }
+.hp2-btn--primary { background: var(--primary); color: #fff; transition: background .2s var(--expo), transform .2s var(--expo), box-shadow .2s var(--expo); }
+.hp2-btn--primary:hover { background: var(--primary-ink); transform: translateY(-1px); box-shadow: 0 6px 16px color-mix(in srgb, var(--primary) 30%, transparent); }
 .hp2-btn--secondary { background: var(--ink-900); color: #fff; }
 .hp2-btn--secondary:hover { background: #000; transform: translateY(-1px); }
 .hp2-btn--outline-light {
@@ -2551,6 +2551,15 @@ body.mobile-menu-open {
   border: 1px solid rgba(255,255,255,.1);
 }
 .hp2-btn--ghost:hover { background: rgba(255,255,255,.1); }
+
+/* Light-background ghost variant for CTAs on white sections */
+.hp2-btn--ghost-light {
+  background: transparent;
+  color: var(--ink-900);
+  border: 1px solid var(--bd-md);
+  transition: background .2s var(--expo), border-color .2s var(--expo);
+}
+.hp2-btn--ghost-light:hover { background: var(--bg2); border-color: var(--primary); color: var(--primary); }
 
 /* ── animated stat ────────────────────────────────────────── */
 .hp2-stat { display: flex; flex-direction: column; gap: 4px; }
@@ -2847,7 +2856,10 @@ body.mobile-menu-open {
   letter-spacing: .06em;
   text-transform: uppercase;
   text-align: center;
+  opacity: .8;
+  transition: opacity .2s ease;
 }
+.hp2-trust-logos__placeholder:hover { opacity: 1; }
 
 /* ═══ TRUST BAR ═══════════════════════════════════════════ */
 .hp2-trustbar { background: #fff; padding: 48px 0; border-bottom: 1px solid var(--bd-lg); }
@@ -2892,7 +2904,7 @@ body.mobile-menu-open {
   border-radius: var(--radius-lg);
   transition: transform .2s var(--expo), box-shadow .2s ease, border-color .2s ease;
 }
-.hp2-svc:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--bd-dk); }
+.hp2-svc:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--primary); }
 .hp2-svc__head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
 .hp2-svc__icon {
   width: 44px;
@@ -3041,9 +3053,13 @@ body.mobile-menu-open {
   font-size: 16px;
   font-weight: 600;
   color: var(--ink-900);
-  transition: transform .2s var(--expo), background .2s ease;
+  cursor: pointer;
+  transition: background .2s var(--expo), border-color .2s var(--expo);
 }
-.hp2-weserve__card:hover { transform: translateY(-2px); background: #fff; box-shadow: var(--shadow-sm); }
+.hp2-weserve__card:hover {
+  background: color-mix(in srgb, var(--primary) 4%, #fff);
+  border-color: var(--primary);
+}
 .hp2-weserve__icon {
   width: 46px;
   height: 46px;
@@ -3073,7 +3089,7 @@ body.mobile-menu-open {
   margin-top: 28px;
   flex-wrap: wrap;
 }
-.hp2-about__stats > div { display: flex; flex-direction: column; }
+.hp2-about__stats > div { display: flex; flex-direction: column; padding-top: 12px; border-top: 2px solid var(--primary); }
 .hp2-about__stats b {
   font-family: var(--fd);
   font-size: 32px;
@@ -3166,14 +3182,19 @@ body.mobile-menu-open {
   backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
+  transition: transform .25s var(--expo), border-color .25s var(--expo), box-shadow .25s var(--expo);
 }
+.hp2-plan:hover { transform: translateY(-4px); border-color: rgba(255,255,255,.16); }
 .hp2-plan--featured {
   transform: translateY(-8px);
   background: linear-gradient(180deg, rgba(111,62,229,.18), rgba(111,62,229,.05));
   border-color: rgba(111,62,229,.4);
   box-shadow: 0 24px 60px rgba(111,62,229,.25);
 }
-@media (max-width: 900px) { .hp2-plan--featured { transform: none; } }
+.hp2-plan--featured:hover { transform: translateY(-12px); }
+@media (max-width: 900px) { .hp2-plan--featured,
+  .hp2-plan:hover,
+  .hp2-plan--featured:hover { transform: none; } }
 .hp2-plan__glow {
   position: absolute;
   inset: -1px;
@@ -3248,7 +3269,8 @@ body.mobile-menu-open {
   transition: background .15s ease, transform .15s ease;
 }
 .hp2-plan--featured .hp2-plan__cta { background: var(--accent); border-color: transparent; }
-.hp2-plan__cta:hover { transform: translateY(-2px); }
+.hp2-plan__cta { transition: transform .2s var(--expo), opacity .2s ease, background .2s ease; }
+.hp2-plan__cta:hover { transform: translateY(-1px); opacity: .88; }
 .hp2-pricing__note {
   text-align: center;
   margin-top: 32px;
