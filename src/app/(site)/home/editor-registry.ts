@@ -1,6 +1,7 @@
 import Hero from './components/Hero';
 import TrustBar from './components/TrustBar';
 import Services from './components/Services';
+import GrowthFunnel from './components/GrowthFunnel';
 import Results from './components/Results';
 import Testimonial from './components/Testimonial';
 import WeServe from './components/WeServe';
@@ -20,6 +21,7 @@ const registry: ConvertedPageRegistry = {
     { key: 'hero',         label: 'Hero',          icon: '🦸', className: 'hp2-hero',        Component: Hero as never },
     { key: 'trustBar',     label: 'Trust Bar',     icon: '🛡️', className: 'hp2-trustbar',    Component: TrustBar as never },
     { key: 'services',     label: 'Services',      icon: '🧩', className: 'hp2-services',    Component: Services as never },
+    { key: 'growthFunnel', label: 'Growth Funnel', icon: '🔻', className: 'hp2-gf',          Component: GrowthFunnel as never },
     { key: 'results',      label: 'Results',       icon: '📈', className: 'hp2-results',     Component: Results as never },
     { key: 'testimonial',  label: 'Testimonial',   icon: '💬', className: 'hp2-testimonial', Component: Testimonial as never },
     { key: 'weServe',      label: 'We Serve',      icon: '🩺', className: 'hp2-weserve',     Component: WeServe as never },

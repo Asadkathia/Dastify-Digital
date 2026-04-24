@@ -3,6 +3,7 @@ import type { ConvertedPageRegistry } from './types';
 type RegistryLoader = () => Promise<{ default: ConvertedPageRegistry }>;
 
 const REGISTRY_LOADERS: Record<string, RegistryLoader> = {
+  home: () => import('@/app/(site)/home/editor-registry'),
   about: () => import('@/app/(site)/about/editor-registry'),
   'services-convert': () => import('@/app/(site)/services-convert/editor-registry'),
   demo: () => import('@/app/(site)/demo/editor-registry'),

@@ -4,6 +4,7 @@ import { Icon } from './_icons';
 
 export default function AboutPreview({ data }: { data: HomepageContent['aboutPreview'] }) {
   return (
+    <div className="hp2-section-tinted">
     <section className="hp2-about">
       <div className="hp2-wrap">
         <div className="hp2-about__layout">
@@ -37,5 +38,6 @@ export default function AboutPreview({ data }: { data: HomepageContent['aboutPre
         </div>
       </div>
     </section>
+    </div>
   );
 }

@@ -26,8 +26,6 @@ function HeroA({ data }: { data: HomepageContent['hero'] }) {
   return (
     <section className="hp2-hero hp2-hero--a">
       <div className="hp2-hero__grid-bg" aria-hidden="true" />
-      <div className="hp2-hero__orb hp2-hero__orb--1" aria-hidden="true" />
-      <div className="hp2-hero__orb hp2-hero__orb--2" aria-hidden="true" />
       <div className="hp2-hero__inner">
         <div className="hp2-hero__left">
           <div className="hp2-hero__kicker">
@@ -66,8 +64,6 @@ function HeroB({ data }: { data: HomepageContent['hero'] }) {
   return (
     <section className="hp2-hero hp2-hero--b">
       <div className="hp2-hero__grid-bg" aria-hidden="true" />
-      <div className="hp2-hero__orb hp2-hero__orb--1" aria-hidden="true" />
-      <div className="hp2-hero__orb hp2-hero__orb--2" aria-hidden="true" />
       <div className="hp2-hero--b__inner">
         <div className="hp2-hero--b__eyebrow">
           <i className="hp2-hero__dot" />

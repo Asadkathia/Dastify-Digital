@@ -55,6 +55,19 @@ export type BlogPostPreview = {
   href?: string;
 };
 
+export type GrowthFunnelStepItem = {
+  n: string;
+  d: string;
+};
+
+export type GrowthFunnelStep = {
+  num: string;
+  title: string;
+  sub: string;
+  desc: string;
+  items: GrowthFunnelStepItem[];
+};
+
 export type HomepageContent = {
   heroVariant: 'A' | 'B' | 'C';
 
@@ -92,6 +105,16 @@ export type HomepageContent = {
     titleTail: string;
     intro: string;
     items: ServiceItem[];
+  };
+
+  growthFunnel: {
+    eyebrow: string;
+    titleLead: string;
+    titleEm: string;
+    intro: string;
+    steps: GrowthFunnelStep[];
+    ctaLabel: string;
+    ctaHref: string;
   };
 
   results: {
@@ -254,6 +277,68 @@ export const homepageContent: HomepageContent = {
         icon: 'chart',
         name: 'Reporting & Attribution',
         description: 'Lead-to-patient attribution wired into your EHR. Know exactly which campaigns drive booked surgeries, not just form fills.',
+      },
+    ],
+  },
+
+  growthFunnel: {
+    eyebrow: 'Not an Average Digital Marketing Agency',
+    titleLead: 'We created a 4-step',
+    titleEm: '<em>Growth Funnel</em> for Healthcare',
+    intro:
+      'From ambitious clinics to hyperscaling provider groups, we engineer smarter healthcare marketing that outperforms generic agencies.',
+    ctaLabel: 'Get a Tailored Marketing Plan',
+    ctaHref: '/book-session',
+    steps: [
+      {
+        num: '01',
+        title: 'Foundation & Awareness',
+        sub: 'Build Your Brand',
+        desc: 'Create a strong, memorable brand that patients recognize and trust.',
+        items: [
+          { n: 'Branding & Identity', d: 'Craft a distinctive healthcare brand that resonates with your ideal patients.' },
+          { n: 'Graphic & Logo Design', d: 'Professional visual assets that convey trust, credibility, and medical expertise.' },
+          { n: 'Content Marketing', d: 'Educational blogs, guides, and articles that establish thought leadership.' },
+          { n: 'Email Marketing', d: 'Nurture sequences that keep your practice top-of-mind with prospects.' },
+          { n: 'Video Marketing', d: 'Patient testimonials, procedure explainers, and doctor profiles that humanize your brand.' },
+        ],
+      },
+      {
+        num: '02',
+        title: 'Visibility & Discovery',
+        sub: 'Get Found Online',
+        desc: 'Dominate search results and appear exactly where patients are looking.',
+        items: [
+          { n: 'SEO', d: 'Rank #1 for high-intent keywords like “dentist near me” or “orthopedic surgeon.”' },
+          { n: 'Website Design & Dev', d: 'Fast, mobile-first, HIPAA-compliant websites that convert visitors into appointments.' },
+          { n: 'Local SEO & GBP', d: 'Dominate the local map pack and drive foot traffic from nearby patients.' },
+          { n: 'Medical Copywriting', d: 'Compelling, compliant website copy that speaks to patient pain points.' },
+        ],
+      },
+      {
+        num: '03',
+        title: 'Conversion & Acquisition',
+        sub: 'Drive Patient Appointments',
+        desc: 'Turn online visibility into booked appointments with targeted campaigns.',
+        items: [
+          { n: 'Medical PPC / Google Ads', d: 'High-ROI paid search campaigns targeting patients actively seeking care.' },
+          { n: 'Social Media Ads', d: 'Precision-targeted Facebook & Instagram ads for new patient acquisition.' },
+          { n: 'Landing Page Optimization', d: 'Conversion-focused pages that turn clicks into confirmed appointments.' },
+          { n: 'Analytics & Tracking', d: 'Full-funnel attribution so you know exactly which campaigns drive revenue.' },
+        ],
+      },
+      {
+        num: '04',
+        title: 'Loyalty & Growth',
+        sub: 'Engage & Retain',
+        desc: 'Build lasting relationships, earn 5-star reviews, and turn patients into referral sources.',
+        items: [
+          { n: 'Social Media Management', d: 'Consistent, engaging social presence that builds community and trust.' },
+          { n: 'Reputation Management', d: 'Proactive review generation and monitoring across Google, Healthgrades, and Yelp.' },
+          { n: 'Patient Retention', d: 'Automated recall, re-engagement, and loyalty email sequences.' },
+          { n: 'Referral Programs', d: 'Structured referral systems that turn happy patients into your best marketers.' },
+          { n: 'SMS & WhatsApp', d: 'Appointment reminders and follow-ups that reduce no-shows by up to 40%.' },
+        ],
       },
     ],
   },

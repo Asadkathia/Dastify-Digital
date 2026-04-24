@@ -128,6 +128,33 @@ const servicesFields: Field[] = [
   },
 ];
 
+const growthFunnelFields: Field[] = [
+  { name: 'eyebrow', type: 'text' },
+  { name: 'titleLead', type: 'text' },
+  { name: 'titleEm', type: 'text' },
+  { name: 'intro', type: 'textarea' },
+  { name: 'ctaLabel', type: 'text' },
+  { name: 'ctaHref', type: 'text' },
+  {
+    name: 'steps',
+    type: 'array',
+    fields: [
+      { name: 'num', type: 'text' },
+      { name: 'title', type: 'text' },
+      { name: 'sub', type: 'text' },
+      { name: 'desc', type: 'textarea' },
+      {
+        name: 'items',
+        type: 'array',
+        fields: [
+          { name: 'n', type: 'text' },
+          { name: 'd', type: 'textarea' },
+        ],
+      },
+    ],
+  },
+];
+
 const resultsFields: Field[] = [
   { name: 'eyebrow', type: 'text' },
   { name: 'titleLead', type: 'text' },
@@ -327,6 +354,7 @@ export const Homepage: GlobalConfig = {
           label: 'Services + Results',
           fields: [
             { name: 'services', type: 'group', defaultValue: homepageContent.services, fields: servicesFields },
+            { name: 'growthFunnel', type: 'group', defaultValue: homepageContent.growthFunnel, fields: growthFunnelFields },
             { name: 'results', type: 'group', defaultValue: homepageContent.results, fields: resultsFields },
           ],
         },
