@@ -1,13 +1,8 @@
 import type { Metadata } from 'next';
+import type { ComponentType } from 'react';
 import { ScrollRevealController } from '@/app/components/home/ScrollRevealController';
 import { SiteNavbar } from '@/components/SiteNavbar';
-import AboutHero from '@/app/(site)/about/components/AboutHero';
-import AboutManifesto from '@/app/(site)/about/components/AboutManifesto';
-import AboutDifference from '@/app/(site)/about/components/AboutDifference';
-import AboutStory from '@/app/(site)/about/components/AboutStory';
-import AboutTeam from '@/app/(site)/about/components/AboutTeam';
-import AboutValues from '@/app/(site)/about/components/AboutValues';
-import AboutCta from '@/app/(site)/about/components/AboutCta';
+import registry from '@/app/(site)/about/editor-registry';
 import { defaultContent } from '@/app/(site)/about/content';
 import { getNavigation, getFooter } from '@/lib/cms/queries';
 import { SiteFooter } from '@/components/SiteFooter';
@@ -20,27 +15,20 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ConvertedAboutPreviewPage() {
-  const [content, nav, footer] = await Promise.all([
-    Promise.resolve(defaultContent),
-    getNavigation(),
-    getFooter(),
-  ]);
+  const [nav, footer] = await Promise.all([getNavigation(), getFooter()]);
+  const content = defaultContent as unknown as Record<string, unknown>;
 
   return (
     <>
       <ScrollRevealController />
-      <SiteNavbar nav={nav} activePath="/about" navClassName="about-nav" linkListClassName="about-nav-links" ctaClassName="about-btn-nav" />
+      <SiteNavbar nav={nav} activePath="/about" />
       <main>
-        <AboutHero data={content.hero} />
-        <AboutManifesto data={content.manifesto} />
-        <AboutDifference data={content.difference} />
-        <AboutStory data={content.story} />
-        <AboutTeam data={content.team} />
-        <AboutValues data={content.values} />
-        <AboutCta data={content.cta} />
+        {registry.sections.map((section) => {
+          const Component = section.Component as ComponentType<{ data: unknown }>;
+          return <Component key={section.key} data={content[section.key]} />;
+        })}
       </main>
       <SiteFooter footer={footer} />
     </>
   );
 }
-
