@@ -10,6 +10,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/contact-2',
+        destination: '/contact',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default withPayload(nextConfig);

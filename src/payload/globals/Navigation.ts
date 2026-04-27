@@ -19,7 +19,6 @@ export const Navigation: GlobalConfig = {
         '/work',
         '/insights',
         '/contact',
-        '/contact-2',
         '/blog',
         '/blog-1',
         '/blog-post',

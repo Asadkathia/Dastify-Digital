@@ -47,7 +47,6 @@ export const Footer: GlobalConfig = {
         '/work',
         '/insights',
         '/contact',
-        '/contact-2',
         '/blog',
         '/blog-1',
         '/blog-post',
