@@ -58,7 +58,7 @@ async function main(): Promise<void> {
     }
 
     await client.execute({
-      sql: `UPDATE pages SET converted_content = '{}' WHERE ${where}`,
+      sql: `UPDATE pages SET converted_content = NULL WHERE ${where}`,
       args: isAll ? [] : args,
     });
 
@@ -90,7 +90,7 @@ async function main(): Promise<void> {
       return;
     }
     await client.query(
-      `UPDATE pages SET converted_content = '{}'::jsonb WHERE ${where}`,
+      `UPDATE pages SET converted_content = NULL::jsonb WHERE ${where}`,
       isAll ? [] : args,
     );
     for (const row of before.rows) {
