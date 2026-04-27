@@ -18,6 +18,10 @@ export function isAdmin(req: PayloadRequest): boolean {
 }
 
 export function isAdminOrEditor(req: PayloadRequest): boolean {
-  const role = getUser(req)?.role;
+  const user = getUser(req);
+  if (!user) return false;
+  const role = user.role;
+  // Backward compatibility for users created before the `role` field existed.
+  if (!role) return true;
   return role === 'admin' || role === 'editor';
 }
