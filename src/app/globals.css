@@ -4573,3 +4573,35 @@ select.bk2-input { appearance: none; -webkit-appearance: none; background-image:
 .bp2-card__body { padding: 20px; }
 .bp2-card__title { font-size: 17px; font-weight: 700; letter-spacing: -.01em; margin: 10px 0 8px; line-height: 1.3; color: var(--ink-900); font-family: var(--fd); }
 .bp2-card__meta { font-size: 12px; color: var(--ink-500); opacity: .8; }
+
+
+/* ═══════════════════════════════════════════════
+   v2 ACCESSIBILITY — keyboard focus outlines
+═══════════════════════════════════════════════ */
+/* Hide outlines on mouse-focus, keep them on keyboard focus */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* Buttons / links / interactive cards on dark surfaces — light ring */
+.nav :focus-visible,
+.site-footer :focus-visible,
+[class*="hp2-hero"] :focus-visible,
+[class*="hp2-pricing"] :focus-visible,
+[class*="hp2-final"] :focus-visible,
+[class*="ab2-cta"] :focus-visible,
+[class*="sv2-cta"] :focus-visible,
+[class*="ct2-hero"] :focus-visible,
+[class*="bk2-hero"] :focus-visible,
+[class*="bp2-hero"] :focus-visible {
+  outline-color: var(--support);
+}
+/* Form inputs already render their own focus ring; suppress the outer
+   outline so we don't get a double ring */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
