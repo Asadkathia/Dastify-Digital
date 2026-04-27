@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local db backups
 /backups
+
+# graphify output
+/graphify-out

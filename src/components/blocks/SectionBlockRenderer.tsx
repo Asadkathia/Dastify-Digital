@@ -58,11 +58,18 @@ function collectDecls(src: SpacingSource): { target: string[]; wrapper: string[]
   return { target, wrapper };
 }
 
-/** Selectors that reach into the section to override block-level padding. */
+/** Selectors that reach into the section to override block-level padding.
+ *  Uses descendant combinators so the fix is depth-agnostic — works across
+ *  block types regardless of how many wrapper divs sit between the section
+ *  root and the block's own element. `:scope > * > * section` would miss
+ *  `.bai-sec` etc; we use a plain descendant selector instead. */
 function targetSelector(sectionId: string): string {
   return (
+    `[data-section-id="${sectionId}"] > section, ` +
+    `[data-section-id="${sectionId}"] > * > section, ` +
+    `[data-section-id="${sectionId}"] > * > * > section, ` +
     `[data-section-id="${sectionId}"] .sp, ` +
-    `[data-section-id="${sectionId}"] > div > div > :is(section, div, article, main)`
+    `[data-section-id="${sectionId}"] .bai-sec`
   );
 }
 

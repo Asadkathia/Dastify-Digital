@@ -14,7 +14,7 @@ export default function HomepageEditorButton() {
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 0' }}>
       <button
         type="button"
-        onClick={() => router.push('/admin/homepage-editor')}
+        onClick={() => router.push('/admin/edit-converted-page/home')}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -35,8 +35,24 @@ export default function HomepageEditorButton() {
         <span style={{ fontSize: '16px' }}>🎨</span>
         Open Visual Editor
       </button>
+      <button
+        type="button"
+        onClick={() => router.push('/admin/homepage-editor')}
+        style={{
+          background: 'transparent',
+          border: '1px solid #333',
+          borderRadius: '6px',
+          color: '#888',
+          cursor: 'pointer',
+          fontSize: '11px',
+          padding: '7px 12px',
+        }}
+        title="Legacy hp-* block editor (kept during transition)"
+      >
+        Legacy editor
+      </button>
       <span style={{ color: 'var(--theme-text-secondary, #888)', fontSize: '12px' }}>
-        Edit all homepage sections, blocks &amp; buttons visually
+        Unified editor — edit sections with the same UX as /about, /services-convert
       </span>
     </div>
   );
