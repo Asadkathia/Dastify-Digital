@@ -22,7 +22,11 @@ export default function Pricing({ data }: { data: HomepageContent['pricing'] }) 
             <p className="hp2-intro is-light">{data.intro}</p>
           </div>
           <div className="hp2-pricing__toggle-wrap">
-            <div className="hp2-pricing__toggle" role="tablist">
+            <div
+              className="hp2-pricing__toggle"
+              role="tablist"
+              data-active={annual ? 'annual' : 'monthly'}
+            >
               <button
                 type="button"
                 role="tab"
