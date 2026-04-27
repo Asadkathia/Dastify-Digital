@@ -1,58 +1,108 @@
-import { getPayload } from 'payload';
-import payloadConfig from '@payload-config';
+import { createClient as createSqliteClient } from '@libsql/client';
 
 /**
- * Wipe convertedContent JSON for one or more converted pages.
+ * Wipe converted_content for one or more converted pages — directly on the
+ * database (SQLite locally, Postgres on prod). Bypasses Payload's bootstrap
+ * because Payload's loadEnv shim is broken under our pinned Next.js build,
+ * which prevents getPayload() from initializing.
  *
  * Use after a PageContent shape change: when the new type differs from the
- * data already stored in convertedContent, the merge leaves new fields
- * undefined and the page crashes (e.g. renderEmHtml on an undefined string).
- * Resetting forces the public render to fall back to defaultContent in the
- * page's content.ts, which is what we want after a redesign rebuild.
+ * data already stored, the merge leaves new fields undefined and the page
+ * crashes (e.g. data.mission undefined → TypeError on render).
  *
  * Usage:
- *   node --import tsx scripts/reset-converted-content.ts about
- *   node --import tsx scripts/reset-converted-content.ts about services contact
- *   node --import tsx scripts/reset-converted-content.ts --all
+ *   npm run pages:reset -- about
+ *   npm run pages:reset -- about services-convert blog-1
+ *   npm run pages:reset -- --all
  */
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   if (args.length === 0) {
-    console.error('Usage: reset-converted-content <pageName...>  |  --all');
+    console.error('Usage: pages:reset <convertedPageName...>  |  --all');
     process.exitCode = 1;
     return;
   }
 
-  const payload = await getPayload({ config: await payloadConfig });
-
-  const where = args.includes('--all')
-    ? { convertedPageName: { exists: true } }
-    : { convertedPageName: { in: args } };
-
-  const found = await payload.find({
-    collection: 'pages',
-    where: where as never,
-    limit: 200,
-    depth: 0,
-  });
-
-  if (found.docs.length === 0) {
-    console.log('[reset-converted] No matching pages.');
+  const dbUri = process.env.DATABASE_URI;
+  if (!dbUri) {
+    console.error('[reset-converted] DATABASE_URI is not set.');
+    process.exitCode = 1;
     return;
   }
 
-  let updated = 0;
-  for (const doc of found.docs as Array<{ id: string | number; convertedPageName?: string; slug?: string }>) {
-    await payload.update({
-      collection: 'pages',
-      id: doc.id,
-      data: { convertedContent: {} } as never,
-    });
-    console.log(`[reset-converted] cleared convertedContent — ${doc.convertedPageName ?? '?'} (slug=${doc.slug ?? '?'}, id=${doc.id})`);
-    updated += 1;
+  const isAll = args.includes('--all');
+  const isSqlite = dbUri.startsWith('file:');
+  const isPg = /^postgres(ql)?:\/\//i.test(dbUri);
+
+  if (!isSqlite && !isPg) {
+    console.error(`[reset-converted] Unsupported DATABASE_URI scheme: ${dbUri.split(':')[0]}`);
+    process.exitCode = 1;
+    return;
   }
 
-  console.log(`[reset-converted] Done. ${updated} page(s) reset.`);
+  if (isSqlite) {
+    const client = createSqliteClient({ url: dbUri });
+    const where = isAll
+      ? 'converted_page_name IS NOT NULL'
+      : `converted_page_name IN (${args.map(() => '?').join(',')})`;
+
+    const before = await client.execute({
+      sql: `SELECT id, slug, converted_page_name FROM pages WHERE ${where}`,
+      args: isAll ? [] : args,
+    });
+
+    if (before.rows.length === 0) {
+      console.log('[reset-converted] No matching pages.');
+      client.close();
+      return;
+    }
+
+    await client.execute({
+      sql: `UPDATE pages SET converted_content = '{}' WHERE ${where}`,
+      args: isAll ? [] : args,
+    });
+
+    for (const row of before.rows) {
+      console.log(
+        `[reset-converted] cleared — ${row.converted_page_name} (slug=${row.slug}, id=${row.id})`,
+      );
+    }
+    console.log(`[reset-converted] Done. ${before.rows.length} page(s) reset.`);
+    client.close();
+    return;
+  }
+
+  // Postgres
+  const { default: pg } = await import('pg');
+  const pool = new pg.Pool({ connectionString: dbUri });
+  const client = await pool.connect();
+  try {
+    const placeholders = args.map((_, i) => `$${i + 1}`).join(',');
+    const where = isAll
+      ? 'converted_page_name IS NOT NULL'
+      : `converted_page_name IN (${placeholders})`;
+    const before = await client.query(
+      `SELECT id, slug, converted_page_name FROM pages WHERE ${where}`,
+      isAll ? [] : args,
+    );
+    if (before.rowCount === 0) {
+      console.log('[reset-converted] No matching pages.');
+      return;
+    }
+    await client.query(
+      `UPDATE pages SET converted_content = '{}'::jsonb WHERE ${where}`,
+      isAll ? [] : args,
+    );
+    for (const row of before.rows) {
+      console.log(
+        `[reset-converted] cleared — ${row.converted_page_name} (slug=${row.slug}, id=${row.id})`,
+      );
+    }
+    console.log(`[reset-converted] Done. ${before.rowCount} page(s) reset.`);
+  } finally {
+    client.release();
+    await pool.end();
+  }
 }
 
 main().catch((err) => {
