@@ -11,6 +11,7 @@ const REGISTRY_LOADERS: Record<string, RegistryLoader> = {
   'blog-post': () => import('@/app/(site)/blog-post/editor-registry'),
   'blog-1': () => import('@/app/(site)/blog-1/editor-registry'),
   'case-studies': () => import('@/app/(site)/case-studies/editor-registry'),
+  'book-session': () => import('@/app/(site)/book-session/editor-registry'),
 };
 export function getSupportedConvertedPages(): string[] {
   return Object.keys(REGISTRY_LOADERS);

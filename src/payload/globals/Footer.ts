@@ -52,6 +52,7 @@ export const Footer: GlobalConfig = {
         '/blog-post',
         '/case-studies',
         '/demo',
+        '/book-session',
       ]),
     ],
   },

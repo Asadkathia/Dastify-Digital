@@ -24,6 +24,7 @@ export const Navigation: GlobalConfig = {
         '/blog-post',
         '/case-studies',
         '/demo',
+        '/book-session',
       ]),
     ],
   },
