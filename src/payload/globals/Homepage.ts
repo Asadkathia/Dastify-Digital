@@ -1,365 +1,297 @@
-import type { Field, GlobalConfig } from 'payload';
+import type { Field, GlobalBeforeChangeHook, GlobalConfig } from 'payload';
 import { homepageContent } from '../../lib/homepage-content.ts';
-import type { HomepageContent } from '../../lib/homepage-content.ts';
-import { resolveHomepageContent } from '../../lib/resolve-homepage-content.ts';
 import { isAdminOrEditor } from '../access.ts';
 import { revalidateGlobalChange } from '../hooks/revalidate.ts';
 import { pageBuilderBlocks } from '../blocks/index.ts';
 
-const linkFields: Field[] = [
-  { name: 'label', type: 'text', required: true },
-  { name: 'href', type: 'text', required: true },
-];
-
-const headingLineFields: Field[] = [
-  { name: 'text', type: 'text', required: true },
-  { name: 'delay', type: 'number' },
-  { name: 'colorVar', type: 'text' },
-];
-
-/** Structured link value stored by the visual editor for CTA buttons */
-const ctaLinkFields: Field[] = [
-  { name: 'url', type: 'text' },
-  {
-    name: 'type',
-    type: 'select',
-    options: [
-      { label: 'Internal Page', value: 'internal' },
-      { label: 'External URL', value: 'external' },
-      { label: 'Anchor (#)', value: 'anchor' },
-    ],
-    defaultValue: 'internal',
-  },
-  { name: 'openInNewTab', type: 'checkbox', defaultValue: false },
-];
-
-function ctaLinkGroup(name: string, label: string): Field {
-  return { name, type: 'group', label, fields: ctaLinkFields };
-}
-
-const STRUCTURED_SECTION_KEYS = [
-  'nav',
-  'hero',
-  'brandAcronym',
-  'about',
-  'features',
-  'caseStudies',
-  'services',
-  'mission',
-  'insights',
-  'faq',
-  'cta',
-  'footer',
-] as const;
+// ─── Preview URL ─────────────────────────────────────────────────────────────
 
 function getHomepagePreviewURL(slug = '/'): string | null {
   const secret = process.env.PREVIEW_SECRET;
-  const params = new URLSearchParams({
-    slug,
-  });
-
-  if (secret) {
-    params.set('secret', secret);
-  }
-
+  const params = new URLSearchParams({ slug });
+  if (secret) params.set('secret', secret);
   return `/api/preview?${params.toString()}`;
 }
 
-function toAdminShape(content: HomepageContent) {
-  return {
-    ...content,
-    hero: {
-      ...content.hero,
-      marquee: content.hero.marquee.map((text) => ({ text })),
-    },
-    about: {
-      ...content.about,
-      paragraphs: content.about.paragraphs.map((text) => ({ text })),
-    },
-    services: {
-      ...content.services,
-      titleLines: content.services.titleLines.map((text) => ({ text })),
-    },
-    mission: {
-      ...content.mission,
-      checks: content.mission.checks.map((text) => ({ text })),
-    },
-  };
+// ─── Orphan-row trap fix (see Footer.ts for why) ─────────────────────────────
+//
+// The v2 homepage has nested arrays inside `group` fields (e.g.
+// `hero.proofStats`, `services.items`, `pricing.plans[].features`). Payload
+// 3.x's upsertRow for globals with nested arrays can leave orphans that then
+// collide on UNIQUE PK. Stripping `id` on every array row forces fresh UUIDs.
+function stripIdsFromArray(items: unknown): void {
+  if (!Array.isArray(items)) return;
+  for (const item of items) {
+    if (!item || typeof item !== 'object') continue;
+    const record = item as Record<string, unknown>;
+    delete record.id;
+    for (const val of Object.values(record)) {
+      if (Array.isArray(val)) stripIdsFromArray(val);
+    }
+  }
 }
 
-function hasStructuredInput(value: unknown): value is Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return false;
-  }
-  const record = value as Record<string, unknown>;
-  return STRUCTURED_SECTION_KEYS.some((key) => typeof record[key] === 'object' && record[key] !== null);
-}
-
-function mergeStructuredInput(base: HomepageContent, input: Record<string, unknown>): Record<string, unknown> {
-  return {
-    ...base,
-    nav: typeof input.nav === 'object' && input.nav !== null ? { ...base.nav, ...(input.nav as Record<string, unknown>) } : base.nav,
-    hero:
-      typeof input.hero === 'object' && input.hero !== null ? { ...base.hero, ...(input.hero as Record<string, unknown>) } : base.hero,
-    brandAcronym:
-      typeof input.brandAcronym === 'object' && input.brandAcronym !== null
-        ? { ...base.brandAcronym, ...(input.brandAcronym as Record<string, unknown>) }
-        : base.brandAcronym,
-    about:
-      typeof input.about === 'object' && input.about !== null
-        ? { ...base.about, ...(input.about as Record<string, unknown>) }
-        : base.about,
-    features:
-      typeof input.features === 'object' && input.features !== null
-        ? { ...base.features, ...(input.features as Record<string, unknown>) }
-        : base.features,
-    caseStudies:
-      typeof input.caseStudies === 'object' && input.caseStudies !== null
-        ? { ...base.caseStudies, ...(input.caseStudies as Record<string, unknown>) }
-        : base.caseStudies,
-    services:
-      typeof input.services === 'object' && input.services !== null
-        ? { ...base.services, ...(input.services as Record<string, unknown>) }
-        : base.services,
-    mission:
-      typeof input.mission === 'object' && input.mission !== null
-        ? { ...base.mission, ...(input.mission as Record<string, unknown>) }
-        : base.mission,
-    insights:
-      typeof input.insights === 'object' && input.insights !== null
-        ? { ...base.insights, ...(input.insights as Record<string, unknown>) }
-        : base.insights,
-    faq:
-      typeof input.faq === 'object' && input.faq !== null ? { ...base.faq, ...(input.faq as Record<string, unknown>) } : base.faq,
-    cta:
-      typeof input.cta === 'object' && input.cta !== null ? { ...base.cta, ...(input.cta as Record<string, unknown>) } : base.cta,
-    footer:
-      typeof input.footer === 'object' && input.footer !== null
-        ? { ...base.footer, ...(input.footer as Record<string, unknown>) }
-        : base.footer,
-  };
-}
-
-function mergeAdminShape(
-  current: Record<string, unknown>,
-  adminShape: Record<string, unknown>,
-): Record<string, unknown> {
-  const merged: Record<string, unknown> = {
-    ...current,
-    ...adminShape,
-  };
-
-  for (const key of STRUCTURED_SECTION_KEYS) {
-    const currentSection = current[key];
-    const nextSection = adminShape[key];
-    if (
-      typeof currentSection === 'object' &&
-      currentSection !== null &&
-      !Array.isArray(currentSection) &&
-      typeof nextSection === 'object' &&
-      nextSection !== null &&
-      !Array.isArray(nextSection)
-    ) {
-      merged[key] = {
-        ...(currentSection as Record<string, unknown>),
-        ...(nextSection as Record<string, unknown>),
-      };
+const stripNestedArrayIds: GlobalBeforeChangeHook = ({ data }) => {
+  if (!data || typeof data !== 'object') return data;
+  const d = data as Record<string, unknown>;
+  for (const key of Object.keys(d)) {
+    const group = d[key];
+    if (!group || typeof group !== 'object' || Array.isArray(group)) continue;
+    const record = group as Record<string, unknown>;
+    for (const val of Object.values(record)) {
+      if (Array.isArray(val)) stripIdsFromArray(val);
     }
   }
+  return data;
+};
 
-  return merged;
-}
+// ─── Field builders for the v2 sections ──────────────────────────────────────
 
-function mergeStructuredRecords(base: Record<string, unknown>, input: Record<string, unknown>): Record<string, unknown> {
-  const merged: Record<string, unknown> = {
-    ...base,
-    ...input,
-  };
+const linkGroup = (name: string): Field => ({
+  name,
+  type: 'group',
+  fields: [
+    { name: 'label', type: 'text' },
+    { name: 'href', type: 'text' },
+  ],
+});
 
-  for (const key of STRUCTURED_SECTION_KEYS) {
-    const baseSection = base[key];
-    const inputSection = input[key];
-    if (
-      typeof baseSection === 'object' &&
-      baseSection !== null &&
-      !Array.isArray(baseSection) &&
-      typeof inputSection === 'object' &&
-      inputSection !== null &&
-      !Array.isArray(inputSection)
-    ) {
-      merged[key] = {
-        ...(baseSection as Record<string, unknown>),
-        ...(inputSection as Record<string, unknown>),
-      };
-    }
-  }
+const heroFields: Field[] = [
+  { name: 'kicker', type: 'text' },
+  { name: 'eyebrow', type: 'text' },
+  { name: 'badge', type: 'text' },
+  { name: 'headingA', type: 'textarea' },
+  { name: 'headingB', type: 'textarea' },
+  { name: 'headingC', type: 'textarea' },
+  { name: 'subA', type: 'textarea' },
+  { name: 'subB', type: 'textarea' },
+  { name: 'subC', type: 'textarea' },
+  linkGroup('primaryCta'),
+  linkGroup('secondaryCta'),
+  { name: 'phone', type: 'text' },
+  {
+    name: 'proofStats',
+    type: 'array',
+    fields: [
+      { name: 'value', type: 'text' },
+      { name: 'label', type: 'text' },
+      { name: 'sublabel', type: 'text' },
+    ],
+  },
+  {
+    name: 'statTiles',
+    type: 'array',
+    fields: [
+      { name: 'value', type: 'text' },
+      { name: 'label', type: 'text' },
+      { name: 'sublabel', type: 'text' },
+    ],
+  },
+  {
+    name: 'ticker',
+    type: 'array',
+    fields: [{ name: 'text', type: 'text' }],
+  },
+  { name: 'image', type: 'text' },
+  { name: 'imageAlt', type: 'text' },
+  { name: 'trustLogosLabel', type: 'text' },
+  {
+    name: 'trustLogos',
+    type: 'array',
+    fields: [
+      { name: 'slug', type: 'text' },
+      { name: 'label', type: 'text' },
+      { name: 'src', type: 'text' },
+    ],
+  },
+];
 
-  return merged;
-}
+const trustBarFields: Field[] = [
+  { name: 'label', type: 'text' },
+  { name: 'logos', type: 'array', fields: [{ name: 'text', type: 'text' }] },
+];
 
-function withRequiredSectionIds(
-  input: Record<string, unknown>,
-  normalized: HomepageContent,
-): Record<string, unknown> {
-  const output: Record<string, unknown> = { ...input };
-  const sections = [
-    { key: 'hero', id: normalized.hero.id },
-    { key: 'brandAcronym', id: normalized.brandAcronym.id },
-    { key: 'about', id: normalized.about.id },
-    { key: 'caseStudies', id: normalized.caseStudies.id },
-    { key: 'services', id: normalized.services.id },
-    { key: 'insights', id: normalized.insights.id },
-    { key: 'faq', id: normalized.faq.id },
-  ] as const;
+const servicesFields: Field[] = [
+  { name: 'eyebrow', type: 'text' },
+  { name: 'titleLead', type: 'text' },
+  { name: 'titleEm', type: 'text' },
+  { name: 'titleTail', type: 'text' },
+  { name: 'intro', type: 'textarea' },
+  {
+    name: 'items',
+    type: 'array',
+    fields: [
+      { name: 'icon', type: 'text' },
+      { name: 'name', type: 'text' },
+      { name: 'description', type: 'textarea' },
+    ],
+  },
+];
 
-  for (const section of sections) {
-    const current = output[section.key];
-    if (typeof current === 'object' && current !== null && !Array.isArray(current)) {
-      const record = current as Record<string, unknown>;
-      output[section.key] = {
-        ...record,
-        id: typeof record.id === 'string' && record.id.length > 0 ? record.id : section.id,
-      };
-    } else {
-      output[section.key] = { id: section.id };
-    }
-  }
+const growthFunnelFields: Field[] = [
+  { name: 'eyebrow', type: 'text' },
+  { name: 'titleLead', type: 'text' },
+  { name: 'titleEm', type: 'text' },
+  { name: 'intro', type: 'textarea' },
+  { name: 'ctaLabel', type: 'text' },
+  { name: 'ctaHref', type: 'text' },
+  {
+    name: 'steps',
+    type: 'array',
+    fields: [
+      { name: 'num', type: 'text' },
+      { name: 'title', type: 'text' },
+      { name: 'sub', type: 'text' },
+      { name: 'desc', type: 'textarea' },
+      {
+        name: 'items',
+        type: 'array',
+        fields: [
+          { name: 'n', type: 'text' },
+          { name: 'd', type: 'textarea' },
+        ],
+      },
+    ],
+  },
+];
 
-  return output;
-}
+const resultsFields: Field[] = [
+  { name: 'eyebrow', type: 'text' },
+  { name: 'titleLead', type: 'text' },
+  { name: 'titleTail', type: 'text' },
+  { name: 'intro', type: 'textarea' },
+  { name: 'ctaLabel', type: 'text' },
+  { name: 'ctaHref', type: 'text' },
+  {
+    name: 'cards',
+    type: 'array',
+    fields: [
+      { name: 'client', type: 'text' },
+      { name: 'value', type: 'text' },
+      { name: 'label', type: 'text' },
+      { name: 'barPercent', type: 'number' },
+      { name: 'featured', type: 'checkbox' },
+      {
+        name: 'subStats',
+        type: 'array',
+        fields: [
+          { name: 'value', type: 'text' },
+          { name: 'label', type: 'text' },
+        ],
+      },
+    ],
+  },
+];
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
-  return null;
-}
+const testimonialFields: Field[] = [
+  { name: 'quoteLead', type: 'textarea' },
+  { name: 'quoteEm', type: 'text' },
+  { name: 'quoteTail', type: 'textarea' },
+  { name: 'authorInitials', type: 'text' },
+  { name: 'authorName', type: 'text' },
+  { name: 'authorRole', type: 'text' },
+];
 
-function asRecordArray(value: unknown): Record<string, unknown>[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-  return value.filter((item): item is Record<string, unknown> => asRecord(item) !== null);
-}
+const weServeFields: Field[] = [
+  { name: 'eyebrow', type: 'text' },
+  { name: 'titleLead', type: 'text' },
+  { name: 'titleEm', type: 'text' },
+  { name: 'intro', type: 'textarea' },
+  {
+    name: 'specialties',
+    type: 'array',
+    fields: [
+      { name: 'icon', type: 'text' },
+      { name: 'name', type: 'text' },
+    ],
+  },
+  { name: 'noteLead', type: 'text' },
+  { name: 'noteLink', type: 'text' },
+];
 
-function hasMediaRef(value: unknown): boolean {
-  if (typeof value === 'string') {
-    return value.trim().length > 0;
-  }
-  if (typeof value === 'number') {
-    return true;
-  }
-  const record = asRecord(value);
-  if (!record) {
-    return false;
-  }
-  return typeof record.id === 'number' || typeof record.id === 'string' || typeof record.url === 'string';
-}
+const aboutPreviewFields: Field[] = [
+  { name: 'eyebrow', type: 'text' },
+  { name: 'titleLead', type: 'text' },
+  { name: 'titleTail', type: 'text' },
+  { name: 'body', type: 'textarea' },
+  {
+    name: 'stats',
+    type: 'array',
+    fields: [
+      { name: 'value', type: 'text' },
+      { name: 'label', type: 'text' },
+    ],
+  },
+  { name: 'ctaLabel', type: 'text' },
+  { name: 'ctaHref', type: 'text' },
+  { name: 'image', type: 'text' },
+  { name: 'imageAlt', type: 'text' },
+];
 
-function hasText(value: unknown): boolean {
-  return typeof value === 'string' && value.trim().length > 0;
-}
+const pricingFields: Field[] = [
+  { name: 'eyebrow', type: 'text' },
+  { name: 'titleLead', type: 'text' },
+  { name: 'titleEm', type: 'text' },
+  { name: 'intro', type: 'textarea' },
+  { name: 'monthlyLabel', type: 'text' },
+  { name: 'annualLabel', type: 'text' },
+  { name: 'annualSavingsLabel', type: 'text' },
+  {
+    name: 'plans',
+    type: 'array',
+    fields: [
+      { name: 'name', type: 'text' },
+      { name: 'icon', type: 'text' },
+      { name: 'priceMonthly', type: 'number' },
+      { name: 'priceAnnual', type: 'number' },
+      { name: 'description', type: 'textarea' },
+      { name: 'badge', type: 'text' },
+      { name: 'featured', type: 'checkbox' },
+      {
+        name: 'color',
+        type: 'select',
+        options: [
+          { label: 'Primary', value: 'primary' },
+          { label: 'Accent', value: 'accent' },
+          { label: 'Support', value: 'support' },
+        ],
+      },
+      { name: 'features', type: 'array', fields: [{ name: 'text', type: 'text' }] },
+      { name: 'ctaLabel', type: 'text' },
+      { name: 'ctaHref', type: 'text' },
+    ],
+  },
+  { name: 'footnoteLead', type: 'textarea' },
+  { name: 'footnoteLinkLabel', type: 'text' },
+  { name: 'footnoteLinkHref', type: 'text' },
+];
 
-function getPublishValidationErrors(data: Record<string, unknown>): string[] {
-  const errors: string[] = [];
-  const pushError = (field: string, message: string) => {
-    errors.push(`${field}: ${message}`);
-  };
+const blogPreviewFields: Field[] = [
+  { name: 'eyebrow', type: 'text' },
+  { name: 'title', type: 'text' },
+  { name: 'intro', type: 'textarea' },
+  { name: 'ctaLabel', type: 'text' },
+  { name: 'ctaHref', type: 'text' },
+  {
+    name: 'posts',
+    type: 'array',
+    fields: [
+      { name: 'tag', type: 'text' },
+      { name: 'title', type: 'text' },
+      { name: 'readTime', type: 'text' },
+      { name: 'href', type: 'text' },
+    ],
+  },
+];
 
-  const hero = asRecord(data.hero);
-  if (hero) {
-    if (!hasMediaRef(hero.imageMedia)) {
-      pushError('Hero > Image Media', 'is required for publish');
-    }
-    if (!hasText(hero.imageAlt)) {
-      pushError('Hero > Image Alt', 'is required for publish');
-    }
-    if (!hasText(hero.chip)) {
-      pushError('Hero > Chip', 'is required for publish');
-    }
-  }
+const finalCtaFields: Field[] = [
+  { name: 'heading', type: 'text' },
+  { name: 'body', type: 'textarea' },
+  linkGroup('primaryCta'),
+  linkGroup('secondaryCta'),
+];
 
-  const about = asRecord(data.about);
-  if (about) {
-    if (!hasMediaRef(about.imageMedia)) {
-      pushError('About > Image Media', 'is required for publish');
-    }
-    if (!hasText(about.imageAlt)) {
-      pushError('About > Image Alt', 'is required for publish');
-    }
-  }
-
-  const features = asRecord(data.features);
-  const featureCards = features ? asRecordArray(features.cards) : [];
-  featureCards.forEach((card, index) => {
-    if (!hasMediaRef(card.imageMedia)) {
-      pushError(`Features > Cards[${index + 1}] > Image Media`, 'is required for publish');
-    }
-    if (!hasText(card.alt)) {
-      pushError(`Features > Cards[${index + 1}] > Alt`, 'is required for publish');
-    }
-  });
-
-  const caseStudies = asRecord(data.caseStudies);
-  if (caseStudies) {
-    const main = asRecord(caseStudies.main);
-    if (main) {
-      if (!hasMediaRef(main.imageMedia)) {
-        pushError('Case Studies > Main > Image Media', 'is required for publish');
-      }
-      if (!hasText(main.alt)) {
-        pushError('Case Studies > Main > Alt', 'is required for publish');
-      }
-      if (!hasText(main.title)) {
-        pushError('Case Studies > Main > Title', 'is required for publish');
-      }
-    }
-
-    const minis = asRecordArray(caseStudies.minis);
-    minis.forEach((mini, index) => {
-      if (!hasMediaRef(mini.imageMedia)) {
-        pushError(`Case Studies > Minis[${index + 1}] > Image Media`, 'is required for publish');
-      }
-      if (!hasText(mini.alt)) {
-        pushError(`Case Studies > Minis[${index + 1}] > Alt`, 'is required for publish');
-      }
-    });
-  }
-
-  const services = asRecord(data.services);
-  const serviceItems = services ? asRecordArray(services.items) : [];
-  serviceItems.forEach((item, index) => {
-    if (!hasMediaRef(item.imageMedia)) {
-      pushError(`Services > Items[${index + 1}] > Image Media`, 'is required for publish');
-    }
-    if (!hasText(item.alt)) {
-      pushError(`Services > Items[${index + 1}] > Alt`, 'is required for publish');
-    }
-  });
-
-  const mission = asRecord(data.mission);
-  if (mission) {
-    if (!hasMediaRef(mission.imageMedia)) {
-      pushError('Mission > Image Media', 'is required for publish');
-    }
-    if (!hasText(mission.imageAlt)) {
-      pushError('Mission > Image Alt', 'is required for publish');
-    }
-  }
-
-  const insights = asRecord(data.insights);
-  const insightItems = insights ? asRecordArray(insights.items) : [];
-  insightItems.forEach((item, index) => {
-    if (!hasMediaRef(item.imageMedia)) {
-      pushError(`Insights > Items[${index + 1}] > Image Media`, 'is required for publish');
-    }
-    if (!hasText(item.alt)) {
-      pushError(`Insights > Items[${index + 1}] > Alt`, 'is required for publish');
-    }
-  });
-
-  return errors;
-}
+// ─── Global config ───────────────────────────────────────────────────────────
 
 export const Homepage: GlobalConfig = {
   slug: 'homepage',
@@ -368,9 +300,7 @@ export const Homepage: GlobalConfig = {
     components: {
       elements: {
         beforeDocumentControls: [
-          // Primary: opens full Homepage Visual Editor
           '@/payload/components/HomepageEditorButton#default',
-          // Secondary: original live preview link still available
           '@/payload/components/HomepagePreviewLink#HomepagePreviewLink',
         ],
       },
@@ -396,581 +326,57 @@ export const Homepage: GlobalConfig = {
     update: ({ req }) => isAdminOrEditor(req),
   },
   hooks: {
+    beforeChange: [stripNestedArrayIds],
     afterChange: [revalidateGlobalChange('homepage', ['/'])],
-    beforeChange: [
-      ({ data, originalDoc }) => {
-        if (!hasStructuredInput(data)) {
-          return data;
-        }
-
-        const status = (data as Record<string, unknown>)._status;
-        if (status !== 'published') {
-          return data;
-        }
-
-        const original = hasStructuredInput(originalDoc) ? (originalDoc as Record<string, unknown>) : {};
-        const merged = mergeStructuredRecords(original, data as Record<string, unknown>);
-        const validationErrors = getPublishValidationErrors(merged);
-
-        if (validationErrors.length > 0) {
-          throw new Error(
-            `Homepage publish blocked. Fix the following fields first:\n- ${validationErrors.join('\n- ')}`,
-          );
-        }
-
-        return data;
-      },
-    ],
-    beforeRead: [
-      ({ doc }) => {
-        const normalized = resolveHomepageContent(doc ?? {});
-        // For current structured docs, do not rewrite section payloads here.
-        // Rewriting can drop relation fields like imageMedia from array items.
-        if (hasStructuredInput((doc ?? {}) as Record<string, unknown>)) {
-          return {
-            ...(doc ?? {}),
-            content: normalized,
-          };
-        }
-
-        const adminShape = toAdminShape(normalized);
-        return mergeAdminShape((doc ?? {}) as Record<string, unknown>, {
-          ...adminShape,
-          content: normalized,
-        });
-      },
-    ],
-    beforeValidate: [
-      ({ data, originalDoc }) => {
-        const input = data ?? {};
-        const baseStructured = hasStructuredInput(originalDoc)
-          ? (originalDoc as Record<string, unknown>)
-          : toAdminShape(homepageContent);
-        const baseContent = resolveHomepageContent(baseStructured);
-        const source = hasStructuredInput(input)
-          ? { ...mergeStructuredInput(baseContent, input), content: undefined }
-          : input;
-        const normalized = resolveHomepageContent(source);
-        // Preserve all structured admin fields as-entered, only refresh canonical content.
-        if (hasStructuredInput(input)) {
-          const withIds = withRequiredSectionIds(source as Record<string, unknown>, normalized);
-          return {
-            ...withIds,
-            content: normalized,
-          };
-        }
-        const adminShape = toAdminShape(normalized);
-        return mergeAdminShape(input as Record<string, unknown>, {
-          ...input,
-          ...adminShape,
-          content: normalized,
-        });
-      },
-    ],
   },
   fields: [
     {
       type: 'tabs',
       tabs: [
         {
-          label: 'Navigation',
-          fields: [
-            {
-              name: 'nav',
-              type: 'group',
-              defaultValue: homepageContent.nav,
-              fields: [
-                { name: 'logo', type: 'text', required: true },
-                { name: 'cta', type: 'text', required: true },
-                ctaLinkGroup('ctaHref', 'CTA Button Link'),
-                {
-                  name: 'links',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.nav.links,
-                  fields: linkFields,
-                },
-              ],
-            },
-          ],
-        },
-        {
           label: 'Hero',
           fields: [
             {
-              name: 'hero',
-              type: 'group',
-              defaultValue: homepageContent.hero,
-              fields: [
-                { name: 'id', type: 'text', required: true },
-                { name: 'chip', type: 'text', required: true },
-                { name: 'description', type: 'textarea', required: true },
-                { name: 'primaryCta', type: 'text', required: true },
-                ctaLinkGroup('primaryCtaHref', 'Primary CTA Link'),
-                { name: 'secondaryCta', type: 'text', required: true },
-                ctaLinkGroup('secondaryCtaHref', 'Secondary CTA Link'),
-                {
-                  name: 'image',
-                  type: 'text',
-                  admin: {
-                    hidden: true,
-                  },
-                },
-                {
-                  name: 'imageMedia',
-                  type: 'upload',
-                  relationTo: 'media',
-                },
-                { name: 'imageAlt', type: 'text', required: true },
-                { name: 'badgeValue', type: 'text', required: true },
-                { name: 'badgeLabel', type: 'text', required: true },
-                {
-                  name: 'headingLines',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.hero.headingLines,
-                  fields: headingLineFields,
-                },
-                {
-                  name: 'stats',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.hero.stats,
-                  fields: [
-                    { name: 'value', type: 'text', required: true },
-                    { name: 'counterTarget', type: 'number' },
-                    { name: 'suffix', type: 'text' },
-                    { name: 'label', type: 'text', required: true },
-                  ],
-                },
-                {
-                  name: 'marquee',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.hero.marquee.map((text) => ({ text })),
-                  fields: [{ name: 'text', type: 'text', required: true }],
-                },
+              name: 'heroVariant',
+              type: 'select',
+              defaultValue: homepageContent.heroVariant,
+              options: [
+                { label: 'A', value: 'A' },
+                { label: 'B', value: 'B' },
+                { label: 'C', value: 'C' },
               ],
             },
+            { name: 'hero', type: 'group', defaultValue: homepageContent.hero, fields: heroFields },
+            { name: 'trustBar', type: 'group', defaultValue: homepageContent.trustBar, fields: trustBarFields },
           ],
         },
         {
-          label: 'Brand Acronym',
+          label: 'Services + Results',
           fields: [
-            {
-              name: 'brandAcronym',
-              type: 'group',
-              defaultValue: homepageContent.brandAcronym,
-              fields: [
-                { name: 'id', type: 'text', required: true },
-                { name: 'chip', type: 'text', required: true },
-                { name: 'title', type: 'text', required: true },
-                { name: 'subtitle', type: 'textarea', required: true },
-                {
-                  name: 'items',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.brandAcronym.items,
-                  fields: [
-                    { name: 'l', type: 'text', required: true },
-                    {
-                      name: 'word',
-                      type: 'select',
-                      required: true,
-                      options: [
-                        { label: 'DASTIFY', value: 'DASTIFY' },
-                        { label: 'DIGITAL', value: 'DIGITAL' },
-                      ],
-                    },
-                    {
-                      name: 'dir',
-                      type: 'select',
-                      required: true,
-                      options: [
-                        { label: 'Up', value: 'up' },
-                        { label: 'Down', value: 'down' },
-                      ],
-                    },
-                    {
-                      name: 'color',
-                      type: 'select',
-                      required: true,
-                      options: [
-                        { label: 'Purple', value: 'purple' },
-                        { label: 'Blue', value: 'blue' },
-                      ],
-                    },
-                    { name: 't1', type: 'text', required: true },
-                    { name: 't2', type: 'text', required: true },
-                  ],
-                },
-              ],
-            },
+            { name: 'services', type: 'group', defaultValue: homepageContent.services, fields: servicesFields },
+            { name: 'growthFunnel', type: 'group', defaultValue: homepageContent.growthFunnel, fields: growthFunnelFields },
+            { name: 'results', type: 'group', defaultValue: homepageContent.results, fields: resultsFields },
           ],
         },
         {
-          label: 'About + Features',
+          label: 'Testimonial + Specialties',
           fields: [
-            {
-              name: 'about',
-              type: 'group',
-              defaultValue: homepageContent.about,
-              fields: [
-                { name: 'id', type: 'text', required: true },
-                { name: 'chip', type: 'text', required: true },
-                { name: 'cta', type: 'text', required: true },
-                ctaLinkGroup('ctaHref', 'CTA Link'),
-                {
-                  name: 'image',
-                  type: 'text',
-                  admin: {
-                    hidden: true,
-                  },
-                },
-                {
-                  name: 'imageMedia',
-                  type: 'upload',
-                  relationTo: 'media',
-                },
-                { name: 'imageAlt', type: 'text', required: true },
-                {
-                  name: 'headingLines',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.about.headingLines,
-                  fields: headingLineFields,
-                },
-                {
-                  name: 'paragraphs',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.about.paragraphs.map((text) => ({ text })),
-                  fields: [{ name: 'text', type: 'textarea', required: true }],
-                },
-              ],
-            },
-            {
-              name: 'features',
-              type: 'group',
-              defaultValue: homepageContent.features,
-              fields: [
-                {
-                  name: 'cards',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.features.cards,
-                  fields: [
-                    { name: 'category', type: 'text', required: true },
-                    { name: 'title', type: 'text', required: true },
-                    { name: 'description', type: 'textarea', required: true },
-                    {
-                      name: 'image',
-                      type: 'text',
-                      admin: {
-                        hidden: true,
-                      },
-                    },
-                    {
-                      name: 'imageMedia',
-                      type: 'upload',
-                      relationTo: 'media',
-                    },
-                    { name: 'alt', type: 'text', required: true },
-                  ],
-                },
-              ],
-            },
+            { name: 'testimonial', type: 'group', defaultValue: homepageContent.testimonial, fields: testimonialFields },
+            { name: 'weServe', type: 'group', defaultValue: homepageContent.weServe, fields: weServeFields },
           ],
         },
         {
-          label: 'Cases + Services',
+          label: 'About + Pricing',
           fields: [
-            {
-              name: 'caseStudies',
-              type: 'group',
-              defaultValue: homepageContent.caseStudies,
-              fields: [
-                { name: 'id', type: 'text', required: true },
-                { name: 'chip', type: 'text', required: true },
-                { name: 'title', type: 'text', required: true },
-                { name: 'cta', type: 'text', required: true },
-                ctaLinkGroup('ctaHref', 'CTA Link'),
-                {
-                  name: 'tabs',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.caseStudies.tabs,
-                  fields: [
-                    { name: 'id', type: 'text', required: true },
-                    { name: 'label', type: 'text', required: true },
-                  ],
-                },
-                {
-                  name: 'main',
-                  type: 'group',
-                  defaultValue: homepageContent.caseStudies.main,
-                  fields: [
-                    { name: 'tag', type: 'text', required: true },
-                    { name: 'title', type: 'text', required: true },
-                    { name: 'description', type: 'textarea', required: true },
-                    { name: 'stat', type: 'text', required: true },
-                    { name: 'statLabel', type: 'text', required: true },
-                    {
-                      name: 'image',
-                      type: 'text',
-                      admin: {
-                        hidden: true,
-                      },
-                    },
-                    {
-                      name: 'imageMedia',
-                      type: 'upload',
-                      relationTo: 'media',
-                    },
-                    { name: 'alt', type: 'text', required: true },
-                  ],
-                },
-                {
-                  name: 'minis',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.caseStudies.minis,
-                  fields: [
-                    { name: 'tag', type: 'text', required: true },
-                    { name: 'title', type: 'text', required: true },
-                    { name: 'stat', type: 'text', required: true },
-                    { name: 'statLabel', type: 'text', required: true },
-                    {
-                      name: 'image',
-                      type: 'text',
-                      admin: {
-                        hidden: true,
-                      },
-                    },
-                    {
-                      name: 'imageMedia',
-                      type: 'upload',
-                      relationTo: 'media',
-                    },
-                    { name: 'alt', type: 'text', required: true },
-                  ],
-                },
-              ],
-            },
-            {
-              name: 'services',
-              type: 'group',
-              defaultValue: homepageContent.services,
-              fields: [
-                { name: 'id', type: 'text', required: true },
-                { name: 'chip', type: 'text', required: true },
-                { name: 'description', type: 'textarea', required: true },
-                {
-                  name: 'titleLines',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.services.titleLines.map((text) => ({ text })),
-                  fields: [{ name: 'text', type: 'text', required: true }],
-                },
-                {
-                  name: 'items',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.services.items,
-                  fields: [
-                    { name: 'number', type: 'text', required: true },
-                    { name: 'name', type: 'text', required: true },
-                    { name: 'description', type: 'textarea', required: true },
-                    {
-                      name: 'image',
-                      type: 'text',
-                      admin: {
-                        hidden: true,
-                      },
-                    },
-                    {
-                      name: 'imageMedia',
-                      type: 'upload',
-                      relationTo: 'media',
-                    },
-                    { name: 'alt', type: 'text', required: true },
-                  ],
-                },
-              ],
-            },
+            { name: 'aboutPreview', type: 'group', defaultValue: homepageContent.aboutPreview, fields: aboutPreviewFields },
+            { name: 'pricing', type: 'group', defaultValue: homepageContent.pricing, fields: pricingFields },
           ],
         },
         {
-          label: 'Mission + Insights + FAQ',
+          label: 'Blog + Final CTA',
           fields: [
-            {
-              name: 'mission',
-              type: 'group',
-              defaultValue: homepageContent.mission,
-              fields: [
-                { name: 'chip', type: 'text', required: true },
-                { name: 'title', type: 'text', required: true },
-                { name: 'description', type: 'textarea', required: true },
-                { name: 'cta', type: 'text', required: true },
-                ctaLinkGroup('ctaHref', 'CTA Link'),
-                {
-                  name: 'image',
-                  type: 'text',
-                  admin: {
-                    hidden: true,
-                  },
-                },
-                {
-                  name: 'imageMedia',
-                  type: 'upload',
-                  relationTo: 'media',
-                },
-                { name: 'imageAlt', type: 'text', required: true },
-                {
-                  name: 'checks',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.mission.checks.map((text) => ({ text })),
-                  fields: [{ name: 'text', type: 'text', required: true }],
-                },
-              ],
-            },
-            {
-              name: 'insights',
-              type: 'group',
-              defaultValue: homepageContent.insights,
-              fields: [
-                { name: 'id', type: 'text', required: true },
-                { name: 'chip', type: 'text', required: true },
-                { name: 'title', type: 'text', required: true },
-                { name: 'cta', type: 'text', required: true },
-                ctaLinkGroup('ctaHref', 'CTA Link'),
-                {
-                  name: 'items',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.insights.items,
-                  fields: [
-                    { name: 'date', type: 'text', required: true },
-                    { name: 'title', type: 'text', required: true },
-                    {
-                      name: 'image',
-                      type: 'text',
-                      admin: {
-                        hidden: true,
-                      },
-                    },
-                    {
-                      name: 'imageMedia',
-                      type: 'upload',
-                      relationTo: 'media',
-                    },
-                    { name: 'alt', type: 'text', required: true },
-                  ],
-                },
-              ],
-            },
-            {
-              name: 'faq',
-              type: 'group',
-              defaultValue: homepageContent.faq,
-              fields: [
-                { name: 'id', type: 'text', required: true },
-                { name: 'chip', type: 'text', required: true },
-                { name: 'title', type: 'text', required: true },
-                { name: 'intro', type: 'textarea', required: true },
-                { name: 'cta', type: 'text', required: true },
-                ctaLinkGroup('ctaHref', 'CTA Link'),
-                {
-                  name: 'items',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.faq.items,
-                  fields: [
-                    { name: 'question', type: 'text', required: true },
-                    { name: 'answer', type: 'textarea', required: true },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          label: 'CTA + Footer',
-          fields: [
-            {
-              name: 'cta',
-              type: 'group',
-              defaultValue: homepageContent.cta,
-              fields: [
-                { name: 'chip', type: 'text', required: true },
-                { name: 'subtitle', type: 'textarea', required: true },
-                { name: 'inputPlaceholder', type: 'text', required: true },
-                { name: 'button', type: 'text', required: true },
-                { name: 'note', type: 'text', required: true },
-                {
-                  name: 'headingLines',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.cta.headingLines,
-                  fields: [
-                    { name: 'text', type: 'text', required: true },
-                    { name: 'delay', type: 'number' },
-                    { name: 'color', type: 'text' },
-                  ],
-                },
-              ],
-            },
-            {
-              name: 'footer',
-              type: 'group',
-              defaultValue: homepageContent.footer,
-              fields: [
-                { name: 'logo', type: 'text', required: true },
-                { name: 'tagline', type: 'textarea', required: true },
-                { name: 'copyright', type: 'text', required: true },
-                {
-                  name: 'socials',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.footer.socials,
-                  fields: linkFields,
-                },
-                {
-                  name: 'columns',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.footer.columns,
-                  fields: [
-                    { name: 'title', type: 'text', required: true },
-                    { name: 'button', type: 'text' },
-                    {
-                      name: 'links',
-                      type: 'array',
-                      defaultValue: [],
-                      fields: linkFields,
-                    },
-                  ],
-                },
-                {
-                  name: 'badges',
-                  type: 'array',
-                  minRows: 1,
-                  defaultValue: homepageContent.footer.badges,
-                  fields: [
-                    { name: 'label', type: 'text', required: true },
-                    {
-                      name: 'tone',
-                      type: 'select',
-                      options: [
-                        { label: 'Blue', value: 'blue' },
-                        { label: 'Green', value: 'green' },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
+            { name: 'blogPreview', type: 'group', defaultValue: homepageContent.blogPreview, fields: blogPreviewFields },
+            { name: 'finalCta', type: 'group', defaultValue: homepageContent.finalCta, fields: finalCtaFields },
           ],
         },
       ],
@@ -978,9 +384,7 @@ export const Homepage: GlobalConfig = {
     {
       name: 'content',
       type: 'json',
-      admin: {
-        hidden: true,
-      },
+      admin: { hidden: true },
     },
     {
       name: 'blocks',
@@ -989,7 +393,7 @@ export const Homepage: GlobalConfig = {
       required: false,
       admin: {
         description:
-          'Unified page-builder blocks — same 42-block palette as the Pages collection. When this array is populated, the homepage renders these blocks pixel-perfect and ignores the legacy structured fields above. Leave empty to keep rendering the legacy Navigation/Hero/About/etc. tabs.',
+          'Unified page-builder blocks — same palette as the Pages collection. When populated, the homepage can optionally render these instead of the structured v2 sections.',
       },
     },
   ],

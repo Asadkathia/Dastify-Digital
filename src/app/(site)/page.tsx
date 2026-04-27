@@ -1,29 +1,22 @@
+import type { ComponentType } from 'react';
 import { unstable_noStore as noStore } from 'next/cache';
 import { draftMode } from 'next/headers';
-import { About } from '../components/home/About';
-import { BrandAcronym } from '../components/home/BrandAcronym';
-import { CaseStudies } from '../components/home/CaseStudies';
-import { Cta } from '../components/home/Cta';
-import { FeatureStrip } from '../components/home/FeatureStrip';
 import { SiteFooter } from '@/components/SiteFooter';
-import { Hero } from '../components/home/Hero';
-import { Insights } from '../components/home/Insights';
-import { Mission } from '../components/home/Mission';
 import { SiteNavbar } from '@/components/SiteNavbar';
 import { LivePreviewSync } from '../components/home/LivePreviewSync';
 import { ScrollRevealController } from '../components/home/ScrollRevealController';
-import { Services } from '../components/home/Services';
-import { Faq } from '../components/home/Faq';
-import { getHomepageContent } from '@/lib/get-homepage-content';
-import { withManagedMenus } from '@/lib/cms/menus';
 import { getNavigation, getFooter } from '@/lib/cms/queries';
 import { JsonLd } from '@/components/JsonLd';
-import { buildFAQJsonLd, buildOrganizationJsonLd, buildWebsiteJsonLd } from '@/lib/seo/jsonld';
+import { buildOrganizationJsonLd, buildWebsiteJsonLd } from '@/lib/seo/jsonld';
 import { buildMetadata } from '@/lib/seo/metadata';
 import { getSiteSettings } from '@/lib/site-settings';
 import { getPayloadClient } from '@/lib/payload';
 import { PageBlocksRenderer } from '@/components/blocks/PageBlocksRenderer';
 import type { PageBuilderBlock } from '@/components/blocks/types';
+import { loadConvertedPageRegistry } from '@/lib/converted-pages/preview-registry';
+import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
+import { extractSectionOverrides, generateOverrideCss } from '@/lib/converted-pages/section-overrides';
+import type { HomepageContent } from '@/lib/homepage-content';
 import type { Metadata } from 'next';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -67,17 +60,31 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const dynamic = 'force-dynamic';
 
+async function findHomePageRecord(draft: boolean): Promise<Record<string, unknown> | null> {
+  try {
+    const client = await getPayloadClient();
+    const res = await client.find({
+      collection: 'pages',
+      where: { convertedPageName: { equals: 'home' } } as never,
+      depth: 2,
+      limit: 1,
+      draft,
+    });
+    const doc = res.docs?.[0];
+    return doc ? (doc as unknown as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function Home() {
   const { isEnabled } = await draftMode();
   noStore();
 
-  const [homepageContent, settings, nav, footer, rawHomepage] = await Promise.all([
-    withManagedMenus(await getHomepageContent({ draft: isEnabled })),
+  const [settings, nav, footer, rawHomepage, homePageRecord] = await Promise.all([
     getSiteSettings(),
     getNavigation(),
     getFooter(),
-    // Read the Homepage global directly so we can check the new `blocks` field.
-    // withManagedMenus strips unknown fields, so we fetch it again via the client.
     (async () => {
       try {
         const client = await getPayloadClient();
@@ -86,27 +93,47 @@ export default async function Home() {
         return null;
       }
     })(),
+    findHomePageRecord(isEnabled),
   ]);
 
   const organizationJsonLd = buildOrganizationJsonLd(settings);
   const websiteJsonLd = buildWebsiteJsonLd(settings);
-  const faqJsonLd = buildFAQJsonLd(homepageContent.faq?.items ?? []);
 
-  // Unified path: when the homepage has been authored with the new page-builder
-  // blocks, render those instead of the legacy structured sections. Editors who
-  // haven't migrated keep seeing the original layout — zero behaviour change.
-  const homepageBlocks = rawHomepage && Array.isArray((rawHomepage as { blocks?: unknown[] }).blocks)
-    ? ((rawHomepage as { blocks?: unknown[] }).blocks as PageBuilderBlock[])
-    : [];
-  const hasBlocks = homepageBlocks.length > 0;
+  const convertedPageName = typeof homePageRecord?.convertedPageName === 'string'
+    ? homePageRecord.convertedPageName
+    : '';
+  const convertedContent = homePageRecord && typeof homePageRecord.convertedContent === 'object'
+    ? (homePageRecord.convertedContent as Record<string, unknown>)
+    : null;
 
-  if (hasBlocks) {
+  // v2: the public homepage is driven exclusively by the converted-page
+  // registry. Empty convertedContent → defaults from src/app/(site)/home/content.ts.
+  const registry = await loadConvertedPageRegistry('home');
+  if (registry && (convertedPageName === 'home' || convertedPageName === '')) {
+    const effective = convertedContent
+      ? mergeConvertedContent(registry.defaultContent, convertedContent)
+      : registry.defaultContent;
+    const sectionOverrideCss = generateOverrideCss(registry, extractSectionOverrides(effective));
+    const effectiveTyped = effective as unknown as HomepageContent;
+
     return (
       <>
+        {sectionOverrideCss ? <style dangerouslySetInnerHTML={{ __html: sectionOverrideCss }} /> : null}
         <LivePreviewSync enabled={isEnabled} />
         <ScrollRevealController />
         <SiteNavbar nav={nav} activePath="/" scrolledClass="solid" linkListClassName="nav-links" ctaClassName="btn-dk nav-cta" />
-        <PageBlocksRenderer blocks={homepageBlocks} />
+        <main>
+          {registry.sections.map((section) => {
+            const Component = section.Component as ComponentType<{ data: unknown }>;
+            // Hero needs the top-level heroVariant flag merged into its data
+            // so the same content block can render A / B / C layouts.
+            const raw = (effectiveTyped as unknown as Record<string, unknown>)[section.key];
+            const data = section.key === 'hero'
+              ? { ...(raw as object), heroVariant: effectiveTyped.heroVariant ?? 'A' }
+              : raw;
+            return <Component key={section.key} data={data} />;
+          })}
+        </main>
         <SiteFooter footer={footer} />
         <JsonLd data={organizationJsonLd} />
         <JsonLd data={websiteJsonLd} />
@@ -114,25 +141,20 @@ export default async function Home() {
     );
   }
 
+  // Blocks[] fallback — only reached if the registry fails to load.
+  const homepageBlocks = rawHomepage && Array.isArray((rawHomepage as { blocks?: unknown[] }).blocks)
+    ? ((rawHomepage as { blocks?: unknown[] }).blocks as PageBuilderBlock[])
+    : [];
+
   return (
     <>
       <LivePreviewSync enabled={isEnabled} />
       <ScrollRevealController />
       <SiteNavbar nav={nav} activePath="/" scrolledClass="solid" linkListClassName="nav-links" ctaClassName="btn-dk nav-cta" />
-      <Hero data={homepageContent.hero} />
-      <BrandAcronym data={homepageContent.brandAcronym} />
-      <About data={homepageContent.about} />
-      <FeatureStrip data={homepageContent.features} />
-      <CaseStudies data={homepageContent.caseStudies} />
-      <Services data={homepageContent.services} />
-      <Mission data={homepageContent.mission} />
-      <Insights data={homepageContent.insights} />
-      <Faq data={homepageContent.faq ?? { items: [] }} />
-      <Cta data={homepageContent.cta} />
+      {homepageBlocks.length > 0 ? <PageBlocksRenderer blocks={homepageBlocks} /> : null}
       <SiteFooter footer={footer} />
       <JsonLd data={organizationJsonLd} />
       <JsonLd data={websiteJsonLd} />
-      <JsonLd data={faqJsonLd} />
     </>
   );
 }

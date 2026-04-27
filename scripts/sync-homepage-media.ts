@@ -114,54 +114,19 @@ async function ensureMediaRecord(
   };
 }
 
+/**
+ * Walk the v2 HomepageContent shape and ensure every local `/images/...`
+ * reference has a matching Media row. Image fields on the v2 shape:
+ *   - hero.image / hero.imageAlt
+ *   - aboutPreview.image / aboutPreview.imageAlt
+ *
+ * Other sections (services, pricing, weServe, blogPreview) are icon-based
+ * or lack images; `trustBar.logos` are short text labels.
+ */
 async function syncContentImages(content: HomepageContent, db: Client): Promise<HomepageContent> {
-  const heroMedia = await ensureMediaRecord(db, content.hero.image, content.hero.imageAlt);
-  const aboutMedia = await ensureMediaRecord(db, content.about.image, content.about.imageAlt);
-  const missionMedia = await ensureMediaRecord(db, content.mission.image, content.mission.imageAlt);
-  const mainCaseMedia = await ensureMediaRecord(db, content.caseStudies.main.image, content.caseStudies.main.alt);
-
-  const featureCards = await Promise.all(
-    content.features.cards.map(async (card) => {
-      const media = await ensureMediaRecord(db, card.image, card.alt);
-      return { ...card, imageMedia: media ?? undefined };
-    }),
-  );
-
-  const caseMinis = await Promise.all(
-    content.caseStudies.minis.map(async (mini) => {
-      const media = await ensureMediaRecord(db, mini.image, mini.alt);
-      return { ...mini, imageMedia: media ?? undefined };
-    }),
-  );
-
-  const serviceItems = await Promise.all(
-    content.services.items.map(async (item) => {
-      const media = await ensureMediaRecord(db, item.image, item.alt);
-      return { ...item, imageMedia: media ?? undefined };
-    }),
-  );
-
-  const insightItems = await Promise.all(
-    content.insights.items.map(async (item) => {
-      const media = await ensureMediaRecord(db, item.image, item.alt);
-      return { ...item, imageMedia: media ?? undefined };
-    }),
-  );
-
-  return {
-    ...content,
-    hero: { ...content.hero, imageMedia: heroMedia ?? undefined },
-    about: { ...content.about, imageMedia: aboutMedia ?? undefined },
-    mission: { ...content.mission, imageMedia: missionMedia ?? undefined },
-    features: { ...content.features, cards: featureCards },
-    caseStudies: {
-      ...content.caseStudies,
-      main: { ...content.caseStudies.main, imageMedia: mainCaseMedia ?? undefined },
-      minis: caseMinis,
-    },
-    services: { ...content.services, items: serviceItems },
-    insights: { ...content.insights, items: insightItems },
-  } as HomepageContent;
+  await ensureMediaRecord(db, content.hero.image, content.hero.imageAlt);
+  await ensureMediaRecord(db, content.aboutPreview.image, content.aboutPreview.imageAlt);
+  return content;
 }
 
 async function writeContent(db: Client, content: HomepageContent): Promise<void> {

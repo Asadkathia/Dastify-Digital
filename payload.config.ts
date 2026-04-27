@@ -141,8 +141,19 @@ const createConfig = async () => {
   const vercelProjectURL = process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : null;
-  const csrfOrigins = [siteURL, vercelURL, vercelBranchURL, vercelProjectURL].filter(
-    (v): v is string => Boolean(v),
+  // In development, accept localhost on any port so a dev server starting on
+  // 3001 (because 3000 is busy) doesn't silently break admin POST/DELETE with
+  // a CSRF rejection that surfaces as a generic "not allowed to perform this
+  // action" 403. Production/CI keep the strict allowlist.
+  const devLocalhostOrigins = process.env.NODE_ENV === 'production'
+    ? []
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
+  const csrfOrigins = Array.from(
+    new Set(
+      [siteURL, vercelURL, vercelBranchURL, vercelProjectURL, ...devLocalhostOrigins].filter(
+        (v): v is string => Boolean(v),
+      ),
+    ),
   );
 
   return buildConfig({

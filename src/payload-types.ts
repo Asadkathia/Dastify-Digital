@@ -3302,292 +3302,233 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface Homepage {
   id: number;
-  nav: {
-    logo: string;
-    cta: string;
-    ctaHref?: {
-      url?: string | null;
-      type?: ('internal' | 'external' | 'anchor') | null;
-      openInNewTab?: boolean | null;
+  heroVariant?: ('A' | 'B' | 'C') | null;
+  hero?: {
+    kicker?: string | null;
+    eyebrow?: string | null;
+    badge?: string | null;
+    headingA?: string | null;
+    headingB?: string | null;
+    headingC?: string | null;
+    subA?: string | null;
+    subB?: string | null;
+    subC?: string | null;
+    primaryCta?: {
+      label?: string | null;
+      href?: string | null;
     };
-    links?:
+    secondaryCta?: {
+      label?: string | null;
+      href?: string | null;
+    };
+    phone?: string | null;
+    proofStats?:
       | {
-          label: string;
-          href: string;
+          value?: string | null;
+          label?: string | null;
+          sublabel?: string | null;
           id?: string | null;
         }[]
       | null;
-  };
-  hero: {
-    id: string;
-    chip: string;
-    description: string;
-    primaryCta: string;
-    primaryCtaHref?: {
-      url?: string | null;
-      type?: ('internal' | 'external' | 'anchor') | null;
-      openInNewTab?: boolean | null;
-    };
-    secondaryCta: string;
-    secondaryCtaHref?: {
-      url?: string | null;
-      type?: ('internal' | 'external' | 'anchor') | null;
-      openInNewTab?: boolean | null;
-    };
+    statTiles?:
+      | {
+          value?: string | null;
+          label?: string | null;
+          sublabel?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    ticker?:
+      | {
+          text?: string | null;
+          id?: string | null;
+        }[]
+      | null;
     image?: string | null;
-    imageMedia?: (number | null) | Media;
-    imageAlt: string;
-    badgeValue: string;
-    badgeLabel: string;
-    headingLines?:
+    imageAlt?: string | null;
+    trustLogosLabel?: string | null;
+    trustLogos?:
       | {
-          text: string;
-          delay?: number | null;
-          colorVar?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-    stats?:
-      | {
-          value: string;
-          counterTarget?: number | null;
-          suffix?: string | null;
-          label: string;
-          id?: string | null;
-        }[]
-      | null;
-    marquee?:
-      | {
-          text: string;
+          slug?: string | null;
+          label?: string | null;
+          src?: string | null;
           id?: string | null;
         }[]
       | null;
   };
-  brandAcronym: {
-    id: string;
-    chip: string;
-    title: string;
-    subtitle: string;
+  trustBar?: {
+    label?: string | null;
+    logos?:
+      | {
+          text?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  services?: {
+    eyebrow?: string | null;
+    titleLead?: string | null;
+    titleEm?: string | null;
+    titleTail?: string | null;
+    intro?: string | null;
     items?:
       | {
-          l: string;
-          word: 'DASTIFY' | 'DIGITAL';
-          dir: 'up' | 'down';
-          color: 'purple' | 'blue';
-          t1: string;
-          t2: string;
+          icon?: string | null;
+          name?: string | null;
+          description?: string | null;
           id?: string | null;
         }[]
       | null;
   };
-  about: {
-    id: string;
-    chip: string;
-    cta: string;
-    ctaHref?: {
-      url?: string | null;
-      type?: ('internal' | 'external' | 'anchor') | null;
-      openInNewTab?: boolean | null;
-    };
-    image?: string | null;
-    imageMedia?: (number | null) | Media;
-    imageAlt: string;
-    headingLines?:
+  growthFunnel?: {
+    eyebrow?: string | null;
+    titleLead?: string | null;
+    titleEm?: string | null;
+    intro?: string | null;
+    ctaLabel?: string | null;
+    ctaHref?: string | null;
+    steps?:
       | {
-          text: string;
-          delay?: number | null;
-          colorVar?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-    paragraphs?:
-      | {
-          text: string;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  features?: {
-    cards?:
-      | {
-          category: string;
-          title: string;
-          description: string;
-          image?: string | null;
-          imageMedia?: (number | null) | Media;
-          alt: string;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  caseStudies: {
-    id: string;
-    chip: string;
-    title: string;
-    cta: string;
-    ctaHref?: {
-      url?: string | null;
-      type?: ('internal' | 'external' | 'anchor') | null;
-      openInNewTab?: boolean | null;
-    };
-    tabs?:
-      | {
-          id: string;
-          label: string;
-        }[]
-      | null;
-    main: {
-      tag: string;
-      title: string;
-      description: string;
-      stat: string;
-      statLabel: string;
-      image?: string | null;
-      imageMedia?: (number | null) | Media;
-      alt: string;
-    };
-    minis?:
-      | {
-          tag: string;
-          title: string;
-          stat: string;
-          statLabel: string;
-          image?: string | null;
-          imageMedia?: (number | null) | Media;
-          alt: string;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  services: {
-    id: string;
-    chip: string;
-    description: string;
-    titleLines?:
-      | {
-          text: string;
-          id?: string | null;
-        }[]
-      | null;
-    items?:
-      | {
-          number: string;
-          name: string;
-          description: string;
-          image?: string | null;
-          imageMedia?: (number | null) | Media;
-          alt: string;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  mission: {
-    chip: string;
-    title: string;
-    description: string;
-    cta: string;
-    ctaHref?: {
-      url?: string | null;
-      type?: ('internal' | 'external' | 'anchor') | null;
-      openInNewTab?: boolean | null;
-    };
-    image?: string | null;
-    imageMedia?: (number | null) | Media;
-    imageAlt: string;
-    checks?:
-      | {
-          text: string;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  insights: {
-    id: string;
-    chip: string;
-    title: string;
-    cta: string;
-    ctaHref?: {
-      url?: string | null;
-      type?: ('internal' | 'external' | 'anchor') | null;
-      openInNewTab?: boolean | null;
-    };
-    items?:
-      | {
-          date: string;
-          title: string;
-          image?: string | null;
-          imageMedia?: (number | null) | Media;
-          alt: string;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  faq: {
-    id: string;
-    chip: string;
-    title: string;
-    intro: string;
-    cta: string;
-    ctaHref?: {
-      url?: string | null;
-      type?: ('internal' | 'external' | 'anchor') | null;
-      openInNewTab?: boolean | null;
-    };
-    items?:
-      | {
-          question: string;
-          answer: string;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  cta: {
-    chip: string;
-    subtitle: string;
-    inputPlaceholder: string;
-    button: string;
-    note: string;
-    headingLines?:
-      | {
-          text: string;
-          delay?: number | null;
-          color?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  footer: {
-    logo: string;
-    tagline: string;
-    copyright: string;
-    socials?:
-      | {
-          label: string;
-          href: string;
-          id?: string | null;
-        }[]
-      | null;
-    columns?:
-      | {
-          title: string;
-          button?: string | null;
-          links?:
+          num?: string | null;
+          title?: string | null;
+          sub?: string | null;
+          desc?: string | null;
+          items?:
             | {
-                label: string;
-                href: string;
+                n?: string | null;
+                d?: string | null;
                 id?: string | null;
               }[]
             | null;
           id?: string | null;
         }[]
       | null;
-    badges?:
+  };
+  results?: {
+    eyebrow?: string | null;
+    titleLead?: string | null;
+    titleTail?: string | null;
+    intro?: string | null;
+    ctaLabel?: string | null;
+    ctaHref?: string | null;
+    cards?:
       | {
-          label: string;
-          tone?: ('blue' | 'green') | null;
+          client?: string | null;
+          value?: string | null;
+          label?: string | null;
+          barPercent?: number | null;
+          featured?: boolean | null;
+          subStats?:
+            | {
+                value?: string | null;
+                label?: string | null;
+                id?: string | null;
+              }[]
+            | null;
           id?: string | null;
         }[]
       | null;
+  };
+  testimonial?: {
+    quoteLead?: string | null;
+    quoteEm?: string | null;
+    quoteTail?: string | null;
+    authorInitials?: string | null;
+    authorName?: string | null;
+    authorRole?: string | null;
+  };
+  weServe?: {
+    eyebrow?: string | null;
+    titleLead?: string | null;
+    titleEm?: string | null;
+    intro?: string | null;
+    specialties?:
+      | {
+          icon?: string | null;
+          name?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    noteLead?: string | null;
+    noteLink?: string | null;
+  };
+  aboutPreview?: {
+    eyebrow?: string | null;
+    titleLead?: string | null;
+    titleTail?: string | null;
+    body?: string | null;
+    stats?:
+      | {
+          value?: string | null;
+          label?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    ctaLabel?: string | null;
+    ctaHref?: string | null;
+    image?: string | null;
+    imageAlt?: string | null;
+  };
+  pricing?: {
+    eyebrow?: string | null;
+    titleLead?: string | null;
+    titleEm?: string | null;
+    intro?: string | null;
+    monthlyLabel?: string | null;
+    annualLabel?: string | null;
+    annualSavingsLabel?: string | null;
+    plans?:
+      | {
+          name?: string | null;
+          icon?: string | null;
+          priceMonthly?: number | null;
+          priceAnnual?: number | null;
+          description?: string | null;
+          badge?: string | null;
+          featured?: boolean | null;
+          color?: ('primary' | 'accent' | 'support') | null;
+          features?:
+            | {
+                text?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          ctaLabel?: string | null;
+          ctaHref?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    footnoteLead?: string | null;
+    footnoteLinkLabel?: string | null;
+    footnoteLinkHref?: string | null;
+  };
+  blogPreview?: {
+    eyebrow?: string | null;
+    title?: string | null;
+    intro?: string | null;
+    ctaLabel?: string | null;
+    ctaHref?: string | null;
+    posts?:
+      | {
+          tag?: string | null;
+          title?: string | null;
+          readTime?: string | null;
+          href?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  finalCta?: {
+    heading?: string | null;
+    body?: string | null;
+    primaryCta?: {
+      label?: string | null;
+      href?: string | null;
+    };
+    secondaryCta?: {
+      label?: string | null;
+      href?: string | null;
+    };
   };
   meta?: {
     title?: string | null;
@@ -3616,7 +3557,7 @@ export interface Homepage {
     | boolean
     | null;
   /**
-   * Unified page-builder blocks — same 42-block palette as the Pages collection. When this array is populated, the homepage renders these blocks pixel-perfect and ignores the legacy structured fields above. Leave empty to keep rendering the legacy Navigation/Hero/About/etc. tabs.
+   * Unified page-builder blocks — same palette as the Pages collection. When populated, the homepage can optionally render these instead of the structured v2 sections.
    */
   blocks?:
     | (
@@ -3808,333 +3749,262 @@ export interface SiteSetting {
  * via the `definition` "homepage_select".
  */
 export interface HomepageSelect<T extends boolean = true> {
-  nav?:
+  heroVariant?: T;
+  hero?:
     | T
     | {
-        logo?: T;
-        cta?: T;
-        ctaHref?:
-          | T
-          | {
-              url?: T;
-              type?: T;
-              openInNewTab?: T;
-            };
-        links?:
+        kicker?: T;
+        eyebrow?: T;
+        badge?: T;
+        headingA?: T;
+        headingB?: T;
+        headingC?: T;
+        subA?: T;
+        subB?: T;
+        subC?: T;
+        primaryCta?:
           | T
           | {
               label?: T;
               href?: T;
-              id?: T;
             };
-      };
-  hero?:
-    | T
-    | {
-        id?: T;
-        chip?: T;
-        description?: T;
-        primaryCta?: T;
-        primaryCtaHref?:
+        secondaryCta?:
           | T
           | {
-              url?: T;
-              type?: T;
-              openInNewTab?: T;
+              label?: T;
+              href?: T;
             };
-        secondaryCta?: T;
-        secondaryCtaHref?:
-          | T
-          | {
-              url?: T;
-              type?: T;
-              openInNewTab?: T;
-            };
-        image?: T;
-        imageMedia?: T;
-        imageAlt?: T;
-        badgeValue?: T;
-        badgeLabel?: T;
-        headingLines?:
-          | T
-          | {
-              text?: T;
-              delay?: T;
-              colorVar?: T;
-              id?: T;
-            };
-        stats?:
+        phone?: T;
+        proofStats?:
           | T
           | {
               value?: T;
-              counterTarget?: T;
-              suffix?: T;
               label?: T;
+              sublabel?: T;
               id?: T;
             };
-        marquee?:
+        statTiles?:
+          | T
+          | {
+              value?: T;
+              label?: T;
+              sublabel?: T;
+              id?: T;
+            };
+        ticker?:
           | T
           | {
               text?: T;
               id?: T;
-            };
-      };
-  brandAcronym?:
-    | T
-    | {
-        id?: T;
-        chip?: T;
-        title?: T;
-        subtitle?: T;
-        items?:
-          | T
-          | {
-              l?: T;
-              word?: T;
-              dir?: T;
-              color?: T;
-              t1?: T;
-              t2?: T;
-              id?: T;
-            };
-      };
-  about?:
-    | T
-    | {
-        id?: T;
-        chip?: T;
-        cta?: T;
-        ctaHref?:
-          | T
-          | {
-              url?: T;
-              type?: T;
-              openInNewTab?: T;
             };
         image?: T;
-        imageMedia?: T;
         imageAlt?: T;
-        headingLines?:
+        trustLogosLabel?: T;
+        trustLogos?:
           | T
           | {
-              text?: T;
-              delay?: T;
-              colorVar?: T;
-              id?: T;
-            };
-        paragraphs?:
-          | T
-          | {
-              text?: T;
-              id?: T;
-            };
-      };
-  features?:
-    | T
-    | {
-        cards?:
-          | T
-          | {
-              category?: T;
-              title?: T;
-              description?: T;
-              image?: T;
-              imageMedia?: T;
-              alt?: T;
-              id?: T;
-            };
-      };
-  caseStudies?:
-    | T
-    | {
-        id?: T;
-        chip?: T;
-        title?: T;
-        cta?: T;
-        ctaHref?:
-          | T
-          | {
-              url?: T;
-              type?: T;
-              openInNewTab?: T;
-            };
-        tabs?:
-          | T
-          | {
-              id?: T;
+              slug?: T;
               label?: T;
+              src?: T;
+              id?: T;
             };
-        main?:
+      };
+  trustBar?:
+    | T
+    | {
+        label?: T;
+        logos?:
           | T
           | {
-              tag?: T;
-              title?: T;
-              description?: T;
-              stat?: T;
-              statLabel?: T;
-              image?: T;
-              imageMedia?: T;
-              alt?: T;
-            };
-        minis?:
-          | T
-          | {
-              tag?: T;
-              title?: T;
-              stat?: T;
-              statLabel?: T;
-              image?: T;
-              imageMedia?: T;
-              alt?: T;
+              text?: T;
               id?: T;
             };
       };
   services?:
     | T
     | {
-        id?: T;
-        chip?: T;
-        description?: T;
-        titleLines?:
-          | T
-          | {
-              text?: T;
-              id?: T;
-            };
+        eyebrow?: T;
+        titleLead?: T;
+        titleEm?: T;
+        titleTail?: T;
+        intro?: T;
         items?:
           | T
           | {
-              number?: T;
+              icon?: T;
               name?: T;
               description?: T;
-              image?: T;
-              imageMedia?: T;
-              alt?: T;
               id?: T;
             };
       };
-  mission?:
+  growthFunnel?:
     | T
     | {
-        chip?: T;
-        title?: T;
-        description?: T;
-        cta?: T;
-        ctaHref?:
-          | T
-          | {
-              url?: T;
-              type?: T;
-              openInNewTab?: T;
-            };
-        image?: T;
-        imageMedia?: T;
-        imageAlt?: T;
-        checks?:
-          | T
-          | {
-              text?: T;
-              id?: T;
-            };
-      };
-  insights?:
-    | T
-    | {
-        id?: T;
-        chip?: T;
-        title?: T;
-        cta?: T;
-        ctaHref?:
-          | T
-          | {
-              url?: T;
-              type?: T;
-              openInNewTab?: T;
-            };
-        items?:
-          | T
-          | {
-              date?: T;
-              title?: T;
-              image?: T;
-              imageMedia?: T;
-              alt?: T;
-              id?: T;
-            };
-      };
-  faq?:
-    | T
-    | {
-        id?: T;
-        chip?: T;
-        title?: T;
+        eyebrow?: T;
+        titleLead?: T;
+        titleEm?: T;
         intro?: T;
-        cta?: T;
-        ctaHref?:
+        ctaLabel?: T;
+        ctaHref?: T;
+        steps?:
           | T
           | {
-              url?: T;
-              type?: T;
-              openInNewTab?: T;
-            };
-        items?:
-          | T
-          | {
-              question?: T;
-              answer?: T;
-              id?: T;
-            };
-      };
-  cta?:
-    | T
-    | {
-        chip?: T;
-        subtitle?: T;
-        inputPlaceholder?: T;
-        button?: T;
-        note?: T;
-        headingLines?:
-          | T
-          | {
-              text?: T;
-              delay?: T;
-              color?: T;
-              id?: T;
-            };
-      };
-  footer?:
-    | T
-    | {
-        logo?: T;
-        tagline?: T;
-        copyright?: T;
-        socials?:
-          | T
-          | {
-              label?: T;
-              href?: T;
-              id?: T;
-            };
-        columns?:
-          | T
-          | {
+              num?: T;
               title?: T;
-              button?: T;
-              links?:
+              sub?: T;
+              desc?: T;
+              items?:
                 | T
                 | {
-                    label?: T;
-                    href?: T;
+                    n?: T;
+                    d?: T;
                     id?: T;
                   };
               id?: T;
             };
-        badges?:
+      };
+  results?:
+    | T
+    | {
+        eyebrow?: T;
+        titleLead?: T;
+        titleTail?: T;
+        intro?: T;
+        ctaLabel?: T;
+        ctaHref?: T;
+        cards?:
+          | T
+          | {
+              client?: T;
+              value?: T;
+              label?: T;
+              barPercent?: T;
+              featured?: T;
+              subStats?:
+                | T
+                | {
+                    value?: T;
+                    label?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+      };
+  testimonial?:
+    | T
+    | {
+        quoteLead?: T;
+        quoteEm?: T;
+        quoteTail?: T;
+        authorInitials?: T;
+        authorName?: T;
+        authorRole?: T;
+      };
+  weServe?:
+    | T
+    | {
+        eyebrow?: T;
+        titleLead?: T;
+        titleEm?: T;
+        intro?: T;
+        specialties?:
+          | T
+          | {
+              icon?: T;
+              name?: T;
+              id?: T;
+            };
+        noteLead?: T;
+        noteLink?: T;
+      };
+  aboutPreview?:
+    | T
+    | {
+        eyebrow?: T;
+        titleLead?: T;
+        titleTail?: T;
+        body?: T;
+        stats?:
+          | T
+          | {
+              value?: T;
+              label?: T;
+              id?: T;
+            };
+        ctaLabel?: T;
+        ctaHref?: T;
+        image?: T;
+        imageAlt?: T;
+      };
+  pricing?:
+    | T
+    | {
+        eyebrow?: T;
+        titleLead?: T;
+        titleEm?: T;
+        intro?: T;
+        monthlyLabel?: T;
+        annualLabel?: T;
+        annualSavingsLabel?: T;
+        plans?:
+          | T
+          | {
+              name?: T;
+              icon?: T;
+              priceMonthly?: T;
+              priceAnnual?: T;
+              description?: T;
+              badge?: T;
+              featured?: T;
+              color?: T;
+              features?:
+                | T
+                | {
+                    text?: T;
+                    id?: T;
+                  };
+              ctaLabel?: T;
+              ctaHref?: T;
+              id?: T;
+            };
+        footnoteLead?: T;
+        footnoteLinkLabel?: T;
+        footnoteLinkHref?: T;
+      };
+  blogPreview?:
+    | T
+    | {
+        eyebrow?: T;
+        title?: T;
+        intro?: T;
+        ctaLabel?: T;
+        ctaHref?: T;
+        posts?:
+          | T
+          | {
+              tag?: T;
+              title?: T;
+              readTime?: T;
+              href?: T;
+              id?: T;
+            };
+      };
+  finalCta?:
+    | T
+    | {
+        heading?: T;
+        body?: T;
+        primaryCta?:
           | T
           | {
               label?: T;
-              tone?: T;
-              id?: T;
+              href?: T;
+            };
+        secondaryCta?:
+          | T
+          | {
+              label?: T;
+              href?: T;
             };
       };
   meta?:

@@ -4,17 +4,6 @@ import { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PageBlocksRenderer } from '@/components/blocks/PageBlocksRenderer';
 import { mapPayloadBlocksToPageBuilderBlocks } from '@/components/blocks/types';
-import { Navbar } from '@/app/components/home/Navbar';
-import { Hero } from '@/app/components/home/Hero';
-import { BrandAcronym } from '@/app/components/home/BrandAcronym';
-import { About } from '@/app/components/home/About';
-import { FeatureStrip } from '@/app/components/home/FeatureStrip';
-import { CaseStudies } from '@/app/components/home/CaseStudies';
-import { Services } from '@/app/components/home/Services';
-import { Mission } from '@/app/components/home/Mission';
-import { Insights } from '@/app/components/home/Insights';
-import { Faq } from '@/app/components/home/Faq';
-import { Cta } from '@/app/components/home/Cta';
 import { NavbarScrollState } from '@/app/components/home/NavbarScrollState';
 import { ScrollRevealController } from '@/app/components/home/ScrollRevealController';
 import { sectionsToHomepagePatch } from '@/payload/views/HomepageEditor/homepage-adapter';
@@ -850,53 +839,15 @@ function HomepageSectionBlock({
   columnId: string;
   homepage: HomepageContent;
 }) {
-  let section: React.ReactNode;
-  switch (block.blockType) {
-    case 'hp-nav':
-      section = <Navbar data={homepage.nav} />;
-      break;
-    case 'hp-hero':
-      section = <Hero data={homepage.hero} />;
-      break;
-    case 'hp-brand-acronym':
-      section = <BrandAcronym data={homepage.brandAcronym} />;
-      break;
-    case 'hp-about':
-      section = <About data={homepage.about} />;
-      break;
-    case 'hp-features':
-      section = <FeatureStrip data={homepage.features} />;
-      break;
-    case 'hp-case-studies':
-      section = <CaseStudies data={homepage.caseStudies} />;
-      break;
-    case 'hp-services':
-      section = <Services data={homepage.services} />;
-      break;
-    case 'hp-mission':
-      section = <Mission data={homepage.mission} />;
-      break;
-    case 'hp-insights':
-      section = <Insights data={homepage.insights} />;
-      break;
-    case 'hp-faq':
-      section = <Faq data={homepage.faq} />;
-      break;
-    case 'hp-cta':
-      section = <Cta data={homepage.cta} />;
-      break;
-    case 'hp-footer':
-      // Footer is now a global SiteFooter rendered outside sections — skip in preview
-      section = null;
-      break;
-    default:
-      section = (
-        <div style={{ padding: '24px', margin: '2px 0', fontFamily: 'sans-serif', color: '#666', fontSize: '13px', textAlign: 'center', border: '1px dashed #ddd' }}>
-          {block.blockType} section
-        </div>
-      );
-      break;
-  }
+  // Legacy hp-* blocks no longer render. The homepage is driven by the
+  // converted-page registry at src/app/(site)/home/ — this branch only fires
+  // on old docs that still have hp-* blocks persisted.
+  void homepage;
+  const section: React.ReactNode = (
+    <div style={{ padding: '24px', margin: '2px 0', fontFamily: 'sans-serif', color: '#666', fontSize: '13px', textAlign: 'center', border: '1px dashed #ddd' }}>
+      {block.blockType} (legacy homepage block — render now lives in /home converted-page)
+    </div>
+  );
 
   return (
     <BlockWrapper block={block} isSelected={isSelected} responsiveMode={responsiveMode} sectionId={sectionId} columnId={columnId}>
@@ -1059,8 +1010,14 @@ function SectionsLayout({
         const innerTablet = collectFromSource(sectionStyles?.tablet);
         const innerMobile = collectFromSource(sectionStyles?.mobile);
 
-        const selector = `[data-dnd-section-id="${section.id}"] .sp, ` +
-          `[data-dnd-section-id="${section.id}"] > div > div > :is(section, div, article, main)`;
+        // Depth-agnostic descendant selectors: match `.sp` (brand-book block
+        // wrapper), `.bai-sec` (BrandAcronym), and any plain `<section>` inside
+        // this section. Used as a single `!important` target for the override.
+        const scope = `[data-dnd-section-id="${section.id}"]`;
+        const selector =
+          `${scope} .sp, ` +
+          `${scope} .bai-sec, ` +
+          `${scope} section`;
 
         const cssParts: string[] = [];
         if (innerDesktop.length > 0) cssParts.push(`${selector} { ${innerDesktop.join('; ')}; }`);

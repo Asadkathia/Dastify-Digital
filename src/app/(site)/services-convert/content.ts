@@ -1,5 +1,5 @@
 import type { ConvertedSectionEditorState } from '@/lib/converted-pages/types';
-import type { SectionType } from '@/lib/converted-pages/section-types';
+import type { HomepageContent } from '@/lib/homepage-content';
 
 type EditableSection<T> = T & {
   editor?: ConvertedSectionEditorState;
@@ -10,444 +10,436 @@ export type PageContent = {
     title: string;
     description: string;
   };
-  nav: EditableSection<{
-    logoText: string;
-    logoAccent: string;
-    links: { label: string; href: string; active?: boolean }[];
-    ctaLabel: string;
-    ctaHref: string;
-  }>;
   hero: EditableSection<{
-    chip: string;
-    title: string;
-    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
-    lead: string;
+    badge: string;
+    heading: string;
+    cyclingWords: string[];
+    sub: string;
+    pills: string[];
     primaryCta: { label: string; href: string };
     secondaryCta: { label: string; href: string };
-    image?: string | { url?: string; alt?: string; filename?: string } | null;
-    imageAlt?: string;
-    imageFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
-    imagePosition?: string;
-    imageRadius?: string;
-    preservePlaceholderChrome?: boolean;
-    placeholderBackground?: string;
-    placeholderBorderColor?: string;
-    placeholderBorderWidth?: string;
-    placeholderBorderStyle?: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
-    placeholderPadding?: string;
-    placeholderGap?: string;
-    placeholderRadius?: string;
-    placeholderShowOverlay?: boolean;
-    placeholderOverlay?: string;
-    placeholderLabelColor?: string;
-    placeholderLabelSize?: string;
-    placeholderDimColor?: string;
-    placeholderDimSize?: string;
-    placeholderIconSize?: string;
-    placeholderIcon: string;
-    placeholderLabel: string;
-    placeholderDimensions: string;
-    marqueeItems: string[];
+    image: { src: string; alt: string };
+    trustLabel: string;
+    trustLogos: { slug: string; alt: string; image?: string }[];
   }>;
-  services: EditableSection<{
-    sectionType?: SectionType;
-    sourceLimit?: number;
-    chip: string;
-    title: string;
-    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
+  stats: EditableSection<{
+    label: string;
+    items: { value: string; arrow: '↑' | '↓' | null; label: string; color: 'primary' | 'accent' | 'support' }[];
+  }>;
+  comparison: EditableSection<{
+    eyebrow: string;
+    heading: string;
     intro: string;
-    items: {
-      id: string;
-      number: string;
-      name: string;
-      tagline: string;
-      outcomesTitle: string;
-      outcomes: string[];
-      description: string;
-      cta: { label: string; href: string };
-    }[];
+    badHeader: string;
+    goodHeader: string;
+    rows: { bad: string; good: string; goodSub: string; icon: string }[];
+    cta: { label: string; href: string };
   }>;
-  results: EditableSection<{
-    headline: string;
-    headlineTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
-    stats: { value: string; label: string }[];
+  growthFunnel: EditableSection<HomepageContent['growthFunnel']>;
+  whyDifferent: EditableSection<{
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    challenges: { icon: string; title: string; problem: string; solution: string }[];
   }>;
-  why: EditableSection<{
-    chip: string;
-    title: string;
-    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
-    lead: string;
-    cards: { icon: string; title: string; description: string }[];
+  formula: EditableSection<{
+    eyebrow: string;
+    items: { icon: string; title: string; desc: string }[];
+    primaryCta: { label: string; href: string };
+    secondaryCta: { label: string; href: string };
+  }>;
+  setsApart: EditableSection<{
+    eyebrow: string;
+    heading: string;
+    items: { icon: string; title: string; desc: string }[];
   }>;
   process: EditableSection<{
-    chip: string;
-    title: string;
-    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
-    intro: string;
-    steps: { number: string; title: string; description: string }[];
-    image?: string | { url?: string; alt?: string; filename?: string } | null;
-    imageAlt?: string;
-    imageFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
-    imagePosition?: string;
-    imageRadius?: string;
-    preservePlaceholderChrome?: boolean;
-    placeholderBackground?: string;
-    placeholderBorderColor?: string;
-    placeholderBorderWidth?: string;
-    placeholderBorderStyle?: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
-    placeholderPadding?: string;
-    placeholderGap?: string;
-    placeholderRadius?: string;
-    placeholderShowOverlay?: boolean;
-    placeholderOverlay?: string;
-    placeholderLabelColor?: string;
-    placeholderLabelSize?: string;
-    placeholderDimColor?: string;
-    placeholderDimSize?: string;
-    placeholderIconSize?: string;
-    placeholderIcon: string;
-    placeholderLabel: string;
-    placeholderDimensions: string;
-    imageOffsetX?: number;
-    imageOffsetY?: number;
+    heading: string;
+    steps: { title: string; desc: string }[];
   }>;
-  cta: EditableSection<{
-    title: string;
-    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
-    subtext: string;
-    primaryCta: { label: string; href: string };
-    secondaryCta: { label: string; href: string };
+  ctaBanner: EditableSection<{
+    heading: string;
+    sub: string;
+    bullets: string[];
+    cta: { label: string; href: string };
+  }>;
+  specialties: EditableSection<{
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    tabs: { slug: string; label: string }[];
+    tabContent: Record<string, { headline: string; description: string; bullets: string[] }>;
+    note: string;
+    noteCta: { label: string; href: string };
+  }>;
+  faqs: EditableSection<{
+    eyebrow: string;
+    heading: string;
+    items: { q: string; a: string }[];
   }>;
 };
 
 export const defaultContent: PageContent = {
-  "meta": {
-    "title": "Services — Dastify Digital | Healthcare Marketing That Fills Schedules",
-    "description": "Six HIPAA-compliant marketing services built for healthcare. SEO, PPC, content, social, web design, and reputation management — all measured in patients, not pageviews."
+  meta: {
+    title: 'Healthcare Marketing Services — Dastify Digital',
+    description:
+      'AI-Powered Healthcare Digital Marketing Services. Strategic, focused, results-driven campaigns that bring high-intent patients to your practice.',
   },
-  "nav": {
-    "logoText": "Dastify",
-    "logoAccent": ".Digital",
-    "links": [
-      {
-        "label": "Home",
-        "href": "/"
-      },
-      {
-        "label": "About",
-        "href": "/about"
-      },
-      {
-        "label": "Services",
-        "href": "/services",
-        "active": true
-      },
-      {
-        "label": "Work",
-        "href": "/work"
-      },
-      {
-        "label": "Insights",
-        "href": "/insights"
-      },
-      {
-        "label": "Contact",
-        "href": "/contact"
-      }
+  hero: {
+    badge: 'Growth Agency',
+    heading: 'AI-Powered Healthcare\nDigital Marketing Services',
+    cyclingWords: ['Strategic.', 'Focused.', 'Results-Driven Digital'],
+    sub: 'Dastify Digital puts your healthcare practice at the top of search results. Our award-winning digital marketing blends a status quo approach with technology-driven campaigns that attract the right patients, increase appointments, and deliver measurable ROI.',
+    pills: ['Maximize Online Visibility', 'HIPAA Compliant', 'Award-Winning', 'Proven ROI & Lead Growth'],
+    primaryCta: { label: 'Get your Free Growth Audit', href: '/contact' },
+    secondaryCta: { label: 'See Real Results', href: '/case-studies' },
+    image: { src: '', alt: 'Healthcare marketing dashboard' },
+    trustLabel: 'Recognized by',
+    trustLogos: [
+      { slug: 'best-in-search', alt: 'Best in Search - TopSEOs' },
+      { slug: 'google-partner', alt: 'Google Partner' },
+      { slug: 'upcity-top', alt: 'UpCity Top Digital Agency' },
+      { slug: 'clutch-top', alt: 'Clutch Top SEO Company Medical 2024' },
+      { slug: 'seoblog-top', alt: 'SEO Blog Top Rated' },
     ],
-    "ctaLabel": "Book a Call",
-    "ctaHref": "/contact"
   },
-  "hero": {
-    "chip": "Healthcare Marketing Services",
-    "title": "Six Services.\nOne Goal: More Patients.",
-    "lead": "Every service is built for healthcare. HIPAA-compliant tracking. Patient journey mapping. Revenue attribution you can actually trust. No generalist guesswork—just measurable growth.",
-    "primaryCta": {
-      "label": "Explore Services ↓",
-      "href": "#services"
-    },
-    "secondaryCta": {
-      "label": "Book a Strategy Call",
-      "href": "/contact"
-    },
-    "image": null,
-    "imageAlt": "",
-    "imageFit": "cover",
-    "imagePosition": "center",
-    "imageRadius": "0",
-    "preservePlaceholderChrome": false,
-    "placeholderBackground": "",
-    "placeholderBorderColor": "",
-    "placeholderBorderWidth": "",
-    "placeholderBorderStyle": "dashed",
-    "placeholderPadding": "",
-    "placeholderGap": "",
-    "placeholderRadius": "4",
-    "placeholderShowOverlay": true,
-    "placeholderOverlay": "",
-    "placeholderLabelColor": "",
-    "placeholderLabelSize": "",
-    "placeholderDimColor": "",
-    "placeholderDimSize": "",
-    "placeholderIconSize": "",
-    "placeholderIcon": "📊",
-    "placeholderLabel": "Hero Visual",
-    "placeholderDimensions": "520 × 480px",
-    "marqueeItems": [
-      "Healthcare SEO",
-      "•",
-      "Medical PPC",
-      "•",
-      "Content Marketing",
-      "•",
-      "Social Media",
-      "•",
-      "Website Design",
-      "•",
-      "Reputation Management",
-      "•"
-    ]
-  },
-  "services": {
-    "sectionType": "auto",
-    "sourceLimit": 10,
-    "chip": "What We Do",
-    "title": "Full-funnel healthcare marketing—built for compliance.",
-    "intro": "Click any service to see what's included and the outcomes we deliver.",
-    "items": [
-      {
-        "id": "seo",
-        "number": "01",
-        "name": "Healthcare SEO",
-        "tagline": "Get found when patients search for your services",
-        "outcomesTitle": "What You Get",
-        "outcomes": [
-          "Local SEO optimization for multi-location practices",
-          "Medical schema markup and structured data",
-          "HIPAA-compliant analytics and tracking setup",
-          "Condition and procedure page optimization",
-          "Google Business Profile management",
-          "Monthly ranking reports tied to patient volume"
-        ],
-        "description": "Patients searching for \"orthopedic surgeon near me\" or \"best dermatologist Dallas\" should find you first. We make that happen—with SEO built for healthcare's unique ranking factors.",
-        "cta": {
-          "label": "Learn More →",
-          "href": "/services/seo"
-        }
-      },
-      {
-        "id": "ppc",
-        "number": "02",
-        "name": "Medical PPC & Paid Media",
-        "tagline": "High-intent patients, compliant campaigns, real ROI",
-        "outcomesTitle": "What You Get",
-        "outcomes": [
-          "Google Ads campaigns with healthcare policy compliance",
-          "Meta (Facebook/Instagram) ads with LegitScript certification",
-          "HIPAA-compliant conversion tracking and attribution",
-          "Landing pages optimized for appointment booking",
-          "Geo-targeting for service area precision",
-          "Weekly optimization and transparent cost reporting"
-        ],
-        "description": "Healthcare PPC is full of landmines—disapproved ads, tracking restrictions, compliance headaches. We navigate all of it so you can focus on what matters: more patients calling.",
-        "cta": {
-          "label": "Learn More →",
-          "href": "/services/ppc"
-        }
-      },
-      {
-        "id": "content",
-        "number": "03",
-        "name": "Healthcare Content Marketing",
-        "tagline": "Educational content that builds trust and ranks",
-        "outcomesTitle": "What You Get",
-        "outcomes": [
-          "Physician-reviewed blog content and articles",
-          "Condition and treatment educational pages",
-          "Patient FAQ libraries optimized for voice search",
-          "Email nurture sequences for patient retention",
-          "Video scripts and production guidance",
-          "Content calendars aligned with seasonal demand"
-        ],
-        "description": "Patients research before they book. Our content answers their questions, builds authority, and guides them to your practice—not your competitor's.",
-        "cta": {
-          "label": "Learn More →",
-          "href": "/services/content"
-        }
-      },
-      {
-        "id": "social",
-        "number": "04",
-        "name": "Social Media Marketing",
-        "tagline": "Build community and humanize your practice",
-        "outcomesTitle": "What You Get",
-        "outcomes": [
-          "Platform-specific content strategies (Instagram, Facebook, LinkedIn)",
-          "Physician thought leadership positioning",
-          "Patient testimonial and UGC campaigns (HIPAA-compliant)",
-          "Community management and engagement",
-          "Paid social advertising integration",
-          "Monthly analytics tied to practice goals"
-        ],
-        "description": "Social media for healthcare isn't about going viral. It's about building trust, showcasing your team, and staying top-of-mind when patients need you.",
-        "cta": {
-          "label": "Learn More →",
-          "href": "/services/social"
-        }
-      },
-      {
-        "id": "web",
-        "number": "05",
-        "name": "Medical Website Design",
-        "tagline": "Fast, accessible, conversion-optimized sites",
-        "outcomesTitle": "What You Get",
-        "outcomes": [
-          "Custom website design built for patient conversion",
-          "Mobile-first, WCAG 2.1 AA accessible development",
-          "Online scheduling and patient portal integration",
-          "Provider profile pages optimized for SEO",
-          "HIPAA-compliant forms and secure data handling",
-          "Ongoing maintenance and performance monitoring"
-        ],
-        "description": "Your website is your 24/7 front desk. We build sites that load fast, look professional, and make it effortless for patients to book—on any device.",
-        "cta": {
-          "label": "Learn More →",
-          "href": "/services/web"
-        }
-      },
-      {
-        "id": "reputation",
-        "number": "06",
-        "name": "Reputation Management",
-        "tagline": "Turn happy patients into 5-star reviews",
-        "outcomesTitle": "What You Get",
-        "outcomes": [
-          "Automated review request workflows (SMS + email)",
-          "Multi-platform monitoring (Google, Healthgrades, Vitals, Yelp)",
-          "Professional response templates and crisis management",
-          "Review generation campaigns tied to patient visits",
-          "Competitive benchmarking and sentiment analysis",
-          "Monthly reputation health reports"
-        ],
-        "description": "87% of patients check reviews before booking. We help you systematically collect positive reviews while managing the occasional negative one with grace.",
-        "cta": {
-          "label": "Learn More →",
-          "href": "/services/reputation"
-        }
-      }
-    ]
-  },
-  "results": {
-    "headline": "Real results from healthcare practices like yours.",
-    "stats": [
-      {
-        "value": "+309%",
-        "label": "Organic Traffic"
-      },
-      {
-        "value": "8.2x",
-        "label": "PPC ROI"
-      },
-      {
-        "value": "4.8★",
-        "label": "Avg. Client Rating"
-      }
-    ]
-  },
-  "why": {
-    "chip": "Why It Matters",
-    "title": "Healthcare marketing isn't regular marketing.",
-    "lead": "Generic agencies learn your industry on your dime. We already know it—because we've worked inside it. Here's what makes healthcare different.",
-    "cards": [
-      {
-        "icon": "🔒",
-        "title": "HIPAA Compliance",
-        "description": "Tracking pixels, form data, remarketing audiences—all require PHI-safe handling. One mistake can mean a breach."
-      },
-      {
-        "icon": "📋",
-        "title": "Platform Restrictions",
-        "description": "Google and Meta have specific healthcare ad policies. We know them cold—and how to work within them."
-      },
-      {
-        "icon": "🏥",
-        "title": "Patient Journeys",
-        "description": "A dermatology patient researches differently than a bariatric surgery candidate. We map every touchpoint."
-      },
-      {
-        "icon": "📊",
-        "title": "Revenue Attribution",
-        "description": "Impressions don't pay bills. We connect marketing spend to actual appointments and patient revenue."
-      }
-    ]
-  },
-  "process": {
-    "chip": "How We Work",
-    "title": "From audit to acceleration in 5 steps.",
-    "intro": "Every engagement starts with understanding your practice, your patients, and your goals.",
-    "steps": [
-      {
-        "number": "1",
-        "title": "Market Audit",
-        "description": "We study your competitors, your patients, and your current marketing performance."
-      },
-      {
-        "number": "2",
-        "title": "Strategy",
-        "description": "Campaign structure, channel selection, compliance framework—all built for your goals."
-      },
-      {
-        "number": "3",
-        "title": "Build",
-        "description": "Copy, design, landing pages, tracking—everything built to healthcare standards."
-      },
-      {
-        "number": "4",
-        "title": "Launch",
-        "description": "Phased rollout with real-time monitoring to catch issues before they cost you."
-      },
-      {
-        "number": "5",
-        "title": "Optimize",
-        "description": "Monthly reviews, data-driven iteration, and continuous improvement."
-      }
+  stats: {
+    label: 'Marketing That Talks Less, Converts More',
+    items: [
+      { value: '35%', arrow: '↑', label: 'Increase conversion', color: 'support' },
+      { value: '50%', arrow: '↑', label: 'Improve engagement', color: 'primary' },
+      { value: '30%', arrow: '↓', label: 'Decrease in CPC', color: 'accent' },
+      { value: '1000+', arrow: null, label: 'Satisfied Customers', color: 'support' },
+      { value: '95%', arrow: null, label: 'Client Retention Rate', color: 'primary' },
+      { value: '$50M+', arrow: null, label: 'Revenue Generated', color: 'accent' },
     ],
-    "image": null,
-    "imageAlt": "",
-    "imageFit": "cover",
-    "imagePosition": "center",
-    "imageRadius": "0",
-    "preservePlaceholderChrome": false,
-    "placeholderBackground": "",
-    "placeholderBorderColor": "",
-    "placeholderBorderWidth": "",
-    "placeholderBorderStyle": "dashed",
-    "placeholderPadding": "",
-    "placeholderGap": "",
-    "placeholderRadius": "4",
-    "placeholderShowOverlay": true,
-    "placeholderOverlay": "",
-    "placeholderLabelColor": "",
-    "placeholderLabelSize": "",
-    "placeholderDimColor": "",
-    "placeholderDimSize": "",
-    "placeholderIconSize": "",
-    "placeholderIcon": "🎯",
-    "placeholderLabel": "Process Visual",
-    "placeholderDimensions": "480 × 520px",
-    "imageOffsetX": 0,
-    "imageOffsetY": 0
   },
-  "cta": {
-    "title": "Ready to see what these\nservices look like for you?",
-    "subtext": "30 minutes. No pitch deck. We'll audit your current marketing and show you where the opportunities are.",
-    "primaryCta": {
-      "label": "Book a Strategy Call →",
-      "href": "/contact"
+  comparison: {
+    eyebrow: 'Want to Become the Practice Patients Find First?',
+    heading: 'Get Ranked. Get Booked.\n<em>Grow Faster.</em>',
+    intro:
+      'Generic campaigns waste money. We build AI-powered, custom digital marketing for healthcare — campaigns that speak directly to your patients, resonate with your specialty, and convert searches into booked appointments.',
+    badHeader: 'What Generic Marketing Gives You',
+    goodHeader: 'How Dastify Boosts ROI',
+    rows: [
+      {
+        bad: 'Patients Can’t Find You — Competitors Win Appointments',
+        good: 'Front-Page Domination',
+        goodSub: 'SEO & Google Maps strategy that puts your practice in front of high-intent patients fast.',
+        icon: 'search',
+      },
+      {
+        bad: 'Ads Don’t Convert & Drain Your Budget',
+        good: 'ROI-Driven PPC Campaigns',
+        goodSub: 'AI-driven, HIPAA-safe ads that bring high-intent patients straight to your schedule.',
+        icon: 'bolt',
+      },
+      {
+        bad: 'Your Website Loses Visitors — Bad UX',
+        good: 'Conversion-Optimized Funnels',
+        goodSub: 'Patient-focused optimized websites that turn visitors into scheduled appointments.',
+        icon: 'spark',
+      },
+      {
+        bad: 'Few Reviews, Low Trust, No New Patients',
+        good: 'Automated Reviews',
+        goodSub: 'Smart AI patient acquisition and 5-star review automation.',
+        icon: 'shield',
+      },
+      {
+        bad: 'No Marketing Clarity, Zero Transparency',
+        good: 'Live Dashboards & Analytics',
+        goodSub: 'Show exactly which campaigns bring patients and revenue.',
+        icon: 'chart',
+      },
+    ],
+    cta: { label: 'Book Your Practice Growth Plan Today', href: '/contact' },
+  },
+  growthFunnel: {
+    eyebrow: 'Not an Average Digital Marketing Agency',
+    titleLead: 'We created a 4-step',
+    titleEm: '<em>Growth Funnel</em> for Healthcare',
+    intro:
+      'From ambitious clinics to hyperscaling provider groups, we engineer smarter healthcare marketing that outperforms generic agencies.',
+    ctaLabel: 'Get a Tailored Marketing Plan',
+    ctaHref: '/contact',
+    steps: [
+      {
+        num: '01',
+        title: 'Foundation & Awareness',
+        sub: 'Build Your Brand',
+        desc: 'Create a strong, memorable brand that patients recognize and trust.',
+        items: [
+          { n: 'Branding & Identity', d: 'Craft a distinctive healthcare brand that resonates with your ideal patients.' },
+          { n: 'Graphic & Logo Design', d: 'Professional visual assets that convey trust, credibility, and medical expertise.' },
+          { n: 'Content Marketing', d: 'Educational blogs, guides, and articles that establish thought leadership.' },
+          { n: 'Email Marketing', d: 'Nurture sequences that keep your practice top-of-mind with prospects.' },
+          { n: 'Video Marketing', d: 'Patient testimonials, procedure explainers, and doctor profiles that humanize your brand.' },
+        ],
+      },
+      {
+        num: '02',
+        title: 'Visibility & Discovery',
+        sub: 'Get Found Online',
+        desc: 'Dominate search results and appear exactly where patients are looking.',
+        items: [
+          { n: 'SEO', d: 'Rank #1 for high-intent keywords like “dentist near me” or “orthopedic surgeon.”' },
+          { n: 'Website Design & Dev', d: 'Fast, mobile-first, HIPAA-compliant websites that convert visitors into appointments.' },
+          { n: 'Local SEO & GBP', d: 'Dominate the local map pack and drive foot traffic from nearby patients.' },
+          { n: 'Medical Copywriting', d: 'Compelling, compliant website copy that speaks to patient pain points.' },
+        ],
+      },
+      {
+        num: '03',
+        title: 'Conversion & Acquisition',
+        sub: 'Drive Patient Appointments',
+        desc: 'Turn online visibility into booked appointments with targeted campaigns.',
+        items: [
+          { n: 'Medical PPC / Google Ads', d: 'High-ROI paid search campaigns targeting patients actively seeking care.' },
+          { n: 'Social Media Ads', d: 'Precision-targeted Facebook & Instagram ads for new patient acquisition.' },
+          { n: 'Landing Page Optimization', d: 'Conversion-focused pages that turn clicks into confirmed appointments.' },
+          { n: 'Analytics & Tracking', d: 'Full-funnel attribution so you know exactly which campaigns drive revenue.' },
+        ],
+      },
+      {
+        num: '04',
+        title: 'Loyalty & Growth',
+        sub: 'Engage & Retain',
+        desc: 'Build lasting relationships, earn 5-star reviews, and turn patients into referral sources.',
+        items: [
+          { n: 'Social Media Management', d: 'Consistent, engaging social presence that builds community and trust.' },
+          { n: 'Reputation Management', d: 'Proactive review generation and monitoring across Google, Healthgrades, and Yelp.' },
+          { n: 'Patient Retention', d: 'Automated recall, re-engagement, and loyalty email sequences.' },
+          { n: 'Referral Programs', d: 'Structured referral systems that turn happy patients into your best marketers.' },
+          { n: 'SMS & WhatsApp', d: 'Appointment reminders and follow-ups that reduce no-shows by up to 40%.' },
+        ],
+      },
+    ],
+  },
+  whyDifferent: {
+    eyebrow: 'Why is it different?',
+    heading: 'Healthcare Marketing is Not\nEveryone’s <em>Cup of Tea</em>',
+    intro:
+      'Healthcare marketing demands compliance expertise, patient trust, and precision strategy. Dastify Digital brings all three together.',
+    challenges: [
+      {
+        icon: 'shield',
+        title: 'HIPAA & Compliance Risks',
+        problem: 'One wrong ad, testimonial, or unsecured form can trigger serious legal and financial penalties.',
+        solution: 'We build campaigns aligned with HIPAA, PHI handling, BAAs, and healthcare advertising regulations.',
+      },
+      {
+        icon: 'calendar',
+        title: 'Constantly Changing Regulations',
+        problem: 'Google healthcare ad policies, state medical board rules, and platform restrictions change frequently.',
+        solution: 'Our team tracks updates continuously so your campaigns stay compliant and up to date.',
+      },
+      {
+        icon: 'heart',
+        title: 'High Patient Trust Barrier',
+        problem: 'Patients aren’t making casual purchases — they’re choosing someone to trust with their health.',
+        solution: 'We create messaging that builds clinical credibility, empathy, and patient confidence.',
+      },
+      {
+        icon: 'search',
+        title: 'Long Patient Decision Cycles',
+        problem: 'Healthcare decisions often involve weeks or months of research and comparison.',
+        solution: 'We design education-driven funnels that guide patients from the first search to an appointment.',
+      },
+      {
+        icon: 'users',
+        title: 'Multiple Decision Makers',
+        problem: 'Patients often consult family members, caregivers, and referring physicians before choosing.',
+        solution: 'Our data-driven marketing addresses all stakeholders’ concerns in the decision-making process.',
+      },
+      {
+        icon: 'chart',
+        title: 'Reputation Driven Industry',
+        problem: 'Online reviews and patient feedback can shape a practice’s credibility overnight.',
+        solution: 'We manage and strengthen your reputation through review monitoring and patient experience strategies.',
+      },
+    ],
+  },
+  formula: {
+    eyebrow: 'That’s the Dastify Formula',
+    items: [
+      {
+        icon: 'search',
+        title: 'Be Found',
+        desc: 'We create digital pathways that put your practice front and center in search results.',
+      },
+      {
+        icon: 'shield',
+        title: 'Be Trusted',
+        desc: 'We craft stories, content, and experiences that make patients feel confident in choosing you.',
+      },
+      {
+        icon: 'check',
+        title: 'Be Chosen',
+        desc: 'We design seamless journeys that turn patient trust into booked appointments.',
+      },
+    ],
+    primaryCta: { label: 'Go Digital Today', href: '/contact' },
+    secondaryCta: { label: 'Free Website & SEO Audit', href: '/contact' },
+  },
+  setsApart: {
+    eyebrow: 'A Sneak Peek into our Growth Lab',
+    heading: 'What Sets Us <em>Apart</em>?',
+    items: [
+      {
+        icon: 'stethoscope',
+        title: 'Healthcare-Only, Patient-Focused',
+        desc: 'We live and breathe healthcare digital marketing — every tactic is designed to attract, educate, and convert real patients.',
+      },
+      {
+        icon: 'bolt',
+        title: 'AI-Powered Smarts',
+        desc: 'From automated campaigns to intelligent optimization, our predictive analytics makes strategies sharper, faster, and more effective.',
+      },
+      {
+        icon: 'users',
+        title: 'Dedicated Growth Team',
+        desc: 'Your practice gets a personal marketing squad and dedicated account managers who know your goals, your patients, and your specialty inside out.',
+      },
+      {
+        icon: 'chart',
+        title: 'Total Transparency',
+        desc: 'No smoke, no mirrors. See every campaign in real time with intuitive dashboards and our AI-powered healthcare CRM.',
+      },
+      {
+        icon: 'shield',
+        title: 'Compliance Without Compromise',
+        desc: 'We navigate FDA, FTC, and state advertising rules so your campaigns stay compliant and your reputation stays untouchable.',
+      },
+    ],
+  },
+  process: {
+    heading: 'Your Digital Growth is\n<em>Just 4 Steps</em> Away',
+    steps: [
+      {
+        title: 'Discovery & Audit',
+        desc: 'We analyze your digital presence, competitors, and patient behavior to identify growth opportunities.',
+      },
+      {
+        title: 'Custom Strategy',
+        desc: 'Build a tailored healthcare marketing plan aligned with your patient growth goals.',
+      },
+      {
+        title: 'Launch & Execute',
+        desc: 'Deploy SEO, ads, social, and email campaigns with HIPAA-compliant execution.',
+      },
+      {
+        title: 'Optimize & Scale',
+        desc: 'Track performance, run A/B tests, and continuously optimize to maximize ROI.',
+      },
+    ],
+  },
+  ctaBanner: {
+    heading: 'Ready to Become the #1 Healthcare Practice in Your Area?',
+    sub: 'Proudly serving all 50 states.',
+    bullets: [
+      'Free 30-minute strategy session',
+      'Custom patient growth roadmap',
+      'Competitor analysis included',
+      'No obligation, no pressure',
+    ],
+    cta: { label: 'Book Your Free Session', href: '/contact' },
+  },
+  specialties: {
+    eyebrow: 'Who Do We Serve?',
+    heading: 'Built for High-Growth\n<em>Medical Specialties</em>',
+    intro:
+      'Our strategies are tailored to the unique patient journeys, compliance needs, and competitive landscapes of each specialty.',
+    tabs: [
+      { slug: 'cosmetic', label: 'Cosmetic & Aesthetic' },
+      { slug: 'dental', label: 'Dental' },
+      { slug: 'fertility', label: 'Fertility & IVF' },
+      { slug: 'plastic', label: 'Plastic Surgery' },
+      { slug: 'orthopedic', label: 'Orthopedic & Sports' },
+      { slug: 'dermatology', label: 'Dermatology' },
+      { slug: 'mental-health', label: 'Mental Health' },
+      { slug: 'telehealth', label: 'Telehealth' },
+      { slug: 'cardiology', label: 'Cardiology' },
+    ],
+    // TODO(copy): per-specialty descriptions/bullets are not in the design source — placeholder text below.
+    tabContent: {
+      cosmetic: {
+        headline: 'Cosmetic & Aesthetic Clinics',
+        description: 'Patient acquisition strategies tuned for elective, high-consideration aesthetic procedures.',
+        bullets: ['Visual-first social campaigns', 'Before/after showcase funnels', 'Consultation booking optimization'],
+      },
+      dental: {
+        headline: 'Dental Practices',
+        description: 'Local dominance and recall systems built for dental practices and DSOs.',
+        bullets: ['Local SEO & GBP optimization', 'Implant & aligner campaigns', 'Recall & reactivation automation'],
+      },
+      fertility: {
+        headline: 'Fertility & IVF Clinics',
+        description: 'Empathy-driven, education-led marketing for long, high-stakes patient decisions.',
+        bullets: ['Education-driven content funnels', 'HIPAA-safe inquiry forms', 'Long-cycle nurture sequences'],
+      },
+      plastic: {
+        headline: 'Plastic & Reconstructive Surgery',
+        description: 'High-trust marketing for elective and reconstructive surgical practices.',
+        bullets: ['Surgeon authority content', 'Procedure-specific landing pages', 'Reputation management'],
+      },
+      orthopedic: {
+        headline: 'Orthopedic & Sports Medicine',
+        description: 'Multi-location SEO and referral channel growth for ortho groups.',
+        bullets: ['Multi-location local SEO', 'Referring-physician outreach', 'Procedure-specific PPC'],
+      },
+      dermatology: {
+        headline: 'Dermatology Clinics',
+        description: 'Balanced medical and cosmetic dermatology patient acquisition.',
+        bullets: ['Cosmetic + medical funnel split', 'Skin condition content hubs', 'Annual skin-check recall'],
+      },
+      'mental-health': {
+        headline: 'Mental Health & Behavioral Health',
+        description: 'Compliant, sensitive marketing for behavioral and mental health providers.',
+        bullets: ['Stigma-aware messaging', 'Insurance-aware funnels', 'Telehealth intake optimization'],
+      },
+      telehealth: {
+        headline: 'Telehealth & Virtual Care',
+        description: 'Conversion-first marketing for virtual-care brands competing on convenience.',
+        bullets: ['Multi-state SEO scaling', 'Subscription + visit funnels', 'Activation & retention email'],
+      },
+      cardiology: {
+        headline: 'Cardiology',
+        description: 'Trust-led campaigns for cardiology groups serving high-acuity patient populations.',
+        bullets: ['Symptom-led content strategy', 'Referral physician portals', 'Compliance-first paid media'],
+      },
     },
-    "secondaryCta": {
-      "label": "See Case Studies",
-      "href": "/work"
-    }
+    note: 'Can’t find yours here? We work with all healthcare verticals.',
+    noteCta: { label: 'Tell Us About Yours', href: '/contact' },
+  },
+  faqs: {
+    eyebrow: 'FAQs',
+    heading: 'Common Questions,\n<em>Clear Answers</em>',
+    items: [
+      {
+        q: 'What does a healthcare marketing agency do?',
+        a: 'A healthcare marketing agency helps medical practices attract more patients through digital channels like SEO, paid advertising, website optimization, social media marketing, and reputation management — while ensuring HIPAA compliance.',
+      },
+      {
+        q: 'What is healthcare digital marketing?',
+        a: 'Healthcare digital marketing uses online strategies — SEO, Google Ads, website optimization, content marketing, social media, and reputation management — to attract, educate, and convert patients into booked appointments.',
+      },
+      {
+        q: 'Why is healthcare marketing important for doctors and clinics?',
+        a: 'Most patients search online before choosing a provider. Effective marketing improves search visibility, builds trust through reviews and educational content, and increases appointment bookings.',
+      },
+      {
+        q: 'How long does it take to see results?',
+        a: 'Paid advertising can generate patient inquiries within weeks, while SEO typically takes 3–6 months. Long-term strategies like content marketing and reputation management continue improving over time.',
+      },
+      {
+        q: 'What are the most effective strategies in 2026?',
+        a: 'Local SEO, Google Ads for high-intent searches, AI-optimized content, reputation management, website conversion optimization, and patient education content drive the highest growth.',
+      },
+      {
+        q: 'How does marketing campaign reporting work?',
+        a: 'We track website traffic, patient inquiries, call tracking, appointment bookings, and advertising ROI. Monthly reports show exactly how digital marketing contributes to patient growth.',
+      },
+    ],
   },
 };

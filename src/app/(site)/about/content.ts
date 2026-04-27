@@ -9,441 +9,229 @@ export type PageContent = {
     title: string;
     description: string;
   };
-  nav: EditableSection<{
-    logo: { text: string; accent: string; href: string };
-    links: { label: string; href: string; active?: boolean }[];
-    cta: { label: string; href: string };
-  }>;
   hero: EditableSection<{
-    chip: string;
-    title: string;
-    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
-    lead: string;
-    ctas: { label: string; href: string; variant: "dark" | "outline" }[];
-    stats: { value: string; label: string }[];
-    visual: {
-      image?: string | { url?: string; alt?: string; filename?: string } | null;
-      imageAlt?: string;
-      imageFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
-      imagePosition?: string;
-      imageRadius?: string;
-      preservePlaceholderChrome?: boolean;
-      placeholderBackground?: string;
-      placeholderBorderColor?: string;
-      placeholderBorderWidth?: string;
-      placeholderBorderStyle?: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
-      placeholderPadding?: string;
-      placeholderGap?: string;
-      placeholderRadius?: string;
-      placeholderShowOverlay?: boolean;
-      placeholderOverlay?: string;
-      placeholderLabelColor?: string;
-      placeholderLabelSize?: string;
-      placeholderDimColor?: string;
-      placeholderDimSize?: string;
-      placeholderIconSize?: string;
-      icon: string;
-      label: string;
-      dimensions: string;
-    };
-    marquee: string[];
+    badge: string;
+    heading: string;
+    sub: string;
   }>;
-  manifesto: EditableSection<{
-    watermark: string;
-    headline: string;
-    headlineTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
-    highlight: string;
-    statements: string[];
-    paragraphs: string[];
+  missionVision: EditableSection<{
+    mission: { icon: string; title: string; body: string };
+    vision: { icon: string; title: string; body: string };
   }>;
-  difference: EditableSection<{
-    chip: string;
-    title: string;
-    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
-    intro: string;
-    cards: { number: string; title: string; description: string }[];
-  }>;
-  story: EditableSection<{
-    watermark: string;
-    chip: string;
-    title: string;
-    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
-    intro: string;
-    items: { year: string; title: string; description: string }[];
-  }>;
-  team: EditableSection<{
-    watermark: string;
-    chip: string;
-    title: string;
-    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
-    description: string;
-    stats: { value: string; label: string }[];
-    cta: { label: string; href: string };
-    visuals: {
-      image?: string | { url?: string; alt?: string; filename?: string } | null;
-      imageAlt?: string;
-      imageFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
-      imagePosition?: string;
-      imageRadius?: string;
-      preservePlaceholderChrome?: boolean;
-      placeholderBackground?: string;
-      placeholderBorderColor?: string;
-      placeholderBorderWidth?: string;
-      placeholderBorderStyle?: 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
-      placeholderPadding?: string;
-      placeholderGap?: string;
-      placeholderRadius?: string;
-      placeholderShowOverlay?: boolean;
-      placeholderOverlay?: string;
-      placeholderLabelColor?: string;
-      placeholderLabelSize?: string;
-      placeholderDimColor?: string;
-      placeholderDimSize?: string;
-      placeholderIconSize?: string;
-      icon: string;
-      label: string;
-      dimensions: string;
-      height: string;
-      className: string;
-    }[];
-  }>;
-  values: EditableSection<{
-    chip: string;
-    title: string;
-    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
-    intro: string;
+  coreValues: EditableSection<{
+    eyebrow: string;
+    heading: string;
     items: { icon: string; title: string; description: string }[];
   }>;
-  cta: EditableSection<{
-    title: string;
-    titleTag?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span';
-    subtext: string;
-    buttons: { label: string; href: string; variant: "primary" | "ghost" }[];
+  stats: EditableSection<{
+    eyebrow: string;
+    heading: string;
+    items: { value: string; label: string }[];
+  }>;
+  timeline: EditableSection<{
+    eyebrow: string;
+    heading: string;
+    milestones: { year: string; title: string; description: string }[];
+  }>;
+  trust: EditableSection<{
+    eyebrow: string;
+    heading: string;
+    logos: { slug: string; label: string }[];
+    badgesLabel: string;
+    badges: { slug: string; alt: string; image?: string }[];
+  }>;
+  certifications: EditableSection<{
+    eyebrow: string;
+    heading: string;
+    items: { icon: string; title: string; description: string }[];
+  }>;
+  finalCta: EditableSection<{
+    heading: string;
+    sub: string;
+    primary: { label: string; href: string };
+    phone: { label: string; href: string };
   }>;
 };
 
 export const defaultContent: PageContent = {
-  "meta": {
-    "title": "About Us — Dastify Digital | The Creative Authority for Healthcare Growth",
-    "description": "Meet the healthcare marketing agency that refuses to look like a hospital. We're strategists who've worked inside health systems, now building growth engines for practices that demand more."
+  meta: {
+    title: 'About Us — Dastify Digital | Healthcare Marketing With Clinical Precision',
+    description:
+      "We didn't start a marketing agency — we started a mission. Meet the team building growth engines for 120+ healthcare practices nationwide.",
   },
-  "nav": {
-    "logo": {
-      "text": "Dastify",
-      "accent": ".Digital",
-      "href": "/"
+  hero: {
+    badge: 'Our Story',
+    heading: "We didn't start a marketing agency.\nWe started a <em>mission</em>.",
+    sub: "In 2014, we saw healthcare practices pouring money into generic marketing that didn't understand their world — the compliance demands, the patient trust barrier, the long decision cycles. So we built something different: an agency that speaks medicine first and marketing second.",
+  },
+  missionVision: {
+    mission: {
+      icon: 'pulse',
+      title: 'Our Mission',
+      body: 'To be the growth partner every healthcare practice deserves — one that understands the weight of what they do, respects the regulations they navigate, and delivers marketing that fills waiting rooms with the right patients.',
     },
-    "links": [
-      {
-        "label": "Home",
-        "href": "/"
-      },
-      {
-        "label": "About",
-        "href": "/about",
-        "active": true
-      },
-      {
-        "label": "Services",
-        "href": "/services"
-      },
-      {
-        "label": "Work",
-        "href": "/work"
-      },
-      {
-        "label": "Insights",
-        "href": "/insights"
-      },
-      {
-        "label": "Contact",
-        "href": "/contact"
-      }
-    ],
-    "cta": {
-      "label": "Book a Call",
-      "href": "/contact"
-    }
-  },
-  "hero": {
-    "chip": "About Dastify Digital",
-    "title": "Built By MarketersWho've Been InsideThe Health Systemm.",
-    "lead": "We didn't learn healthcare from a textbook. We learned it from 12-hour days inside hospital marketing departments, fighting for budget, navigating compliance, and proving ROI to skeptical CMOs.",
-    "ctas": [
-      {
-        "label": "Meet The Team →",
-        "href": "/contact",
-        "variant": "dark"
-      },
-      {
-        "label": "See Our Work",
-        "href": "/work",
-        "variant": "outline"
-      }
-    ],
-    "stats": [
-      {
-        "value": "50+",
-        "label": "Healthcare Clients Served"
-      },
-      {
-        "value": "$40M+",
-        "label": "Patient Revenue Generated"
-      }
-    ],
-    "visual": {
-      "image": null,
-      "imageAlt": "",
-      "imageFit": "cover",
-      "imagePosition": "center",
-      "imageRadius": "0",
-      "preservePlaceholderChrome": false,
-      "placeholderBackground": "",
-      "placeholderBorderColor": "",
-      "placeholderBorderWidth": "",
-      "placeholderBorderStyle": "dashed",
-      "placeholderPadding": "",
-      "placeholderGap": "",
-      "placeholderRadius": "4",
-      "placeholderShowOverlay": true,
-      "placeholderOverlay": "",
-      "placeholderLabelColor": "",
-      "placeholderLabelSize": "",
-      "placeholderDimColor": "",
-      "placeholderDimSize": "",
-      "placeholderIconSize": "",
-      "icon": "🏥",
-      "label": "Hero Visual",
-      "dimensions": "580 × 520px"
+    vision: {
+      icon: 'spark',
+      title: 'Our Vision',
+      body: 'A world where every quality healthcare provider is easy to find, easy to trust, and easy to choose — because their digital presence is as excellent as their clinical care.',
     },
-    "marquee": [
-      "Healthcare SEO",
-      "•",
-      "Patient Acquisition",
-      "•",
-      "HIPAA-Compliant Campaigns",
-      "•",
-      "Medical Practice Growth",
-      "•",
-      "Physician Referral Marketing",
-      "•"
-    ]
   },
-  "manifesto": {
-    "watermark": "A",
-    "headline": "Most healthcare marketing",
-    "highlight": "fails.",
-    "statements": [
-      "Because the agency doesn't understand HIPAA. Or patient journeys. Or why a 2.3% conversion rate is actually exceptional for orthopedic surgery.",
-      "Because they're generalists who learned \"healthcare\" from a Wikipedia article last Tuesday.",
-      "Because they measure impressions instead of appointments. Clicks instead of patients."
+  coreValues: {
+    eyebrow: 'What We Stand For',
+    heading: 'Six principles that guide\nevery <em>decision</em> we make.',
+    items: [
+      {
+        icon: 'stethoscope',
+        title: 'Medical-Only Focus',
+        description:
+          "We don’t do restaurants. We don’t do retail. Every strategy, benchmark, and campaign is built for healthcare — and it shows.",
+      },
+      {
+        icon: 'shield',
+        title: 'Compliance First',
+        description:
+          'HIPAA, FDA, FTC, state medical board rules — we navigate them all so your campaigns stay safe and your reputation stays untouchable.',
+      },
+      {
+        icon: 'chart',
+        title: 'Radical Transparency',
+        description:
+          'No smoke, no mirrors. Every campaign is visible in real time. You see what we see — live dashboards, honest reporting, no vanity metrics.',
+      },
+      {
+        icon: 'heart',
+        title: 'Patient-Centered Thinking',
+        description:
+          'We build campaigns the way you build care plans — starting with the patient. Their search, their fears, their journey to your door.',
+      },
+      {
+        icon: 'bolt',
+        title: 'Measurable Impact',
+        description:
+          "If we can’t measure it, we don’t recommend it. Every dollar is tracked from first click to seated patient.",
+      },
+      {
+        icon: 'users',
+        title: 'Long-Term Partnership',
+        description:
+          "95% client retention doesn’t happen by accident. We invest in relationships that compound over years, not quick wins that fade.",
+      },
     ],
-    "paragraphs": [
-      "We started Dastify Digital after watching this cycle repeat for years. <strong>Healthcare organizations hiring agencies that didn't speak their language</strong>—and then wondering why the campaigns flopped.",
-      "Our founding team came from inside the system. Hospital marketing directors. Health system strategists. Practice administrators who actually signed the checks. We know what it's like to defend a marketing budget to a CFO who thinks \"digital\" means a fancier brochure.",
-      "So we built the agency we wished existed: one that combines <strong>world-class creative with deep healthcare intelligence</strong>. One that knows how to work with compliance, not against it. One that measures success the same way you do—in patients, not pageviews.",
-      "<strong>This isn't marketing for healthcare. It's healthcare marketing.</strong> There's a difference."
-    ]
   },
-  "difference": {
-    "chip": "Why Dastify Digital",
-    "title": "Three things we do that nobody else will.",
-    "intro": "Any agency can run Google Ads. Very few can do it while navigating BAA requirements, HIPAA-compliant tracking, and physician skepticism.",
-    "cards": [
-      {
-        "number": "01",
-        "title": "Compliance as Creative Fuel",
-        "description": "HIPAA isn't a roadblock—it's a filter. Constraints force better ideas. We've built campaigns that outperform non-healthcare competitors while staying fully compliant with PHI regulations, BAA requirements, and platform-specific healthcare policies."
-      },
-      {
-        "number": "02",
-        "title": "Patient Journey Obsession",
-        "description": "We map every touchpoint from symptom search to scheduled appointment. We know that a dermatology patient researches differently than a bariatric surgery candidate. And we build campaigns that meet them exactly where they are."
-      },
-      {
-        "number": "03",
-        "title": "Revenue Attribution, Not Vanity",
-        "description": "We connect marketing spend to actual patient revenue. Not \"estimated conversions.\" Not \"projected value.\" Real appointments. Real patients. Real ROI that you can show your CFO without crossing your fingers."
-      }
-    ]
-  },
-  "story": {
-    "watermark": "T",
-    "chip": "Our Journey",
-    "title": "From hospital hallways to healthcare growth.",
-    "intro": "The short version: we got tired of watching healthcare organizations settle for mediocre marketing.",
-    "items": [
-      {
-        "year": "2018",
-        "title": "The Breaking Point",
-        "description": "Our founders—working in separate health systems—independently reach the same conclusion: healthcare marketing is broken. Generic agencies don't understand the space. In-house teams are stretched too thin."
-      },
-      {
-        "year": "2019",
-        "title": "Dastify Digital Launches",
-        "description": "We open with three clients, all multi-location specialty practices. First-year goal: prove that compliance and creativity can coexist. Spoiler: they can."
-      },
-      {
-        "year": "2021",
-        "title": "The Pandemic Pivot",
-        "description": "COVID changes everything. Telehealth explodes. Patient acquisition moves entirely digital. We help 20+ practices navigate the shift—and discover that crisis is where healthcare marketing expertise matters most."
-      },
-      {
-        "year": "2023",
-        "title": "Vertical Expansion",
-        "description": "We expand beyond specialty practices into dental, behavioral health, senior care, and urgent care. Each vertical gets its own dedicated team with deep expertise in that patient journey."
-      },
-      {
-        "year": "Today",
-        "title": "50+ Healthcare Clients",
-        "description": "Now serving practices across 6 healthcare verticals, with a team of 25+ healthcare marketing specialists. Still obsessing over the same thing we did on day one: measurable patient growth."
-      }
-    ]
-  },
-  "team": {
-    "watermark": "D",
-    "chip": "The Team",
-    "title": "Marketers who've worked your side of the desk.",
-    "description": "No one on our team learned healthcare marketing from a course. Every strategist, designer, and media buyer has worked inside health systems, medical practices, or healthcare tech companies. When you explain your challenges, we already know the landscape.",
-    "stats": [
-      {
-        "value": "25+",
-        "label": "Healthcare Specialists"
-      },
-      {
-        "value": "120+",
-        "label": "Combined Years"
-      }
+  stats: {
+    eyebrow: 'By the Numbers',
+    heading: 'Results that speak\n<em>louder than promises</em>.',
+    items: [
+      { value: '10+', label: 'Years medical-only' },
+      { value: '120+', label: 'Practices served' },
+      { value: '48', label: 'States covered' },
+      { value: '95%', label: 'Client retention' },
+      { value: '$50M+', label: 'Revenue generated' },
+      { value: '575%', label: 'Best conversion lift' },
     ],
-    "cta": {
-      "label": "Meet The Full Team →",
-      "href": "/team"
-    },
-    "visuals": [
-      {
-        "image": null,
-        "imageAlt": "",
-        "imageFit": "cover",
-        "imagePosition": "center",
-        "imageRadius": "0",
-        "preservePlaceholderChrome": false,
-        "placeholderBackground": "",
-        "placeholderBorderColor": "",
-        "placeholderBorderWidth": "",
-        "placeholderBorderStyle": "dashed",
-        "placeholderPadding": "",
-        "placeholderGap": "",
-        "placeholderRadius": "4",
-        "placeholderShowOverlay": true,
-        "placeholderOverlay": "",
-        "placeholderLabelColor": "",
-        "placeholderLabelSize": "",
-        "placeholderDimColor": "",
-        "placeholderDimSize": "",
-        "placeholderIconSize": "",
-        "icon": "👥",
-        "label": "Team Photo 1",
-        "dimensions": "320 × 400px",
-        "height": "400px",
-        "className": "about-team-img-1"
-      },
-      {
-        "image": null,
-        "imageAlt": "",
-        "imageFit": "cover",
-        "imagePosition": "center",
-        "imageRadius": "0",
-        "preservePlaceholderChrome": false,
-        "placeholderBackground": "",
-        "placeholderBorderColor": "",
-        "placeholderBorderWidth": "",
-        "placeholderBorderStyle": "dashed",
-        "placeholderPadding": "",
-        "placeholderGap": "",
-        "placeholderRadius": "4",
-        "placeholderShowOverlay": true,
-        "placeholderOverlay": "",
-        "placeholderLabelColor": "",
-        "placeholderLabelSize": "",
-        "placeholderDimColor": "",
-        "placeholderDimSize": "",
-        "placeholderIconSize": "",
-        "icon": "💼",
-        "label": "Team Photo 2",
-        "dimensions": "280 × 188px",
-        "height": "188px",
-        "className": "about-team-img-2"
-      },
-      {
-        "image": null,
-        "imageAlt": "",
-        "imageFit": "cover",
-        "imagePosition": "center",
-        "imageRadius": "0",
-        "preservePlaceholderChrome": false,
-        "placeholderBackground": "",
-        "placeholderBorderColor": "",
-        "placeholderBorderWidth": "",
-        "placeholderBorderStyle": "dashed",
-        "placeholderPadding": "",
-        "placeholderGap": "",
-        "placeholderRadius": "4",
-        "placeholderShowOverlay": true,
-        "placeholderOverlay": "",
-        "placeholderLabelColor": "",
-        "placeholderLabelSize": "",
-        "placeholderDimColor": "",
-        "placeholderDimSize": "",
-        "placeholderIconSize": "",
-        "icon": "🎯",
-        "label": "Team Photo 3",
-        "dimensions": "280 × 188px",
-        "height": "188px",
-        "className": "about-team-img-3"
-      }
-    ]
   },
-  "values": {
-    "chip": "Our Values",
-    "title": "What we believe.",
-    "intro": "Not mission statements. Not corporate fluff. The principles that actually guide how we work.",
-    "items": [
+  timeline: {
+    eyebrow: 'Our Journey',
+    heading: 'From five clients to\n<em>120+ practices</em> nationwide.',
+    milestones: [
       {
-        "icon": "📊",
-        "title": "Outcomes Over Optics",
-        "description": "We'd rather show you 50 new patients than 50,000 impressions. Pretty campaigns that don't convert are just expensive wallpaper."
+        year: '2014',
+        title: 'The Beginning',
+        description:
+          'Founded with a single belief: healthcare practices deserve marketing that understands medicine. First 5 clients onboarded.',
       },
       {
-        "icon": "🔒",
-        "title": "Compliance as Craft",
-        "description": "HIPAA isn't a box to check. It's a design constraint that makes us more creative. We've never had a compliance violation. Ever."
+        year: '2016',
+        title: 'Medical-Only Commitment',
+        description:
+          'Made the decision to serve healthcare exclusively. Dropped all non-medical clients to go all-in.',
       },
       {
-        "icon": "🎯",
-        "title": "Radical Transparency",
-        "description": "You'll see exactly where every dollar goes. No hidden fees. No mysterious \"platform costs.\" Real-time dashboards you actually understand."
+        year: '2018',
+        title: '50 Practices Served',
+        description:
+          'Built proprietary reporting dashboards connecting marketing spend to patient bookings.',
       },
       {
-        "icon": "🤝",
-        "title": "Partnership, Not Vendorship",
-        "description": "We're not here to \"manage your account.\" We're here to grow your practice. That means challenging you when needed and celebrating wins together."
-      }
-    ]
+        year: '2020',
+        title: 'Telehealth Pivot',
+        description:
+          'Helped practices rapidly shift to digital-first patient acquisition during the pandemic.',
+      },
+      {
+        year: '2022',
+        title: 'AI-Powered Growth',
+        description:
+          'Integrated AI-driven campaign optimization and predictive analytics into our stack.',
+      },
+      {
+        year: '2024',
+        title: '120+ Practices',
+        description:
+          'Recognized by Clutch, Google, and SEO Blog as a top healthcare marketing agency.',
+      },
+      {
+        year: '2026',
+        title: 'The Next Chapter',
+        description:
+          'Expanding into PE-backed platform marketing and next-gen patient attribution technology.',
+      },
+    ],
   },
-  "cta": {
-    "title": "Ready to see what healthcare\nmarketing should look like?",
-    "subtext": "30 minutes. No pitch deck. Just a conversation about what's working, what's not, and where the opportunities are.",
-    "buttons": [
+  trust: {
+    eyebrow: 'Trusted Partners',
+    heading: 'Proud to work with <em>120+</em>\nmedical practices nationwide.',
+    logos: [
+      { slug: 'ortho-tennessee', label: 'ORTHO TENNESSEE' },
+      { slug: 'cona', label: 'CONA' },
+      { slug: 'midlands-ortho', label: 'MIDLANDS ORTHO' },
+      { slug: 'hopco', label: 'HOPCO' },
+      { slug: 'cvr-medical', label: 'CVR MEDICAL' },
+      { slug: 'summit-health', label: 'SUMMIT HEALTH' },
+    ],
+    badgesLabel: 'Recognized by',
+    badges: [
+      { slug: 'best-in-search', alt: 'Best in Search' },
+      { slug: 'google-partner', alt: 'Google Partner' },
+      { slug: 'upcity-top', alt: 'UpCity Top Digital Agency' },
+      { slug: 'clutch-top', alt: 'Clutch Top SEO Company' },
+      { slug: 'seoblog-top', alt: 'SEO Blog Top Rated' },
+    ],
+  },
+  certifications: {
+    eyebrow: 'Compliance & Certifications',
+    heading: 'Marketing you can trust\nwith your <em>reputation</em>.',
+    items: [
       {
-        "label": "Book a Strategy Call →",
-        "href": "/contact",
-        "variant": "primary"
+        icon: 'shield',
+        title: 'HIPAA-Trained',
+        description:
+          'All staff complete annual HIPAA training. We handle your marketing data with the same care you handle patient records.',
       },
       {
-        "label": "See Case Studies",
-        "href": "/work",
-        "variant": "ghost"
-      }
-    ]
+        icon: 'check',
+        title: 'BAA Available',
+        description:
+          'Business Associate Agreements available on request for all client partnerships.',
+      },
+      {
+        icon: 'stethoscope',
+        title: 'HIPAA-Safe Forms',
+        description:
+          'No PHI is collected on marketing surfaces. Forms route to a HIPAA-compliant CRM with a signed BAA.',
+      },
+      {
+        icon: 'shield',
+        title: 'FDA & FTC Compliant',
+        description:
+          'We navigate FDA, FTC, and state advertising regulations so your campaigns are always above board.',
+      },
+    ],
+  },
+  finalCta: {
+    heading: "Let’s talk about growing your practice.",
+    sub: "A 30-minute conversation — no pressure, no obligation. We’ll listen first, then show you where the biggest opportunities are.",
+    primary: { label: 'Book a growth session', href: '/contact' },
+    phone: { label: '(770) 462-4237', href: 'tel:+17704624237' },
   },
 };
