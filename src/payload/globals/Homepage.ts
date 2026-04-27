@@ -295,8 +295,18 @@ const finalCtaFields: Field[] = [
 
 export const Homepage: GlobalConfig = {
   slug: 'homepage',
-  label: 'Homepage Content',
+  label: 'Homepage Content (deprecated)',
+  // v2 redesign moved homepage editing into the Pages collection (slug=home,
+  // convertedPageName=home). The public `/` route reads from that Pages row,
+  // not from this global. Hiding from admin nav so marketing doesn't get
+  // confused about which surface to edit. Route is still reachable by URL,
+  // but nothing in the sidebar points to it.
+  //
+  // The underlying homepage_* tables on Neon still hold the legacy v1 column
+  // set; the new field shape in code wouldn't load anyway without a Postgres
+  // migration. Leaving both as-is — the global is functionally retired.
   admin: {
+    hidden: true,
     components: {
       elements: {
         beforeDocumentControls: [

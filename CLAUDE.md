@@ -42,7 +42,7 @@ scripts/
 ### 1. Payload collections (e.g. `Pages`)
 Data lives in the DB. The visual **PageEditor** assembles blocks drag-and-drop. Everything is dynamic.
 
-### 2. "Converted pages" (e.g. `/about`, `/demo`, `/contact-2`)
+### 2. "Converted pages" (e.g. `/`, `/about`, `/services`, `/contact`, `/book-session`, `/case-studies`, `/blog`, `/blog-post`)
 Data lives in a TypeScript file: `src/app/(site)/<page>/content.ts`. The file exports:
 - `PageContent` type — the shape
 - `defaultContent` — the actual copy
@@ -50,6 +50,8 @@ Data lives in a TypeScript file: `src/app/(site)/<page>/content.ts`. The file ex
 The page also has `editor-registry.ts` which registers sections with the PageEditor so marketing can edit them. Runtime render uses the TS content directly.
 
 **Source of truth for `PageContent`:** `content.ts`. Any sibling `components/types.ts` should just re-export — do not duplicate the type. (A duplicate type drifting out of sync has already broken Vercel builds.)
+
+> **Homepage editing lives here too.** The Pages collection has a row with `slug=home, convertedPageName=home` that drives `/`. The legacy `Homepage` Payload **global** is deprecated (hidden from admin nav) — its DB tables still exist on Neon but nothing in the new architecture reads from it for content. Marketing edits the homepage via Pages → Home, same as every other converted page.
 
 ---
 
