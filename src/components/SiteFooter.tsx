@@ -175,6 +175,11 @@ export function SiteFooter({ footer }: SiteFooterProps) {
         {/* ── Bottom row ── */}
         <div className="site-footer-bottom">
           <span className="site-footer-copy">{copyright}</span>
+          <div className="site-footer-legal">
+            <Link href="/privacy" className="site-footer-legal-link">Privacy</Link>
+            <Link href="/terms" className="site-footer-legal-link">Terms</Link>
+            <Link href="/hipaa" className="site-footer-legal-link">HIPAA Policy</Link>
+          </div>
           {badges.length > 0 && (
             <div className="site-footer-badges">
               {badges.map((badge) => (

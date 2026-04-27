@@ -1998,6 +1998,18 @@ body.mobile-menu-open {
   gap: 8px;
   flex-wrap: wrap;
 }
+.site-footer-legal {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+.site-footer-legal-link {
+  font-size: 12px;
+  color: rgba(255, 255, 255, .55);
+  transition: color .18s var(--expo);
+}
+.site-footer-legal-link:hover { color: #fff; }
 @media (max-width: 1100px) {
   .site-footer-grid {
     grid-template-columns: 1fr 1fr;
