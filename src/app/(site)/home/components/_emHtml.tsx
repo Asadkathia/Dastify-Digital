@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 // Render a string containing a limited subset of HTML (<em>…</em> and \n) as
 // ReactNode. This keeps <em> italic-serif accents expressible in the content
 // layer without dangerouslySetInnerHTML.
-export function renderEmHtml(input: string): ReactNode {
+export function renderEmHtml(input: string | null | undefined): ReactNode {
+  if (!input) return null;
   const lines = input.split('\n');
   const out: ReactNode[] = [];
   lines.forEach((line, lineIdx) => {
