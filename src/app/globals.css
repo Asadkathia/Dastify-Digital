@@ -4631,3 +4631,69 @@ select:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+/* v2 Tone Cycle */
+/* Card-level tone tints: derived from --primary | --accent | --support so the
+   runtime Tweaks panel can recolor them live. */
+.hp2-svc[data-tone="primary"],
+.hp2-weserve__card[data-tone="primary"] {
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  background: color-mix(in srgb, var(--primary) 5%, var(--bg2));
+}
+.hp2-svc[data-tone="accent"],
+.hp2-weserve__card[data-tone="accent"] {
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg2));
+}
+.hp2-svc[data-tone="support"],
+.hp2-weserve__card[data-tone="support"] {
+  border-color: color-mix(in srgb, var(--support) 35%, transparent);
+  background: color-mix(in srgb, var(--support) 5%, var(--bg2));
+}
+.hp2-svc[data-tone="primary"]:hover,
+.hp2-weserve__card[data-tone="primary"]:hover { border-color: var(--primary); }
+.hp2-svc[data-tone="accent"]:hover,
+.hp2-weserve__card[data-tone="accent"]:hover { border-color: var(--accent); }
+.hp2-svc[data-tone="support"]:hover,
+.hp2-weserve__card[data-tone="support"]:hover { border-color: var(--support); }
+
+/* WeServe icon tile picks up the tone when its card is colored. */
+.hp2-weserve__card[data-tone="primary"] .hp2-weserve__icon { background: var(--primary); color: #fff; }
+.hp2-weserve__card[data-tone="accent"]  .hp2-weserve__icon { background: var(--accent);  color: #fff; }
+.hp2-weserve__card[data-tone="support"] .hp2-weserve__icon { background: var(--support); color: #fff; }
+
+/* GrowthFunnel: tone tint applies only when not open. The is-open primary
+   border treatment keeps precedence by matching the more-specific selector. */
+.hp2-gf__step[data-tone="primary"]:not(.is-open) {
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  background: color-mix(in srgb, var(--primary) 5%, var(--bg2));
+}
+.hp2-gf__step[data-tone="accent"]:not(.is-open) {
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg2));
+}
+.hp2-gf__step[data-tone="support"]:not(.is-open) {
+  border-color: color-mix(in srgb, var(--support) 35%, transparent);
+  background: color-mix(in srgb, var(--support) 5%, var(--bg2));
+}
+.hp2-gf__step[data-tone="primary"]:not(.is-open):hover { border-color: var(--primary); }
+.hp2-gf__step[data-tone="accent"]:not(.is-open):hover  { border-color: var(--accent); }
+.hp2-gf__step[data-tone="support"]:not(.is-open):hover { border-color: var(--support); }
+
+/* Hero recognition badges sit on a dark gradient — use brighter alpha and
+   tinted text instead of full bg fill. */
+.hp2-trust-logos__placeholder[data-tone="primary"] {
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  color: color-mix(in srgb, var(--primary) 85%, white);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+.hp2-trust-logos__placeholder[data-tone="accent"] {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  color: color-mix(in srgb, var(--accent) 85%, white);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.hp2-trust-logos__placeholder[data-tone="support"] {
+  border-color: color-mix(in srgb, var(--support) 50%, transparent);
+  color: color-mix(in srgb, var(--support) 85%, white);
+  background: color-mix(in srgb, var(--support) 8%, transparent);
+}

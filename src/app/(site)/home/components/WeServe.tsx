@@ -2,6 +2,13 @@ import type { HomepageContent } from '@/lib/homepage-content';
 import { getConvertedNodeBinding } from '@/components/converted-editor';
 import { Icon, type IconName } from './_icons';
 
+const TONE_PALETTE = ['primary', 'accent', 'support'] as const;
+type Tone = (typeof TONE_PALETTE)[number] | null;
+function toneForIndex(i: number): Tone {
+  if (i % 2 !== 0) return null;
+  return TONE_PALETTE[Math.floor(i / 2) % TONE_PALETTE.length];
+}
+
 export default function WeServe({ data }: { data: HomepageContent['weServe'] }) {
   const eyebrow = getConvertedNodeBinding(data, { field: 'eyebrow', defaultTag: 'div' });
   const EyebrowTag = eyebrow.Tag;
@@ -31,8 +38,9 @@ export default function WeServe({ data }: { data: HomepageContent['weServe'] }) 
           {data.specialties.map((s, i) => {
             const nameB = getConvertedNodeBinding(data, { field: `specialties.${i}.name`, defaultTag: 'span' });
             const NameTag = nameB.Tag;
+            const tone = toneForIndex(i);
             return (
-              <div key={i} className="hp2-weserve__card">
+              <div key={i} className="hp2-weserve__card" data-tone={tone ?? undefined}>
                 <div className="hp2-weserve__icon">
                   <Icon name={s.icon as IconName} size={20} />
                 </div>

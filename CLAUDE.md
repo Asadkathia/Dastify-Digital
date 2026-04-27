@@ -6,6 +6,20 @@ Healthcare marketing site for Dastify Solutions. Next.js + Payload CMS 3.x, depl
 
 ---
 
+## ⚡ READ FIRST — graphify knowledge graph
+
+**Before exploring this codebase via grep / find / file reads, check `graphify-out/`.** If it exists, it's the cheapest way to understand architecture and save tokens.
+
+1. **`graphify-out/GRAPH_REPORT.md`** — plain-language summary: god nodes (most-connected files), community labels (architectural clusters), surprising cross-file connections, suggested questions.
+2. **`graphify-out/graph.json`** — full graph (nodes + edges + community assignments). Use `/graphify query "<question>"`, `/graphify path "A" "B"`, or `/graphify explain "X"` to traverse it instead of running grep across the whole codebase.
+3. **`graphify-out/wiki/index.md`** (if present) — agent-crawlable wiki, one article per community.
+
+This rule applies to **every conversation, new or continued**. If `graphify-out/` is stale or missing after recent code changes, run `/graphify . --update` (incremental — re-extracts only changed files) before deep exploration.
+
+The graph survives across sessions and was built specifically so future agents don't have to re-read every source file. Use it.
+
+---
+
 ## Architecture at a glance
 
 ```

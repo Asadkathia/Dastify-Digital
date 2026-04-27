@@ -6,6 +6,13 @@ import { getConvertedNodeBinding } from '@/components/converted-editor';
 import { Icon } from './_icons';
 import { renderEmHtml } from './_emHtml';
 
+const TONE_PALETTE = ['primary', 'accent', 'support'] as const;
+type Tone = (typeof TONE_PALETTE)[number] | null;
+function toneForIndex(i: number): Tone {
+  if (i % 2 !== 0) return null;
+  return TONE_PALETTE[Math.floor(i / 2) % TONE_PALETTE.length];
+}
+
 export default function GrowthFunnel({ data }: { data: HomepageContent['growthFunnel'] }) {
   const [open, setOpen] = useState<number | null>(0);
 
@@ -42,10 +49,12 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
             const STag = subB.Tag;
             const descB = getConvertedNodeBinding(data, { field: `steps.${i}.desc`, defaultTag: 'p' });
             const DTag = descB.Tag;
+            const tone = toneForIndex(i);
             return (
               <div
                 key={i}
                 className={'hp2-gf__step' + (open === i ? ' is-open' : '')}
+                data-tone={tone ?? undefined}
                 onClick={() => setOpen((cur) => (cur === i ? null : i))}
               >
                 <div className="hp2-gf__step-head">

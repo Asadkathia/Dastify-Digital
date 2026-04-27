@@ -5,6 +5,7 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { SiteNavbar } from '@/components/SiteNavbar';
 import { LivePreviewSync } from '../components/home/LivePreviewSync';
 import { ScrollRevealController } from '../components/home/ScrollRevealController';
+import TweaksPanel from './home/components/_TweaksPanel';
 import { getNavigation, getFooter } from '@/lib/cms/queries';
 import { JsonLd } from '@/components/JsonLd';
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from '@/lib/seo/jsonld';
@@ -133,6 +134,7 @@ export default async function Home() {
               : raw;
             return <Component key={section.key} data={data} />;
           })}
+          <TweaksPanel />
         </main>
         <SiteFooter footer={footer} />
         <JsonLd data={organizationJsonLd} />
