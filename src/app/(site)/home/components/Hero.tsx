@@ -11,12 +11,21 @@ function TrustLogos({ data, centered }: { data: HomepageContent['hero']; centere
     <div className={`hp2-trust-logos${centered ? ' is-center' : ''}`}>
       <span className="hp2-trust-logos__label">{data.trustLogosLabel}</span>
       <div className="hp2-trust-logos__row">
-        {data.trustLogos.map((l) => (
-          // TODO(assets): drop real badge PNG at public/trust-badges/<slug>.png and switch to <img src=...>
-          <div key={l.slug} className="iph hp2-trust-logos__placeholder" aria-label={l.label}>
-            <span>{l.label}</span>
-          </div>
-        ))}
+        {data.trustLogos.map((l) =>
+          l.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={l.slug}
+              src={l.image}
+              alt={l.label}
+              className="hp2-trust-logos__img"
+            />
+          ) : (
+            <div key={l.slug} className="iph hp2-trust-logos__placeholder" aria-label={l.label}>
+              <span>{l.label}</span>
+            </div>
+          ),
+        )}
       </div>
     </div>
   );

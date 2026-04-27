@@ -14,9 +14,18 @@ export default function BlogPreview({ data }: { data: HomepageContent['blogPrevi
         <div className="hp2-blog__grid">
           {data.posts.map((p, i) => (
             <article key={i} className="hp2-post">
-              <div className="hp2-post__img iph" aria-hidden="true">
-                <span>{p.tag.toLowerCase()} visual</span>
-              </div>
+              {p.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={p.image}
+                  alt={p.imageAlt ?? p.title}
+                  className="hp2-post__img"
+                />
+              ) : (
+                <div className="hp2-post__img iph" aria-hidden="true">
+                  <span>{p.tag.toLowerCase()} visual</span>
+                </div>
+              )}
               <div className="hp2-post__body">
                 <span className="hp2-post__badge">{p.tag}</span>
                 <h3 className="hp2-post__title">

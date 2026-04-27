@@ -4605,3 +4605,17 @@ textarea:focus-visible,
 select:focus-visible {
   outline: none;
 }
+
+/* ═══════════════════════════════════════════════
+   v2 ACCESSIBILITY — reduced motion
+═══════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

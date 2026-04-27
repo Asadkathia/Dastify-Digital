@@ -20,7 +20,7 @@ export type PageContent = {
     secondaryCta: { label: string; href: string };
     image: { src: string; alt: string };
     trustLabel: string;
-    trustLogos: { slug: string; alt: string }[];
+    trustLogos: { slug: string; alt: string; image?: string }[];
   }>;
   stats: EditableSection<{
     label: string;

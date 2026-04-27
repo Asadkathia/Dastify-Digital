@@ -19,12 +19,21 @@ export default function Trust({ data }: { data: PageContent['trust'] }) {
         <div className="ab2-trust__badges">
           <span className="ab2-trust__badges-label">{data.badgesLabel}</span>
           <div className="ab2-trust__badges-row">
-            {data.badges.map((b) => (
-              // TODO(assets): drop real badge PNG at public/trust-badges/<slug>.png and switch to <img src=...>
-              <div key={b.slug} className="iph ab2-trust__badge-ph" aria-label={b.alt}>
-                <span>{b.alt}</span>
-              </div>
-            ))}
+            {data.badges.map((b) =>
+              b.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={b.slug}
+                  src={b.image}
+                  alt={b.alt}
+                  className="ab2-trust__badge-img"
+                />
+              ) : (
+                <div key={b.slug} className="iph ab2-trust__badge-ph" aria-label={b.alt}>
+                  <span>{b.alt}</span>
+                </div>
+              ),
+            )}
           </div>
         </div>
       </div>

@@ -38,7 +38,7 @@ export type PageContent = {
     heading: string;
     logos: { slug: string; label: string }[];
     badgesLabel: string;
-    badges: { slug: string; alt: string }[];
+    badges: { slug: string; alt: string; image?: string }[];
   }>;
   certifications: EditableSection<{
     eyebrow: string;

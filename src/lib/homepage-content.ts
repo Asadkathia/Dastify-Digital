@@ -12,6 +12,9 @@ export type TrustLogo = {
   slug: string;
   label: string;
   src?: string;
+  /** Optional path under /public for the badge image. When set the renderer
+   *  outputs an <img>; otherwise the .iph placeholder is used. */
+  image?: string;
 };
 
 export type ServiceItem = {
@@ -53,6 +56,10 @@ export type BlogPostPreview = {
   title: string;
   readTime: string;
   href?: string;
+  /** Optional image path (e.g. /blog/<slug>.webp). When set renderer
+   *  outputs an <img>; otherwise the .iph placeholder is used. */
+  image?: string;
+  imageAlt?: string;
 };
 
 export type GrowthFunnelStepItem = {

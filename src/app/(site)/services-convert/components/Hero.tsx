@@ -68,12 +68,21 @@ export default function Hero({ data }: { data: PageContent['hero'] }) {
         <div className="sv2-hero__trust">
           <span className="sv2-hero__trust-label">{data.trustLabel}</span>
           <div className="sv2-hero__trust-logos">
-            {data.trustLogos.map((logo) => (
-              // TODO(assets): drop badge at public/trust-badges/<slug>.png
-              <div key={logo.slug} className="iph sv2-hero__trust-img" aria-label={logo.alt}>
-                <span>{logo.alt}</span>
-              </div>
-            ))}
+            {data.trustLogos.map((logo) =>
+              logo.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={logo.slug}
+                  src={logo.image}
+                  alt={logo.alt}
+                  className="sv2-hero__trust-img"
+                />
+              ) : (
+                <div key={logo.slug} className="iph sv2-hero__trust-img" aria-label={logo.alt}>
+                  <span>{logo.alt}</span>
+                </div>
+              ),
+            )}
           </div>
         </div>
       </div>
