@@ -83,10 +83,13 @@ export default async function GenericPage({ params }: Props) {
     convertedPageName ? getNavigation() : Promise.resolve(null),
     convertedPageName ? getFooter() : Promise.resolve(null),
   ]);
-  const fallbackConvertedContent =
-    convertedPageName && !convertedContent
-      ? await loadConvertedPageContent(convertedPageName)
-      : null;
+  // Always load defaults when there's a converted page registered. Even if
+  // convertedContent has saved data, partial saves from the admin can leave
+  // some sections undefined — merging defaults underneath keeps the page
+  // safe to render. Sections present in convertedContent override defaults.
+  const fallbackConvertedContent = convertedPageName
+    ? await loadConvertedPageContent(convertedPageName)
+    : null;
   const effectiveConvertedContent =
     fallbackConvertedContent && convertedContent
       ? mergeConvertedContent(fallbackConvertedContent, convertedContent)
