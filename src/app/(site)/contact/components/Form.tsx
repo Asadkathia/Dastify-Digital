@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import type { FormData } from '../content';
+import type { PageContent } from '../content';
+import { getConvertedNodeBinding } from '@/components/converted-editor';
 import { Icon } from '../../home/components/_icons';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
-export default function Form({ data }: { data: FormData }) {
+export default function Form({ data: main }: { data: PageContent['main'] }) {
+  const data = main.form;
   const [values, setValues] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -59,6 +61,23 @@ export default function Form({ data }: { data: FormData }) {
     }
   };
 
+  const titleNode = getConvertedNodeBinding(main, { field: 'form.title', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const TitleTag = titleNode.Tag;
+  const subNode = getConvertedNodeBinding(main, { field: 'form.sub', defaultTag: 'p' });
+  const SubTag = subNode.Tag;
+  const successTitle = getConvertedNodeBinding(main, { field: 'form.successTitle', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const SuccessTitleTag = successTitle.Tag;
+  const successBody = getConvertedNodeBinding(main, { field: 'form.successBody', defaultTag: 'p' });
+  const SuccessBodyTag = successBody.Tag;
+  const consentNode = getConvertedNodeBinding(main, { field: 'form.consent', defaultTag: 'span' });
+  const ConsentTag = consentNode.Tag;
+  const errorTitle = getConvertedNodeBinding(main, { field: 'form.errorTitle', defaultTag: 'strong' });
+  const ErrorTitleTag = errorTitle.Tag;
+  const errorBody = getConvertedNodeBinding(main, { field: 'form.errorBody', defaultTag: 'span' });
+  const ErrorBodyTag = errorBody.Tag;
+  const submitLabel = getConvertedNodeBinding(main, { field: 'form.submitLabel', defaultTag: 'span' });
+  const SubmitLabelTag = submitLabel.Tag;
+
   if (status === 'success') {
     return (
       <div className="ct2-form-wrap">
@@ -66,8 +85,8 @@ export default function Form({ data }: { data: FormData }) {
           <div className="ct2-form__success-icon" aria-hidden="true">
             <Icon name="check" size={28} />
           </div>
-          <h2 className="ct2-form__title">{data.successTitle}</h2>
-          <p className="ct2-form__sub">{data.successBody}</p>
+          <SuccessTitleTag {...successTitle.props} className="ct2-form__title">{data.successTitle}</SuccessTitleTag>
+          <SuccessBodyTag {...successBody.props} className="ct2-form__sub">{data.successBody}</SuccessBodyTag>
         </div>
       </div>
     );
@@ -75,20 +94,22 @@ export default function Form({ data }: { data: FormData }) {
 
   return (
     <div className="ct2-form-wrap">
-      <h2 className="ct2-form__title">{data.title}</h2>
-      <p className="ct2-form__sub">{data.sub}</p>
+      <TitleTag {...titleNode.props} className="ct2-form__title">{data.title}</TitleTag>
+      <SubTag {...subNode.props} className="ct2-form__sub">{data.sub}</SubTag>
       <form className="ct2-form" onSubmit={onSubmit} noValidate>
         {data.rows.map((row, rIdx) => (
           <div key={rIdx} className={`ct2-form__row${row.fields.length === 1 ? ' ct2-form__row--full' : ''}`}>
-            {row.fields.map((field) => {
+            {row.fields.map((field, fIdx) => {
               const isError = !!errors[field.name];
               const value = values[field.name] ?? '';
+              const labelB = getConvertedNodeBinding(main, { field: `form.rows.${rIdx}.fields.${fIdx}.label`, defaultTag: 'span' });
+              const LabelTag = labelB.Tag;
               return (
                 <label
                   key={field.name}
                   className={`ct2-field${field.full ? ' ct2-field--full' : ''}${isError ? ' ct2-field--error' : ''}`}
                 >
-                  <span className="ct2-field__label">{field.label}</span>
+                  <LabelTag {...labelB.props} className="ct2-field__label">{field.label}</LabelTag>
                   {field.type === 'textarea' ? (
                     <textarea
                       className="ct2-input"
@@ -142,13 +163,13 @@ export default function Form({ data }: { data: FormData }) {
               }
             }}
           />
-          <span>{data.consent}</span>
+          <ConsentTag {...consentNode.props}>{data.consent}</ConsentTag>
         </label>
 
         {status === 'error' ? (
           <div className="ct2-form__error" role="alert">
-            <strong>{data.errorTitle}</strong>
-            <span>{data.errorBody}</span>
+            <ErrorTitleTag {...errorTitle.props}>{data.errorTitle}</ErrorTitleTag>
+            <ErrorBodyTag {...errorBody.props}>{data.errorBody}</ErrorBodyTag>
           </div>
         ) : null}
 
@@ -158,7 +179,7 @@ export default function Form({ data }: { data: FormData }) {
           disabled={status === 'submitting'}
         >
           <Icon name="arrow" size={18} />
-          <span>{status === 'submitting' ? 'Sending…' : data.submitLabel}</span>
+          <SubmitLabelTag {...submitLabel.props}>{status === 'submitting' ? 'Sending…' : data.submitLabel}</SubmitLabelTag>
         </button>
       </form>
     </div>

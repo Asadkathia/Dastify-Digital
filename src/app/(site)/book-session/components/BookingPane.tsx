@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
-import type { BookingFormData, SchedulerData } from '../content';
+import type { PageContent } from '../content';
+import { getConvertedNodeBinding } from '@/components/converted-editor';
 import { Icon } from '../../home/components/_icons';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
@@ -25,13 +26,9 @@ const fmtKey = (d: Date) => d.toISOString().split('T')[0];
 const fmtFullDate = (d: Date) =>
   d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
-export default function BookingPane({
-  scheduler,
-  form,
-}: {
-  scheduler: SchedulerData;
-  form: BookingFormData;
-}) {
+export default function BookingPane({ data: main }: { data: PageContent['main'] }) {
+  const scheduler = main.scheduler;
+  const form = main.form;
   const dates = useMemo(() => buildDates(scheduler.daysToShow ?? 10), [scheduler.daysToShow]);
 
   const [selectedDate, setSelectedDate] = useState<string>('');
@@ -88,6 +85,25 @@ export default function BookingPane({
     }
   };
 
+  const schedTitle = getConvertedNodeBinding(main, { field: 'scheduler.title', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const SchedTitleTag = schedTitle.Tag;
+  const datesLabel = getConvertedNodeBinding(main, { field: 'scheduler.datesLabel', defaultTag: 'div' });
+  const DatesLabelTag = datesLabel.Tag;
+  const timesLabel = getConvertedNodeBinding(main, { field: 'scheduler.timesLabel', defaultTag: 'div' });
+  const TimesLabelTag = timesLabel.Tag;
+  const formTitle = getConvertedNodeBinding(main, { field: 'form.title', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const FormTitleTag = formTitle.Tag;
+  const successTitle = getConvertedNodeBinding(main, { field: 'form.successTitle', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const SuccessTitleTag = successTitle.Tag;
+  const successBody = getConvertedNodeBinding(main, { field: 'form.successBody', defaultTag: 'p' });
+  const SuccessBodyTag = successBody.Tag;
+  const errorTitle = getConvertedNodeBinding(main, { field: 'form.errorTitle', defaultTag: 'strong' });
+  const ErrorTitleTag = errorTitle.Tag;
+  const errorBody = getConvertedNodeBinding(main, { field: 'form.errorBody', defaultTag: 'span' });
+  const ErrorBodyTag = errorBody.Tag;
+  const submitLabel = getConvertedNodeBinding(main, { field: 'form.submitLabel', defaultTag: 'span' });
+  const SubmitLabelTag = submitLabel.Tag;
+
   if (status === 'success') {
     return (
       <div className="bk2-form-wrap">
@@ -95,8 +111,8 @@ export default function BookingPane({
           <div className="bk2-form__success-icon" aria-hidden="true">
             <Icon name="check" size={28} />
           </div>
-          <h2 className="bk2-title">{form.successTitle}</h2>
-          <p className="bk2-form__sub">{form.successBody}</p>
+          <SuccessTitleTag {...successTitle.props} className="bk2-title">{form.successTitle}</SuccessTitleTag>
+          <SuccessBodyTag {...successBody.props} className="bk2-form__sub">{form.successBody}</SuccessBodyTag>
         </div>
       </div>
     );
@@ -104,10 +120,10 @@ export default function BookingPane({
 
   return (
     <div className="bk2-form-wrap">
-      <h2 className="bk2-title">{scheduler.title}</h2>
+      <SchedTitleTag {...schedTitle.props} className="bk2-title">{scheduler.title}</SchedTitleTag>
 
       <div className="bk2-dates">
-        <div className="bk2-dates__label">{scheduler.datesLabel}</div>
+        <DatesLabelTag {...datesLabel.props} className="bk2-dates__label">{scheduler.datesLabel}</DatesLabelTag>
         <div className="bk2-dates__grid">
           {dates.map((d) => {
             const key = fmtKey(d);
@@ -134,18 +150,22 @@ export default function BookingPane({
 
       {selectedDate ? (
         <div className="bk2-times">
-          <div className="bk2-dates__label">{scheduler.timesLabel}</div>
+          <TimesLabelTag {...timesLabel.props} className="bk2-dates__label">{scheduler.timesLabel}</TimesLabelTag>
           <div className="bk2-times__grid">
-            {scheduler.times.map((t) => (
-              <button
-                type="button"
-                key={t}
-                className={`bk2-time${selectedTime === t ? ' is-active' : ''}`}
-                onClick={() => setSelectedTime(t)}
-              >
-                {t}
-              </button>
-            ))}
+            {scheduler.times.map((t, i) => {
+              const tB = getConvertedNodeBinding(main, { field: `scheduler.times.${i}`, defaultTag: 'span' });
+              return (
+                <button
+                  type="button"
+                  key={t}
+                  className={`bk2-time${selectedTime === t ? ' is-active' : ''}`}
+                  onClick={() => setSelectedTime(t)}
+                  {...tB.props}
+                >
+                  {t}
+                </button>
+              );
+            })}
           </div>
         </div>
       ) : null}
@@ -162,22 +182,24 @@ export default function BookingPane({
         </div>
       ) : null}
 
-      <h2 className="bk2-title bk2-title--mt">{form.title}</h2>
+      <FormTitleTag {...formTitle.props} className="bk2-title bk2-title--mt">{form.title}</FormTitleTag>
       <form className="bk2-form" onSubmit={onSubmit} noValidate>
         {form.rows.map((row, rIdx) => (
           <div
             key={rIdx}
             className={`bk2-form__row${row.fields.length === 1 ? ' bk2-form__row--full' : ''}`}
           >
-            {row.fields.map((field) => {
+            {row.fields.map((field, fIdx) => {
               const isError = !!errors[field.name];
               const value = values[field.name] ?? '';
+              const labelB = getConvertedNodeBinding(main, { field: `form.rows.${rIdx}.fields.${fIdx}.label`, defaultTag: 'span' });
+              const LabelTag = labelB.Tag;
               return (
                 <label
                   key={field.name}
                   className={`bk2-field${field.full ? ' bk2-field--full' : ''}${isError ? ' bk2-field--error' : ''}`}
                 >
-                  <span className="bk2-field__label">{field.label}</span>
+                  <LabelTag {...labelB.props} className="bk2-field__label">{field.label}</LabelTag>
                   {field.type === 'textarea' ? (
                     <textarea
                       className="bk2-input"
@@ -225,8 +247,8 @@ export default function BookingPane({
 
         {status === 'error' ? (
           <div className="bk2-form__error" role="alert">
-            <strong>{form.errorTitle}</strong>
-            <span>{form.errorBody}</span>
+            <ErrorTitleTag {...errorTitle.props}>{form.errorTitle}</ErrorTitleTag>
+            <ErrorBodyTag {...errorBody.props}>{form.errorBody}</ErrorBodyTag>
           </div>
         ) : null}
 
@@ -236,7 +258,7 @@ export default function BookingPane({
           disabled={status === 'submitting'}
         >
           <Icon name="calendar" size={18} />
-          <span>{status === 'submitting' ? 'Confirming…' : form.submitLabel}</span>
+          <SubmitLabelTag {...submitLabel.props}>{status === 'submitting' ? 'Confirming…' : form.submitLabel}</SubmitLabelTag>
         </button>
       </form>
     </div>

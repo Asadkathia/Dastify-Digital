@@ -7,8 +7,8 @@ export default function Main({ data }: { data: PageContent['main'] }) {
     <section className="ct2-main">
       <div className="ct2-wrap">
         <div className="ct2-layout">
-          <Form data={data.form} />
-          <Info data={data.info} />
+          <Form data={data} />
+          <Info data={data} />
         </div>
       </div>
     </section>

@@ -1,6 +1,17 @@
 import type { HomepageContent } from '@/lib/homepage-content';
+import { getConvertedNodeBinding } from '@/components/converted-editor';
 
 export default function Testimonial({ data }: { data: HomepageContent['testimonial'] }) {
+  const quoteLead = getConvertedNodeBinding(data, { field: 'quoteLead', defaultTag: 'span' });
+  const QuoteLeadTag = quoteLead.Tag;
+  const quoteEm = getConvertedNodeBinding(data, { field: 'quoteEm', defaultTag: 'em' });
+  const QuoteEmTag = quoteEm.Tag;
+  const quoteTail = getConvertedNodeBinding(data, { field: 'quoteTail', defaultTag: 'span' });
+  const QuoteTailTag = quoteTail.Tag;
+  const name = getConvertedNodeBinding(data, { field: 'authorName', defaultTag: 'div' });
+  const NameTag = name.Tag;
+  const role = getConvertedNodeBinding(data, { field: 'authorRole', defaultTag: 'div' });
+  const RoleTag = role.Tag;
   return (
     <section className="hp2-testimonial">
       <div className="hp2-wrap">
@@ -20,9 +31,9 @@ export default function Testimonial({ data }: { data: HomepageContent['testimoni
               />
             </svg>
             <blockquote>
-              {data.quoteLead}
-              <em>{data.quoteEm}</em>
-              {data.quoteTail}
+              <QuoteLeadTag {...quoteLead.props}>{data.quoteLead}</QuoteLeadTag>
+              <QuoteEmTag {...quoteEm.props}>{data.quoteEm}</QuoteEmTag>
+              <QuoteTailTag {...quoteTail.props}>{data.quoteTail}</QuoteTailTag>
             </blockquote>
           </div>
           <div className="hp2-testimonial__author">
@@ -30,8 +41,8 @@ export default function Testimonial({ data }: { data: HomepageContent['testimoni
               {data.authorInitials}
             </div>
             <div>
-              <div className="hp2-testimonial__name">{data.authorName}</div>
-              <div className="hp2-testimonial__role">{data.authorRole}</div>
+              <NameTag {...name.props} className="hp2-testimonial__name">{data.authorName}</NameTag>
+              <RoleTag {...role.props} className="hp2-testimonial__role">{data.authorRole}</RoleTag>
             </div>
           </div>
         </div>

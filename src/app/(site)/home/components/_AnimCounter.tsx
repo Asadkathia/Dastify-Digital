@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 type AnimCounterProps = {
   value: string;
@@ -8,12 +8,15 @@ type AnimCounterProps = {
   sublabel?: string;
   color?: string;
   className?: string;
+  valueProps?: Record<string, unknown>;
+  labelProps?: Record<string, unknown>;
+  sublabelProps?: Record<string, unknown>;
 };
 
 // Ported from /tmp/design-drop/.../anim-counter.jsx — parses a display value
 // like "+575%" or "$6.80" into prefix/number/suffix and counts up from 0
 // once the element scrolls into view.
-export default function AnimCounter({ value, label, sublabel, color, className }: AnimCounterProps) {
+export default function AnimCounter({ value, label, sublabel, color, className, valueProps, labelProps, sublabelProps }: AnimCounterProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [inView, setInView] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -62,13 +65,13 @@ export default function AnimCounter({ value, label, sublabel, color, className }
 
   return (
     <div className={`hp2-stat${className ? ` ${className}` : ''}`} ref={ref}>
-      <div className="hp2-stat__n" style={color ? { color } : undefined}>
+      <div {...(valueProps as object | undefined)} className="hp2-stat__n" style={{ ...(color ? { color } : null), ...((valueProps as { style?: React.CSSProperties } | undefined)?.style ?? {}) }}>
         {pre}
         {display}
         {suf}
       </div>
-      {label ? <div className="hp2-stat__l">{label}</div> : null}
-      {sublabel ? <div className="hp2-stat__s">{sublabel}</div> : null}
+      {label ? <div {...(labelProps as object | undefined)} className="hp2-stat__l">{label}</div> : null}
+      {sublabel ? <div {...(sublabelProps as object | undefined)} className="hp2-stat__s">{sublabel}</div> : null}
     </div>
   );
 }

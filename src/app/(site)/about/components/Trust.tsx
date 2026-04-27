@@ -1,26 +1,39 @@
 import type { PageContent } from '../content';
+import { getConvertedNodeBinding } from '@/components/converted-editor';
 import { renderEmHtml } from '../../home/components/_emHtml';
 
 export default function Trust({ data }: { data: PageContent['trust'] }) {
+  const eyebrow = getConvertedNodeBinding(data, { field: 'eyebrow', defaultTag: 'div' });
+  const EyebrowTag = eyebrow.Tag;
+  const heading = getConvertedNodeBinding(data, { field: 'heading', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const HeadingTag = heading.Tag;
+  const badgesLabel = getConvertedNodeBinding(data, { field: 'badgesLabel', defaultTag: 'span' });
+  const BadgesLabelTag = badgesLabel.Tag;
   return (
     <section className="ab2-trust">
       <div className="ab2-wrap">
         <div className="ab2-section-head ab2-section-head--center">
-          <div className="ab2-eyebrow">{data.eyebrow}</div>
-          <h2 className="ab2-h2">{renderEmHtml(data.heading)}</h2>
+          <EyebrowTag {...eyebrow.props} className="ab2-eyebrow">{data.eyebrow}</EyebrowTag>
+          <HeadingTag {...heading.props} className="ab2-h2">{renderEmHtml(data.heading)}</HeadingTag>
         </div>
         <div className="ab2-trust__logos">
-          {data.logos.map((l) => (
-            <div key={l.slug} className="ab2-trust__logo">
-              {l.label}
-            </div>
-          ))}
+          {data.logos.map((l, i) => {
+            const lB = getConvertedNodeBinding(data, { field: `logos.${i}.label`, defaultTag: 'div' });
+            const LTag = lB.Tag;
+            return (
+              <LTag key={l.slug} {...lB.props} className="ab2-trust__logo">
+                {l.label}
+              </LTag>
+            );
+          })}
         </div>
         <div className="ab2-trust__badges">
-          <span className="ab2-trust__badges-label">{data.badgesLabel}</span>
+          <BadgesLabelTag {...badgesLabel.props} className="ab2-trust__badges-label">{data.badgesLabel}</BadgesLabelTag>
           <div className="ab2-trust__badges-row">
-            {data.badges.map((b) =>
-              b.image ? (
+            {data.badges.map((b, i) => {
+              const altB = getConvertedNodeBinding(data, { field: `badges.${i}.alt`, defaultTag: 'span' });
+              const ATag = altB.Tag;
+              return b.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   key={b.slug}
@@ -30,10 +43,10 @@ export default function Trust({ data }: { data: PageContent['trust'] }) {
                 />
               ) : (
                 <div key={b.slug} className="iph ab2-trust__badge-ph" aria-label={b.alt}>
-                  <span>{b.alt}</span>
+                  <ATag {...altB.props}>{b.alt}</ATag>
                 </div>
-              ),
-            )}
+              );
+            })}
           </div>
         </div>
       </div>

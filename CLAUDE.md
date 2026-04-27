@@ -126,6 +126,23 @@ When a Payload collection/global saves, `revalidateCollectionChange` / `revalida
 2. Create `src/app/(site)/<slug>/editor-registry.ts` — map sections to block types
 3. Create `src/app/(site)/<slug>/page.tsx` — render sections from `content.ts`
 4. Components go in `src/app/(site)/<slug>/components/`. **Do not** create a duplicate `PageContent` in `components/types.ts` — if you need the type there, re-export from `../content`.
+5. **MANDATORY — Editor bindings.** Every editable text/heading/link/list-item/stat/CTA-label in every section component must use `getConvertedNodeBinding` from `@/components/converted-editor`. Without these bindings the visual editor's inline-edit feature is silently dead — clicks don't open field editors and inspector style overrides don't persist.
+
+   ```tsx
+   import { getConvertedNodeBinding } from '@/components/converted-editor';
+
+   const titleNode = getConvertedNodeBinding(data, {
+     field: 'title',                                // dotted path inside this section's data
+     defaultTag: 'h1',
+     allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'],    // optional — enables tag switching
+   });
+   const TitleTag = titleNode.Tag;
+   return <TitleTag {...titleNode.props} className="ab2-hero__h1">{data.title}</TitleTag>;
+   ```
+
+   The helper emits `data-field` / `data-style-field` / `data-tag-field` / `data-allowed-tags` and computes the inline `style` object from `editor.nodes.<key>.styles`. For arrays/repeaters, use dotted paths like `field: \`items.${i}.title\`` so each item is independently editable. Static decorative elements (orbs, icon SVGs, dividers) don't need bindings.
+
+   Reference implementation: any component under `src/app/(site)/about/components/` (post-redesign-binding pass).
 
 ### Add a schema change
 1. Update the Payload field config
