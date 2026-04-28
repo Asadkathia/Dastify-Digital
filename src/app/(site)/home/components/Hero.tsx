@@ -5,6 +5,13 @@ import { Icon } from './_icons';
 import AnimCounter from './_AnimCounter';
 import { renderEmHtml } from './_emHtml';
 
+const TONE_PALETTE = ['primary', 'accent', 'support'] as const;
+type Tone = (typeof TONE_PALETTE)[number] | null;
+function toneForIndex(i: number): Tone {
+  if (i % 2 !== 0) return null;
+  return TONE_PALETTE[Math.floor(i / 2) % TONE_PALETTE.length];
+}
+
 type HeroData = HomepageContent['hero'] & { heroVariant?: 'A' | 'B' | 'C' };
 
 function TrustLogos({ data, centered }: { data: HomepageContent['hero']; centered?: boolean }) {
@@ -17,6 +24,7 @@ function TrustLogos({ data, centered }: { data: HomepageContent['hero']; centere
         {data.trustLogos.map((l, i) => {
           const labelBinding = getConvertedNodeBinding(data, { field: `trustLogos.${i}.label`, defaultTag: 'span' });
           const LBTag = labelBinding.Tag;
+          const tone = toneForIndex(i);
           return l.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -26,7 +34,7 @@ function TrustLogos({ data, centered }: { data: HomepageContent['hero']; centere
               className="hp2-trust-logos__img"
             />
           ) : (
-            <div key={l.slug} className="iph hp2-trust-logos__placeholder" aria-label={l.label}>
+            <div key={l.slug} className="iph hp2-trust-logos__placeholder" aria-label={l.label} data-tone={tone ?? undefined}>
               <LBTag {...labelBinding.props}>{l.label}</LBTag>
             </div>
           );
