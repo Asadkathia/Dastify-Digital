@@ -134,19 +134,13 @@ function HeroB({ data }: { data: HomepageContent['hero'] }) {
           </a>
         </div>
         <TrustLogos data={data} centered />
-        <div className="hp2-hero--b__stats">
+        <div className="hp2-hero--b__pills" role="list">
           {data.statTiles.map((t, i) => {
-            const valueB = getConvertedNodeBinding(data, { field: `statTiles.${i}.value`, defaultTag: 'div' });
+            const valueB = getConvertedNodeBinding(data, { field: `statTiles.${i}.value`, defaultTag: 'span' });
             const VTag = valueB.Tag;
-            const labelB = getConvertedNodeBinding(data, { field: `statTiles.${i}.label`, defaultTag: 'div' });
-            const LTag = labelB.Tag;
-            const subB = getConvertedNodeBinding(data, { field: `statTiles.${i}.sublabel`, defaultTag: 'div' });
-            const STag = subB.Tag;
             return (
-              <div key={i} className="hp2-hero--b__tile">
-                <VTag {...valueB.props} className="hp2-hero--b__tile-n">{t.value}</VTag>
-                <LTag {...labelB.props} className="hp2-hero--b__tile-l">{t.label}</LTag>
-                {t.sublabel ? <STag {...subB.props} className="hp2-hero--b__tile-s">{t.sublabel}</STag> : null}
+              <div key={i} className="hp2-hero--b__pill" role="listitem">
+                <VTag {...valueB.props} className="hp2-hero--b__pill-n">{t.value}</VTag>
               </div>
             );
           })}

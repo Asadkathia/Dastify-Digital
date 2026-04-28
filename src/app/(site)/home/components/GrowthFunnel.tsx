@@ -12,11 +12,23 @@ function toneForIndex(i: number): Tone {
   return TONE_PALETTE[i % TONE_PALETTE.length];
 }
 
+// Derive a single-word tab label from the step's full title.
+// Marketing-edited title stays authoritative; the tab is just its lead/identity word.
+function tabLabelFromTitle(title: string): string {
+  const trimmed = title.trim();
+  if (/loyalty\s*&\s*growth/i.test(trimmed)) return 'Growth';
+  return trimmed.split(/\s+/)[0];
+}
+
 export default function GrowthFunnel({ data }: { data: HomepageContent['growthFunnel'] }) {
   const sectionRef = useRef<HTMLElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
   const triggerIdRef = useRef<string>('gf-pin');
+  const completedRef = useRef(false);
   const [active, setActive] = useState(0);
   const [progress, setProgress] = useState(0); // 0..1 within current step
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const [completed, setCompleted] = useState(false);
 
   const stepCount = data.steps.length;
   const safeIndex = Math.min(active, Math.max(0, stepCount - 1));
@@ -31,7 +43,8 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
     if (window.innerWidth < 1024) return;
 
     const sectionEl = sectionRef.current;
-    if (!sectionEl) return;
+    const stageEl = stageRef.current;
+    if (!sectionEl || !stageEl) return;
 
     let cleanupFns: Array<() => void> = [];
     let cancelled = false;
@@ -46,30 +59,84 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
 
       const mm = gsap.matchMedia();
       mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+        let prevIdx = -1;
         const trig = ScrollTrigger.create({
           id: triggerIdRef.current,
-          trigger: sectionEl,
-          // Pin only once the entire section is fully in view (avoids cutoff on laptops).
-          // If the section is taller than the viewport, fall back to top-aligned pin.
-          start: () => (sectionEl.offsetHeight <= window.innerHeight ? 'bottom bottom' : 'top top'),
+          trigger: stageEl,
+          start: 'center center',
           end: '+=400%',
-          pin: true,
+          pin: stageEl,
           pinSpacing: true,
-          anticipatePin: 1,
           invalidateOnRefresh: true,
-          scrub: 1,
+          scrub: 0.5,
           snap: {
             snapTo: [0, 0.25, 0.5, 0.75, 1],
-            duration: { min: 0.3, max: 0.6 },
-            ease: 'power2.inOut',
-            delay: 0.1,
+            duration: { min: 0.15, max: 0.35 },
+            ease: 'power2.out',
+            delay: 0.05,
+            inertia: false,
           },
           onUpdate: (self) => {
+            // Once the user has completed the animation, leave it locked to the
+            // final step and let the page scroll past normally — no reverse traversal.
+            if (completedRef.current) return;
+
             const p = self.progress * stepCount;
             const idx = Math.min(stepCount - 1, Math.floor(p));
             const within = Math.max(0, Math.min(1, p - idx));
+            if (idx !== prevIdx) {
+              setDirection(self.direction === -1 ? -1 : 1);
+              prevIdx = idx;
+            }
             setActive(idx);
             setProgress(within);
+
+            // Mark complete the moment the user scrolls into the final segment going
+            // forward, then defer killing the trigger so React commits the final state
+            // before the pin spacer collapses.
+            if (self.progress >= 0.999 && self.direction === 1) {
+              completedRef.current = true;
+              setActive(stepCount - 1);
+              setProgress(1);
+              setCompleted(true);
+              requestAnimationFrame(() => {
+                type LenisAPI = {
+                  stop?: () => void;
+                  start?: () => void;
+                  resize?: () => void;
+                  scrollTo?: (target: number, opts?: { immediate?: boolean; force?: boolean }) => void;
+                };
+                const lenis = (window as unknown as { __lenis?: LenisAPI }).__lenis;
+
+                // Capture the spacer height (= total scroll distance of the pin) BEFORE
+                // killing the trigger, since trig.start/end become unavailable after kill.
+                const spacerHeight = Math.max(0, trig.end - trig.start);
+                const oldScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+
+                // Pause Lenis so its in-flight wheel-tween doesn't carry a stale
+                // targetScroll into the new (shorter) document.
+                lenis?.stop?.();
+
+                // revert: removes the pin-spacer (400vh of reserved scroll space) and
+                // restores the stage to its natural document flow. Without revert the
+                // page keeps that 400vh as empty whitespace forever.
+                trig.kill(true);
+                ScrollTrigger.refresh();
+                lenis?.resize?.();
+
+                // The browser does NOT auto-adjust scrollY when the document shrinks.
+                // Without this compensation the user "skips" forward by spacerHeight
+                // (typically 400vh = 2–3 sections). Subtract spacerHeight so the user
+                // stays visually pinned to whatever was just below the funnel.
+                const newScrollY = Math.max(0, oldScrollY - spacerHeight);
+                window.scrollTo(0, newScrollY);
+
+                requestAnimationFrame(() => {
+                  lenis?.scrollTo?.(newScrollY, { immediate: true, force: true });
+                  lenis?.start?.();
+                });
+              });
+            }
           },
         });
         return () => {
@@ -89,8 +156,13 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
 
   const handleJump = (i: number) => {
     if (typeof window === 'undefined') return;
+
     setActive(i);
     setProgress(0);
+
+    // After completion the pin trigger is dead — clicks just swap the visible
+    // panel via existing transitions; no scroll-jump because there's no pin region.
+    if (completedRef.current) return;
 
     if (window.self !== window.top || window.innerWidth < 1024) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -117,43 +189,42 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
   const TitleTag = title.Tag;
   const titleEm = getConvertedNodeBinding(data, { field: 'titleEm', defaultTag: 'span' });
   const TitleEmTag = titleEm.Tag;
-  const intro = getConvertedNodeBinding(data, { field: 'intro', defaultTag: 'p' });
-  const IntroTag = intro.Tag;
   const ctaLabel = getConvertedNodeBinding(data, { field: 'ctaLabel', defaultTag: 'span' });
   const CtaLabelTag = ctaLabel.Tag;
 
   return (
     <section
       ref={sectionRef}
-      className="hp2-gf"
+      className={'hp2-gf' + (completed ? ' is-completed' : '')}
       data-tone={activeTone}
+      data-direction={direction === 1 ? 'fwd' : 'rev'}
     >
       <div className="hp2-wrap hp2-gf__inner">
+        <div ref={stageRef} className="hp2-gf__stage">
         <div className="hp2-gf__head">
           <EyebrowTag {...eyebrow.props} className="hp2-eyebrow">{data.eyebrow}</EyebrowTag>
           <TitleTag {...title.props} className="hp2-h2">
-            {data.titleLead}
-            <br />
+            {data.titleLead}{' '}
             <TitleEmTag {...titleEm.props} className="hp2-gf__title-em">{renderEmHtml(data.titleEm)}</TitleEmTag>
           </TitleTag>
-          <IntroTag {...intro.props} className="hp2-intro">{data.intro}</IntroTag>
         </div>
 
-        {/* tab pills */}
+        {/* display-sized word labels — replace pills */}
         <div className="hp2-gf__tabs" role="tablist">
           {data.steps.map((s, i) => {
             const isActive = i === safeIndex;
+            const tone = toneForIndex(i);
             return (
               <button
-                key={i}
+                key={`${i}-${isActive ? 'on' : 'off'}`}
                 type="button"
                 role="tab"
                 aria-selected={isActive}
+                data-tone={tone}
                 className={'hp2-gf__tab' + (isActive ? ' is-active' : '')}
                 onClick={() => handleJump(i)}
               >
-                <span className="hp2-gf__tab-num">{s.num}</span>
-                <span className="hp2-gf__tab-label">{s.title}</span>
+                {tabLabelFromTitle(s.title)}
               </button>
             );
           })}
@@ -219,6 +290,7 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
             />
             {data.steps.map((s, i) => {
               const isActive = i === safeIndex;
+              const isPassed = i < safeIndex;
               const tone = toneForIndex(i);
               return (
                 <button
@@ -226,7 +298,11 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
                   type="button"
                   role="tab"
                   aria-selected={isActive}
-                  className={'hp2-gf__bar-seg' + (isActive ? ' is-active' : '')}
+                  className={
+                    'hp2-gf__bar-seg' +
+                    (isActive ? ' is-active' : '') +
+                    (isPassed ? ' is-passed' : '')
+                  }
                   data-tone={tone}
                   onClick={() => handleJump(i)}
                 >
@@ -238,6 +314,7 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
           </div>
         </div>
 
+        </div>
         <div className="hp2-gf__cta">
           <a href={data.ctaHref} className="hp2-btn hp2-btn--primary hp2-btn--lg">
             <Icon name="arrow" size={18} />
