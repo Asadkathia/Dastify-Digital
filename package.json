@@ -60,6 +60,8 @@
     "@payloadcms/plugin-seo": "^3.81.0",
     "@payloadcms/richtext-lexical": "^3.81.0",
     "@payloadcms/storage-vercel-blob": "^3.81.0",
+    "gsap": "^3.15.0",
+    "lenis": "^1.3.23",
     "next": "16.2.2",
     "payload": "^3.81.0",
     "pg": "^8.20.0",

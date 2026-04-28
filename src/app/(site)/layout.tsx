@@ -2,6 +2,7 @@ import Script from 'next/script';
 import { Plus_Jakarta_Sans, DM_Sans, Source_Serif_4, JetBrains_Mono } from 'next/font/google';
 import '../globals.css';
 import { getSiteSettings } from '@/lib/site-settings';
+import SmoothScroll from '@/components/SmoothScroll';
 
 export const preferredRegion = 'sin1';
 
@@ -59,7 +60,9 @@ gtag('config', '${gaId}');`}
             </Script>
           </>
         ) : null}
-        <main>{children}</main>
+        <SmoothScroll>
+          <main>{children}</main>
+        </SmoothScroll>
       </body>
     </html>
   );
