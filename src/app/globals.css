@@ -4637,18 +4637,18 @@ select:focus-visible {
    runtime Tweaks panel can recolor them live. */
 .hp2-svc[data-tone="primary"],
 .hp2-weserve__card[data-tone="primary"] {
-  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
-  background: color-mix(in srgb, var(--primary) 5%, var(--bg2));
+  border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+  background: color-mix(in srgb, var(--primary) 14%, var(--bg2));
 }
 .hp2-svc[data-tone="accent"],
 .hp2-weserve__card[data-tone="accent"] {
-  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
-  background: color-mix(in srgb, var(--accent) 5%, var(--bg2));
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg2));
 }
 .hp2-svc[data-tone="support"],
 .hp2-weserve__card[data-tone="support"] {
-  border-color: color-mix(in srgb, var(--support) 35%, transparent);
-  background: color-mix(in srgb, var(--support) 5%, var(--bg2));
+  border-color: color-mix(in srgb, var(--support) 55%, transparent);
+  background: color-mix(in srgb, var(--support) 14%, var(--bg2));
 }
 .hp2-svc[data-tone="primary"]:hover,
 .hp2-weserve__card[data-tone="primary"]:hover { border-color: var(--primary); }
@@ -4665,16 +4665,16 @@ select:focus-visible {
 /* GrowthFunnel: tone tint applies only when not open. The is-open primary
    border treatment keeps precedence by matching the more-specific selector. */
 .hp2-gf__step[data-tone="primary"]:not(.is-open) {
-  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
-  background: color-mix(in srgb, var(--primary) 5%, var(--bg2));
+  border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+  background: color-mix(in srgb, var(--primary) 14%, var(--bg2));
 }
 .hp2-gf__step[data-tone="accent"]:not(.is-open) {
-  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
-  background: color-mix(in srgb, var(--accent) 5%, var(--bg2));
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg2));
 }
 .hp2-gf__step[data-tone="support"]:not(.is-open) {
-  border-color: color-mix(in srgb, var(--support) 35%, transparent);
-  background: color-mix(in srgb, var(--support) 5%, var(--bg2));
+  border-color: color-mix(in srgb, var(--support) 55%, transparent);
+  background: color-mix(in srgb, var(--support) 14%, var(--bg2));
 }
 .hp2-gf__step[data-tone="primary"]:not(.is-open):hover { border-color: var(--primary); }
 .hp2-gf__step[data-tone="accent"]:not(.is-open):hover  { border-color: var(--accent); }
