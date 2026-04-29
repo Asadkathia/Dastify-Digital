@@ -23,164 +23,199 @@ function tabLabelFromTitle(title: string): string {
 export default function GrowthFunnel({ data }: { data: HomepageContent['growthFunnel'] }) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const triggerIdRef = useRef<string>('gf-pin');
-  const completedRef = useRef(false);
+  const barFillRef = useRef<HTMLDivElement | null>(null);
+  const runwayRef = useRef<HTMLDivElement | null>(null);
+  // Ratchet: scroll-driven updates may only advance forward. Tab clicks reset
+  // this so the user can rewind via tabs if they want.
+  const prevIdxRef = useRef(0);
+  // Once the user has fully traversed the runway forward, we collapse it so
+  // scrolling back up past the section is short (otherwise the user has to
+  // scroll through the full pin runway showing the locked final step).
+  const collapsedRef = useRef(false);
   const [active, setActive] = useState(0);
-  const [progress, setProgress] = useState(0); // 0..1 within current step
   const [direction, setDirection] = useState<1 | -1>(1);
-  const [completed, setCompleted] = useState(false);
+  const [mode, setMode] = useState<'live' | 'editor'>('live');
 
   const stepCount = data.steps.length;
   const safeIndex = Math.min(active, Math.max(0, stepCount - 1));
   const activeTone = toneForIndex(safeIndex);
-  const overallProgress = (safeIndex + progress) / stepCount;
 
-  // ScrollTrigger pin + scrub. Skipped on mobile, reduced-motion, or inside editor iframe.
+  const writeBarProgress = (p: number) => {
+    const el = barFillRef.current;
+    if (el) el.style.setProperty('--gf-progress', String(p));
+  };
+
+  // Inside the visual editor iframe we render a flat, scroll-free layout so
+  // marketing can edit every step inline. CSS keys off `data-mode="editor"`.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (window.self !== window.top) return;
+    if (window.self !== window.top) setMode('editor');
+  }, []);
+
+  // Bar-fill snaps to the active step (CSS handles the eased transition between
+  // discrete values). Kept in sync with `active` so jumps from tab clicks update
+  // the bar even when the scroll listener isn't running (mobile / editor).
+  useEffect(() => {
+    writeBarProgress((safeIndex + 1) / stepCount);
+  }, [safeIndex, stepCount]);
+
+  // Scroll-driven step advancement.
+  //
+  // Reads `runway.getBoundingClientRect()` directly on each rAF-throttled scroll
+  // tick to compute progress through the runway, then maps progress → active
+  // step. This is pixel-accurate and immune to the timing flakiness of
+  // IntersectionObserver against a zero-height root margin under smooth scroll.
+  //
+  // A separate IntersectionObserver gates the scroll listener so it only runs
+  // while the section is on screen — the listener is detached entirely the
+  // rest of the time.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (mode === 'editor') return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (window.innerWidth < 1024) return;
+    if (!window.matchMedia('(min-width: 1024px)').matches) return;
 
-    const sectionEl = sectionRef.current;
-    const stageEl = stageRef.current;
-    if (!sectionEl || !stageEl) return;
+    const runway = runwayRef.current;
+    if (!runway) return;
 
-    let cleanupFns: Array<() => void> = [];
-    let cancelled = false;
+    let pending = false;
+    let rafId = 0;
+    let scrollAttached = false;
 
-    (async () => {
-      const [{ gsap }, { ScrollTrigger }] = await Promise.all([
-        import('gsap'),
-        import('gsap/ScrollTrigger'),
-      ]);
-      if (cancelled) return;
-      gsap.registerPlugin(ScrollTrigger);
+    const compute = () => {
+      pending = false;
+      if (collapsedRef.current) return;
+      const rect = runway.getBoundingClientRect();
+      const viewportH = window.innerHeight;
+      // Pin engages while runway top has scrolled past viewport top and runway
+      // bottom hasn't yet reached viewport bottom. Within that window:
+      //   scrolled  = -rect.top                   (0 → scrollable)
+      //   scrollable = rect.height - viewportH    (= (stepCount - 1) × 100vh)
+      const scrollable = rect.height - viewportH;
+      if (scrollable <= 0) return;
+      const progress = Math.max(0, Math.min(1, -rect.top / scrollable));
+      // 4 steps share [0..1] evenly: idx 0 owns [0, .25), idx 1 owns [.25, .5), …
+      // idx 3 owns [.75, 1]. Floor handles the open interval at the high end.
+      const idx = Math.min(stepCount - 1, Math.floor(progress * stepCount));
+      // Forward-only ratchet: never decrement on scroll-back. Once a step has
+      // been reached, scrolling up keeps it locked there — no reverse traversal
+      // through prior panels. Tab clicks (handleJump) bypass this by resetting
+      // prevIdxRef directly.
+      if (idx > prevIdxRef.current) {
+        setDirection(1);
+        prevIdxRef.current = idx;
+        setActive(idx);
+      }
+      // End of forward scroll → collapse the runway so backward scroll is short.
+      // Triggered exactly when the pin is releasing (scrollY at sticky-max), so
+      // pin stays at viewport top in both pre- and post-collapse states. With
+      // tight scrollY compensation, this is visually seamless.
+      if (progress >= 0.999 && idx === stepCount - 1) {
+        collapse();
+      }
+    };
 
-      const mm = gsap.matchMedia();
-      mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
-        let prevIdx = -1;
-        const trig = ScrollTrigger.create({
-          id: triggerIdRef.current,
-          trigger: stageEl,
-          start: 'center center',
-          end: '+=400%',
-          pin: stageEl,
-          pinSpacing: true,
-          invalidateOnRefresh: true,
-          scrub: 0.5,
-          snap: {
-            snapTo: [0, 0.25, 0.5, 0.75, 1],
-            duration: { min: 0.15, max: 0.35 },
-            ease: 'power2.out',
-            delay: 0.05,
-            inertia: false,
-          },
-          onUpdate: (self) => {
-            // Once the user has completed the animation, leave it locked to the
-            // final step and let the page scroll past normally — no reverse traversal.
-            if (completedRef.current) return;
+    const collapse = () => {
+      if (collapsedRef.current) return;
+      const section = sectionRef.current;
+      if (!section || !runway) return;
+      collapsedRef.current = true;
 
-            const p = self.progress * stepCount;
-            const idx = Math.min(stepCount - 1, Math.floor(p));
-            const within = Math.max(0, Math.min(1, p - idx));
-            if (idx !== prevIdx) {
-              setDirection(self.direction === -1 ? -1 : 1);
-              prevIdx = idx;
-            }
-            setActive(idx);
-            setProgress(within);
+      type LenisAPI = {
+        stop?: () => void;
+        start?: () => void;
+        resize?: () => void;
+        scrollTo?: (y: number, opts?: { immediate?: boolean; force?: boolean }) => void;
+      };
+      const lenis = (window as unknown as { __lenis?: LenisAPI }).__lenis;
 
-            // Mark complete the moment the user scrolls into the final segment going
-            // forward, then defer killing the trigger so React commits the final state
-            // before the pin spacer collapses.
-            if (self.progress >= 0.999 && self.direction === 1) {
-              completedRef.current = true;
-              setActive(stepCount - 1);
-              setProgress(1);
-              setCompleted(true);
-              requestAnimationFrame(() => {
-                type LenisAPI = {
-                  stop?: () => void;
-                  start?: () => void;
-                  resize?: () => void;
-                  scrollTo?: (target: number, opts?: { immediate?: boolean; force?: boolean }) => void;
-                };
-                const lenis = (window as unknown as { __lenis?: LenisAPI }).__lenis;
+      // CRITICAL: capture scrollY before layout change; flip the attribute,
+      // re-measure (forces layout flush), compensate scrollY, sync Lenis — all
+      // in a single synchronous task so the browser cannot paint with the
+      // runway collapsed but scrollY stale.
+      const oldHeight = runway.offsetHeight;
+      const oldScrollY = window.scrollY;
 
-                // Capture the spacer height (= total scroll distance of the pin) BEFORE
-                // killing the trigger, since trig.start/end become unavailable after kill.
-                const spacerHeight = Math.max(0, trig.end - trig.start);
-                const oldScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      lenis?.stop?.();
+      section.setAttribute('data-completed', 'true');
+      const newHeight = runway.offsetHeight; // forces layout flush
+      const reduction = Math.max(0, oldHeight - newHeight);
+      const newScrollY = Math.max(0, oldScrollY - reduction);
 
-                // Pause Lenis so its in-flight wheel-tween doesn't carry a stale
-                // targetScroll into the new (shorter) document.
-                lenis?.stop?.();
+      window.scrollTo(0, newScrollY);
+      lenis?.resize?.();
+      lenis?.scrollTo?.(newScrollY, { immediate: true, force: true });
+      lenis?.start?.();
+    };
 
-                // revert: removes the pin-spacer (400vh of reserved scroll space) and
-                // restores the stage to its natural document flow. Without revert the
-                // page keeps that 400vh as empty whitespace forever.
-                trig.kill(true);
-                ScrollTrigger.refresh();
-                lenis?.resize?.();
+    const onScroll = () => {
+      if (pending) return;
+      pending = true;
+      rafId = requestAnimationFrame(compute);
+    };
 
-                // The browser does NOT auto-adjust scrollY when the document shrinks.
-                // Without this compensation the user "skips" forward by spacerHeight
-                // (typically 400vh = 2–3 sections). Subtract spacerHeight so the user
-                // stays visually pinned to whatever was just below the funnel.
-                const newScrollY = Math.max(0, oldScrollY - spacerHeight);
-                window.scrollTo(0, newScrollY);
+    const attach = () => {
+      if (scrollAttached) return;
+      window.addEventListener('scroll', onScroll, { passive: true });
+      scrollAttached = true;
+      compute();
+    };
+    const detach = () => {
+      if (!scrollAttached) return;
+      window.removeEventListener('scroll', onScroll);
+      scrollAttached = false;
+      if (rafId) cancelAnimationFrame(rafId);
+    };
 
-                requestAnimationFrame(() => {
-                  lenis?.scrollTo?.(newScrollY, { immediate: true, force: true });
-                  lenis?.start?.();
-                });
-              });
-            }
-          },
-        });
-        return () => {
-          trig.kill();
-        };
-      });
-
-      cleanupFns.push(() => mm.revert());
-    })();
+    const visObserver = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((e) => e.isIntersecting);
+        if (visible) attach();
+        else detach();
+      },
+      { rootMargin: '0px', threshold: 0 },
+    );
+    visObserver.observe(runway);
 
     return () => {
-      cancelled = true;
-      cleanupFns.forEach((fn) => fn());
-      cleanupFns = [];
+      visObserver.disconnect();
+      detach();
     };
-  }, [stepCount]);
+  }, [stepCount, mode]);
 
   const handleJump = (i: number) => {
     if (typeof window === 'undefined') return;
-
+    // Tab clicks bypass the forward-only ratchet — user explicitly chose this
+    // step. Re-anchor the ratchet so subsequent scroll-forward works from here.
+    prevIdxRef.current = i;
+    setDirection(i >= safeIndex ? 1 : -1);
     setActive(i);
-    setProgress(0);
 
-    // After completion the pin trigger is dead — clicks just swap the visible
-    // panel via existing transitions; no scroll-jump because there's no pin region.
-    if (completedRef.current) return;
+    if (mode === 'editor') return;
+    if (!window.matchMedia('(min-width: 1024px)').matches) return;
 
-    if (window.self !== window.top || window.innerWidth < 1024) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const runway = runwayRef.current;
+    if (!runway) return;
+    const rect = runway.getBoundingClientRect();
+    const runwayTopDoc = rect.top + window.scrollY;
+    const viewportH = window.innerHeight;
+    const scrollable = rect.height - viewportH;
+    // Aim at the middle of step i's progress range so it sits firmly in the
+    // [i/N, (i+1)/N) bucket.
+    const targetY = runwayTopDoc + ((i + 0.5) / stepCount) * scrollable;
 
-    import('gsap/ScrollTrigger').then(({ ScrollTrigger }) => {
-      const trig = ScrollTrigger.getById(triggerIdRef.current);
-      if (!trig) return;
-      const target = trig.start + (i / stepCount + 1 / (2 * stepCount)) * (trig.end - trig.start);
-      const lenis = (window as unknown as { __lenis?: { scrollTo: (y: number, opts?: object) => void } }).__lenis;
-      if (lenis) {
-        lenis.scrollTo(target, {
-          duration: 1.2,
-          easing: (t: number) => 1 - Math.pow(1 - t, 3),
-        });
-      } else {
-        window.scrollTo({ top: target, behavior: 'smooth' });
-      }
-    });
+    type LenisAPI = {
+      scrollTo?: (y: number, opts?: { duration?: number; easing?: (t: number) => number }) => void;
+    };
+    const lenis = (window as unknown as { __lenis?: LenisAPI }).__lenis;
+    if (lenis?.scrollTo) {
+      lenis.scrollTo(targetY, {
+        duration: 1.0,
+        easing: (t: number) => 1 - Math.pow(1 - t, 3),
+      });
+    } else {
+      window.scrollTo({ top: targetY, behavior: 'smooth' });
+    }
   };
 
   const eyebrow = getConvertedNodeBinding(data, { field: 'eyebrow', defaultTag: 'div' });
@@ -195,132 +230,134 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
   return (
     <section
       ref={sectionRef}
-      className={'hp2-gf' + (completed ? ' is-completed' : '')}
+      className="hp2-gf"
       data-tone={activeTone}
       data-direction={direction === 1 ? 'fwd' : 'rev'}
+      data-mode={mode}
+      style={{ ['--gf-step-count' as string]: stepCount }}
     >
-      <div className="hp2-wrap hp2-gf__inner">
-        <div ref={stageRef} className="hp2-gf__stage">
-        <div className="hp2-gf__head">
-          <EyebrowTag {...eyebrow.props} className="hp2-eyebrow">{data.eyebrow}</EyebrowTag>
-          <TitleTag {...title.props} className="hp2-h2">
-            {data.titleLead}{' '}
-            <TitleEmTag {...titleEm.props} className="hp2-gf__title-em">{renderEmHtml(data.titleEm)}</TitleEmTag>
-          </TitleTag>
-        </div>
+      <div ref={runwayRef} className="hp2-gf__runway">
+        <div className="hp2-gf__pin">
+          <div className="hp2-wrap hp2-gf__inner">
+            <div ref={stageRef} className="hp2-gf__stage">
+              <div className="hp2-gf__head">
+                <EyebrowTag {...eyebrow.props} className="hp2-eyebrow">{data.eyebrow}</EyebrowTag>
+                <TitleTag {...title.props} className="hp2-h2">
+                  {data.titleLead}{' '}
+                  <TitleEmTag {...titleEm.props} className="hp2-gf__title-em">{renderEmHtml(data.titleEm)}</TitleEmTag>
+                </TitleTag>
+              </div>
 
-        {/* display-sized word labels — replace pills */}
-        <div className="hp2-gf__tabs" role="tablist">
-          {data.steps.map((s, i) => {
-            const isActive = i === safeIndex;
-            const tone = toneForIndex(i);
-            return (
-              <button
-                key={`${i}-${isActive ? 'on' : 'off'}`}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                data-tone={tone}
-                className={'hp2-gf__tab' + (isActive ? ' is-active' : '')}
-                onClick={() => handleJump(i)}
-              >
-                {tabLabelFromTitle(s.title)}
-              </button>
-            );
-          })}
-        </div>
+              {/* display-sized word labels — replace pills */}
+              <div className="hp2-gf__tabs" role="tablist">
+                {data.steps.map((s, i) => {
+                  const isActive = i === safeIndex;
+                  const tone = toneForIndex(i);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      data-tone={tone}
+                      className={'hp2-gf__tab' + (isActive ? ' is-active' : '')}
+                      onClick={() => handleJump(i)}
+                    >
+                      {tabLabelFromTitle(s.title)}
+                    </button>
+                  );
+                })}
+              </div>
 
-        {/* stacked panels — every step always mounted so visual editor bindings stay live */}
-        <div className="hp2-gf__card">
-          <div className="hp2-gf__panels">
-            {data.steps.map((step, i) => {
-              const tone = toneForIndex(i);
-              const isActive = i === safeIndex;
-              const numB = getConvertedNodeBinding(data, { field: `steps.${i}.num`, defaultTag: 'span' });
-              const NumTag = numB.Tag;
-              const titleB = getConvertedNodeBinding(data, { field: `steps.${i}.title`, defaultTag: 'h3', allowedTags: ['h2', 'h3', 'h4', 'p'] });
-              const TTag = titleB.Tag;
-              const subB = getConvertedNodeBinding(data, { field: `steps.${i}.sub`, defaultTag: 'p' });
-              const STag = subB.Tag;
-              const descB = getConvertedNodeBinding(data, { field: `steps.${i}.desc`, defaultTag: 'p' });
-              const DTag = descB.Tag;
-              return (
-                <div
-                  key={i}
-                  className={'hp2-gf__panel' + (isActive ? ' is-active' : '')}
-                  data-tone={tone}
-                  aria-hidden={!isActive}
-                >
-                  <div className="hp2-gf__card-grid">
-                    <div className="hp2-gf__card-left">
-                      <NumTag {...numB.props} className="hp2-gf__big-num">{step.num}</NumTag>
-                      <div className="hp2-gf__step-label">STEP {step.num}</div>
-                      <TTag {...titleB.props} className="hp2-gf__step-h">{step.title}</TTag>
-                      <STag {...subB.props} className="hp2-gf__step-sub">{step.sub}</STag>
-                      <DTag {...descB.props} className="hp2-gf__step-desc">{step.desc}</DTag>
-                    </div>
-                    <div className="hp2-gf__card-right">
-                      {step.items.map((it, j) => {
-                        const nB = getConvertedNodeBinding(data, { field: `steps.${i}.items.${j}.n`, defaultTag: 'b' });
-                        const NB = nB.Tag;
-                        const dB = getConvertedNodeBinding(data, { field: `steps.${i}.items.${j}.d`, defaultTag: 'p' });
-                        const DB = dB.Tag;
-                        return (
-                          <div key={j} className="hp2-gf__svc" style={{ ['--svc-i' as string]: j }}>
-                            <div className="hp2-gf__svc-h">
-                              <NB {...nB.props}>{it.n}</NB>
-                            </div>
-                            <DB {...dB.props} className="hp2-gf__svc-d">{it.d}</DB>
+              {/* stacked panels — every step always mounted so editor bindings stay live */}
+              <div className="hp2-gf__card">
+                <div className="hp2-gf__panels">
+                  {data.steps.map((step, i) => {
+                    const tone = toneForIndex(i);
+                    const isActive = i === safeIndex;
+                    const numB = getConvertedNodeBinding(data, { field: `steps.${i}.num`, defaultTag: 'span' });
+                    const NumTag = numB.Tag;
+                    const titleB = getConvertedNodeBinding(data, { field: `steps.${i}.title`, defaultTag: 'h3', allowedTags: ['h2', 'h3', 'h4', 'p'] });
+                    const TTag = titleB.Tag;
+                    const subB = getConvertedNodeBinding(data, { field: `steps.${i}.sub`, defaultTag: 'p' });
+                    const STag = subB.Tag;
+                    const descB = getConvertedNodeBinding(data, { field: `steps.${i}.desc`, defaultTag: 'p' });
+                    const DTag = descB.Tag;
+                    return (
+                      <div
+                        key={i}
+                        className={'hp2-gf__panel' + (isActive ? ' is-active' : '')}
+                        data-tone={tone}
+                        aria-hidden={!isActive}
+                      >
+                        <div className="hp2-gf__card-grid">
+                          <div className="hp2-gf__card-left">
+                            <NumTag {...numB.props} className="hp2-gf__big-num">{step.num}</NumTag>
+                            <div className="hp2-gf__step-label">STEP {step.num}</div>
+                            <TTag {...titleB.props} className="hp2-gf__step-h">{step.title}</TTag>
+                            <STag {...subB.props} className="hp2-gf__step-sub">{step.sub}</STag>
+                            <DTag {...descB.props} className="hp2-gf__step-desc">{step.desc}</DTag>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                          <div className="hp2-gf__card-right">
+                            {step.items.map((it, j) => {
+                              const nB = getConvertedNodeBinding(data, { field: `steps.${i}.items.${j}.n`, defaultTag: 'b' });
+                              const NB = nB.Tag;
+                              const dB = getConvertedNodeBinding(data, { field: `steps.${i}.items.${j}.d`, defaultTag: 'p' });
+                              const DB = dB.Tag;
+                              return (
+                                <div key={j} className="hp2-gf__svc" style={{ ['--svc-i' as string]: j }}>
+                                  <div className="hp2-gf__svc-h">
+                                    <NB {...nB.props}>{it.n}</NB>
+                                  </div>
+                                  <DB {...dB.props} className="hp2-gf__svc-d">{it.d}</DB>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
 
-          {/* timeline with scaleX fill */}
-          <div className="hp2-gf__bar" role="tablist">
-            <div
-              className="hp2-gf__bar-fill"
-              style={{ transform: `scaleX(${overallProgress})` }}
-              aria-hidden
-            />
-            {data.steps.map((s, i) => {
-              const isActive = i === safeIndex;
-              const isPassed = i < safeIndex;
-              const tone = toneForIndex(i);
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  className={
-                    'hp2-gf__bar-seg' +
-                    (isActive ? ' is-active' : '') +
-                    (isPassed ? ' is-passed' : '')
-                  }
-                  data-tone={tone}
-                  onClick={() => handleJump(i)}
-                >
-                  <span>{s.num} · {s.title.toUpperCase()}</span>
-                  {isActive && <span className="hp2-gf__bar-dot" aria-hidden>●</span>}
-                </button>
-              );
-            })}
+                {/* timeline with eased scaleX fill driven by --gf-progress */}
+                <div className="hp2-gf__bar" role="tablist">
+                  <div ref={barFillRef} className="hp2-gf__bar-fill" aria-hidden />
+                  {data.steps.map((s, i) => {
+                    const isActive = i === safeIndex;
+                    const isPassed = i < safeIndex;
+                    const tone = toneForIndex(i);
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        className={
+                          'hp2-gf__bar-seg' +
+                          (isActive ? ' is-active' : '') +
+                          (isPassed ? ' is-passed' : '')
+                        }
+                        data-tone={tone}
+                        onClick={() => handleJump(i)}
+                      >
+                        <span>{s.num} · {s.title.toUpperCase()}</span>
+                        {isActive && <span className="hp2-gf__bar-dot" aria-hidden>●</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        </div>
-        <div className="hp2-gf__cta">
-          <a href={data.ctaHref} className="hp2-btn hp2-btn--primary hp2-btn--lg">
-            <Icon name="arrow" size={18} />
-            <CtaLabelTag {...ctaLabel.props}>{data.ctaLabel}</CtaLabelTag>
-          </a>
-        </div>
+      <div className="hp2-wrap hp2-gf__cta">
+        <a href={data.ctaHref} className="hp2-btn hp2-btn--primary hp2-btn--lg">
+          <Icon name="arrow" size={18} />
+          <CtaLabelTag {...ctaLabel.props}>{data.ctaLabel}</CtaLabelTag>
+        </a>
       </div>
     </section>
   );
