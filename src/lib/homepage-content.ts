@@ -197,7 +197,7 @@ export type HomepageContent = {
 };
 
 export const homepageContent: HomepageContent = {
-  heroVariant: 'A',
+  heroVariant: 'B',
 
   hero: {
     kicker: 'Healthcare marketing that moves numbers',
@@ -219,10 +219,10 @@ export const homepageContent: HomepageContent = {
       { value: '10+', label: 'years medical-only' },
     ],
     statTiles: [
-      { value: '575%', label: 'Ad conversion lift', sublabel: 'Tennessee Orthopaedic Alliance' },
-      { value: '94%', label: 'Avg organic traffic growth', sublabel: 'Across 120+ practices' },
-      { value: '$6.80', label: 'Cost per urgent care visit', sublabel: 'Midlands Orthopaedics' },
-      { value: '23.4%', label: 'More booked consults / month', sublabel: 'HOPCO Orthopedics' },
+      { value: '+575% conversions', label: 'Ad conversion lift', sublabel: 'Tennessee Orthopaedic Alliance' },
+      { value: '+94% traffic', label: 'Avg organic traffic growth', sublabel: 'Across 120+ practices' },
+      { value: '$6.80 per visit', label: 'Cost per urgent care visit', sublabel: 'Midlands Orthopaedics' },
+      { value: '+312% organic leads', label: 'More booked consults / month', sublabel: 'HOPCO Orthopedics' },
     ],
     ticker: [
       '+575% conversions',
@@ -291,7 +291,7 @@ export const homepageContent: HomepageContent = {
   growthFunnel: {
     eyebrow: 'Not an Average Digital Marketing Agency',
     titleLead: 'We created a 4-step',
-    titleEm: '<em>Growth Funnel</em> for Healthcare',
+    titleEm: 'Funnel',
     intro:
       'From ambitious clinics to hyperscaling provider groups, we engineer smarter healthcare marketing that outperforms generic agencies.',
     ctaLabel: 'Get a Tailored Marketing Plan',
