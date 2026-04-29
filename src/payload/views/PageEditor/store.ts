@@ -132,6 +132,7 @@ type EditorState = {
         computedStyles: Record<string, string>;
         isImageField?: boolean;
         altField?: string;
+        hiddenField?: string;
       }
     | null;
 

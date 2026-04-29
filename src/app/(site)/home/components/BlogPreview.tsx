@@ -35,7 +35,11 @@ export default function BlogPreview({ data }: { data: HomepageContent['blogPrevi
             });
             return (
               <article key={i} className="hp2-post">
-                {postImg.hasImage ? (
+                {postImg.hidden ? (
+                  <div {...postImg.props} data-image-hidden="true" className="hp2-post__img iph" aria-hidden="true">
+                    <span>{p.tag.toLowerCase()} visual</span>
+                  </div>
+                ) : postImg.hasImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     {...postImg.props}

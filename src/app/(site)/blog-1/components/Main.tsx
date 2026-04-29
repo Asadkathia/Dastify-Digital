@@ -39,6 +39,13 @@ function PostImage({
     altField: `posts.${index}.imageAlt`,
     defaultAlt: post.imageAlt ?? post.title,
   });
+  if (imgBinding.hidden) {
+    return (
+      <div {...imgBinding.props} data-image-hidden="true" className="iph bl2-card__iph" role="img" aria-label={`${post.cat} post placeholder`}>
+        <span>{post.cat}</span>
+      </div>
+    );
+  }
   if (imgBinding.hasImage) {
     /* eslint-disable-next-line @next/next/no-img-element */
     return <img {...imgBinding.props} src={imgBinding.src} alt={imgBinding.alt || post.title} className="bl2-card__img-real" />;
@@ -89,7 +96,11 @@ export default function Main({ data, posts }: MainProps) {
           return (
             <Link href={featured.href} className="bl2-featured">
               <div className="bl2-featured__media">
-                {featuredImg ? (
+                {featuredImg?.hidden ? (
+                  <div {...featuredImg.props} data-image-hidden="true" className="iph bl2-featured__iph" role="img" aria-label="Featured post placeholder">
+                    <span>{featured.cat}</span>
+                  </div>
+                ) : featuredImg ? (
                   featuredImg.hasImage ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img {...featuredImg.props} src={featuredImg.src} alt={featuredImg.alt || featured.title} className="bl2-featured__img-real" />

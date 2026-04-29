@@ -38,6 +38,13 @@ export default function Trust({ data }: { data: PageContent['trust'] }) {
                 altField: `badges.${i}.alt`,
                 defaultAlt: b.alt,
               });
+              if (imgBinding.hidden) {
+                return (
+                  <div key={b.slug} {...imgBinding.props} data-image-hidden="true" className="iph ab2-trust__badge-ph" aria-label={b.alt}>
+                    <ATag {...altB.props}>{b.alt}</ATag>
+                  </div>
+                );
+              }
               return imgBinding.hasImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

@@ -161,6 +161,7 @@ export function getConvertedImageBinding(
   const resolvedAltField = altField ?? `${field}.alt`;
   const nodeKey = nodeKeyProp ?? sanitizeNodeKey(field);
   const resolvedStyleField = styleField ?? `editor.nodes.${nodeKey}.styles`;
+  const resolvedHiddenField = `editor.nodes.${nodeKey}.hidden`;
 
   const raw = getValueAtPath(source, field);
   const normalized = normalizeImageValue(raw);
@@ -177,11 +178,13 @@ export function getConvertedImageBinding(
   const hasImage = src.length > 0;
 
   const styles = getValueAtPath(source, resolvedStyleField) as ConvertedNodeStyles | undefined;
+  const hidden = getValueAtPath(source, resolvedHiddenField) === true;
 
   return {
     src,
     alt,
     hasImage,
+    hidden,
     mediaId: normalized.mediaId,
     nodeKey,
     props: {
@@ -189,6 +192,7 @@ export function getConvertedImageBinding(
       'data-image-field': 'true' as const,
       'data-alt-field': resolvedAltField,
       'data-style-field': resolvedStyleField,
+      'data-image-hidden-field': resolvedHiddenField,
       style: styleToReact(styles),
     },
   };

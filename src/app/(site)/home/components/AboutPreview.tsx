@@ -51,6 +51,13 @@ export default function AboutPreview({ data }: { data: HomepageContent['aboutPre
           <div className="hp2-about__visual">
             {(() => {
               const aboutImg = getConvertedImageBinding(data, { field: 'image', altField: 'imageAlt', defaultAlt: data.imageAlt });
+              if (aboutImg.hidden) {
+                return (
+                  <div {...aboutImg.props} data-image-hidden="true" className="iph hp2-about__img" aria-label={data.imageAlt}>
+                    <span>{data.imageAlt}</span>
+                  </div>
+                );
+              }
               return aboutImg.hasImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img {...aboutImg.props} src={aboutImg.src} alt={aboutImg.alt} className="hp2-about__img" />

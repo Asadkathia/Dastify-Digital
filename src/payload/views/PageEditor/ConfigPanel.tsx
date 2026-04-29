@@ -1473,6 +1473,7 @@ function ConvertedImageInspector({
     blockId: string;
     fieldName: string;
     altField?: string;
+    hiddenField?: string;
   };
 }) {
   const updateBlockData = useEditorStore((s) => s.updateBlockData);
@@ -1482,6 +1483,17 @@ function ConvertedImageInspector({
 
   const { url, mediaId } = readImageSlot(blockData, node.fieldName);
   const altPath = node.altField ?? `${node.fieldName}.alt`;
+  const hiddenPath = node.hiddenField;
+  // Converted-page blockData is a flat record keyed by dotted paths
+  // (e.g. "editor.nodes.hero_image.hidden"). Older nested-shaped data may
+  // also exist, so check both representations when reading.
+  const isHidden = hiddenPath
+    ? blockData[hiddenPath] === true || getValueAtPath(blockData, hiddenPath) === true
+    : false;
+  function setHidden(next: boolean) {
+    if (!hiddenPath) return;
+    updateBlockData(blockId, hiddenPath, next || undefined);
+  }
   const altValue = (() => {
     const v = getValueAtPath(blockData, altPath);
     if (typeof v === 'string') return v;
@@ -1608,6 +1620,17 @@ function ConvertedImageInspector({
           </button>
         ) : null}
       </div>
+      {hiddenPath ? (
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', cursor: 'pointer', fontSize: '11px', color: '#cbd5e1' }}>
+          <input
+            type="checkbox"
+            checked={isHidden}
+            onChange={(e) => setHidden(e.target.checked)}
+            style={{ accentColor: '#0ea5e9' }}
+          />
+          <span>Hide this image slot on the live site (no placeholder shown)</span>
+        </label>
+      ) : null}
       <div style={{ marginBottom: '4px' }}>
         <label style={labelStyle}>Alt text</label>
         <input
@@ -1655,6 +1678,7 @@ function ConvertedNodeInspector({
     computedStyles: Record<string, string>;
     isImageField?: boolean;
     altField?: string;
+    hiddenField?: string;
   };
 }) {
   const updateBlockData = useEditorStore((s) => s.updateBlockData);
