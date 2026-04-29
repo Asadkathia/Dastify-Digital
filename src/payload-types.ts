@@ -1322,9 +1322,13 @@ export interface Service {
     href?: string | null;
   };
   /**
-   * Used on the standalone /services/[slug] detail page as the hero.
+   * Used on the standalone /services/[slug] detail page as the hero. When empty, a placeholder renders unless "Hide Hero Image" is checked.
    */
   heroImage?: (number | null) | Media;
+  /**
+   * When checked, the hero image area is hidden completely on /services/[slug] (no placeholder either).
+   */
+  hideHeroImage?: boolean | null;
   /**
    * Preview image revealed on hover inside the services accordion (brand book §06).
    */
@@ -2786,6 +2790,7 @@ export interface ServicesSelect<T extends boolean = true> {
         href?: T;
       };
   heroImage?: T;
+  hideHeroImage?: T;
   hoverImage?: T;
   content?: T;
   blocks?:
