@@ -1,11 +1,28 @@
 import type { HomepageContent } from '@/lib/homepage-content';
 import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 
+// Coerce any value to a render-safe string. Defends against corrupted DB
+// shapes (e.g. nested `{label: {label: 'X'}}` left over from older saves) so
+// React never receives a raw object as a child.
+function safeText(v: unknown): string {
+  if (typeof v === 'string') return v;
+  if (v == null) return '';
+  if (typeof v === 'object') {
+    const obj = v as Record<string, unknown>;
+    if (typeof obj.label === 'string') return obj.label;
+    if (obj.label != null) return safeText(obj.label);
+  }
+  return String(v);
+}
+
 // Normalize the legacy `string` entry shape into the upgraded `{ label, image }`
 // shape so already-saved `convertedContent.trustBar.logos` keeps rendering.
-function normalizeLogo(entry: string | { label: string; image?: unknown }): { label: string } {
+function normalizeLogo(entry: unknown): { label: string } {
   if (typeof entry === 'string') return { label: entry };
-  return { label: entry.label ?? '' };
+  if (entry && typeof entry === 'object') {
+    return { label: safeText((entry as { label?: unknown }).label) };
+  }
+  return { label: '' };
 }
 
 export default function TrustBar({ data }: { data: HomepageContent['trustBar'] }) {

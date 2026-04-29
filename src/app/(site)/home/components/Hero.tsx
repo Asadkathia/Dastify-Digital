@@ -14,43 +14,57 @@ function toneForIndex(i: number): Tone {
 
 type HeroData = HomepageContent['hero'] & { heroVariant?: 'A' | 'B' | 'C' };
 
+// Defensive coercion — saved DB content has occasionally drifted to nested
+// shapes like `{label: {label: 'X'}}`. Render strings only, never objects.
+function safeText(v: unknown): string {
+  if (typeof v === 'string') return v;
+  if (v == null) return '';
+  if (typeof v === 'object') {
+    const obj = v as Record<string, unknown>;
+    if (typeof obj.label === 'string') return obj.label;
+    if (obj.label != null) return safeText(obj.label);
+  }
+  return String(v);
+}
+
 function TrustLogos({ data, centered }: { data: HomepageContent['hero']; centered?: boolean }) {
   const labelNode = getConvertedNodeBinding(data, { field: 'trustLogosLabel', defaultTag: 'span' });
   const LabelTag = labelNode.Tag;
   return (
     <div className={`hp2-trust-logos${centered ? ' is-center' : ''}`}>
-      <LabelTag {...labelNode.props} className="hp2-trust-logos__label">{data.trustLogosLabel}</LabelTag>
+      <LabelTag {...labelNode.props} className="hp2-trust-logos__label">{safeText(data.trustLogosLabel)}</LabelTag>
       <div className="hp2-trust-logos__row">
         {data.trustLogos.map((l, i) => {
+          const label = safeText(l.label);
           const labelBinding = getConvertedNodeBinding(data, { field: `trustLogos.${i}.label`, defaultTag: 'span' });
           const LBTag = labelBinding.Tag;
-          const imgBinding = getConvertedImageBinding(data, { field: `trustLogos.${i}.image`, defaultAlt: l.label });
+          const imgBinding = getConvertedImageBinding(data, { field: `trustLogos.${i}.image`, defaultAlt: label });
           const tone = toneForIndex(i);
           if (imgBinding.hidden) {
             return (
-              <div key={l.slug} {...imgBinding.props} data-image-hidden="true" className="iph hp2-trust-logos__placeholder" aria-label={l.label}>
-                <span>{l.label}</span>
+              <div key={l.slug ?? i} {...imgBinding.props} data-image-hidden="true" className="iph hp2-trust-logos__placeholder" aria-label={label}>
+                <span>{label}</span>
               </div>
             );
           }
           return imgBinding.hasImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              key={l.slug}
+              key={l.slug ?? i}
               {...imgBinding.props}
               src={imgBinding.src}
-              alt={imgBinding.alt || l.label}
+              alt={imgBinding.alt || label}
               className="hp2-trust-logos__img"
             />
           ) : (
             <div
-              key={l.slug}
+              key={l.slug ?? i}
               {...imgBinding.props}
               className="iph hp2-trust-logos__placeholder"
-              aria-label={l.label}
+              aria-label={label}
               data-tone={tone ?? undefined}
             >
-              <LBTag {...labelBinding.props}>{l.label}</LBTag>
+              <LBTag {...labelBinding.props}>{label}</LBTag>
             </div>
           );
         })}
