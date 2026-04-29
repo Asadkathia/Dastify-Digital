@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { BlogPostSeed, PageContent } from '../content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 
 type MainProps = {
   data: PageContent['main'];
@@ -11,14 +11,40 @@ type MainProps = {
   posts?: BlogPostSeed[];
 };
 
-function PostImage({ post }: { post: BlogPostSeed }) {
-  if (post.image) {
-    /* eslint-disable-next-line @next/next/no-img-element */
-    return <img src={post.image} alt={post.imageAlt ?? post.title} className="bl2-card__img-real" />;
+function PostImage({
+  post,
+  data,
+  index,
+}: {
+  post: BlogPostSeed;
+  data: PageContent['main'];
+  index: number;
+}) {
+  // When the post is a static seed, expose it as an editable image slot.
+  // For collection-backed posts (index < 0) we fall back to the legacy
+  // non-editable render — collection edits happen in the BlogPosts admin.
+  if (index < 0) {
+    if (post.image) {
+      /* eslint-disable-next-line @next/next/no-img-element */
+      return <img src={post.image} alt={post.imageAlt ?? post.title} className="bl2-card__img-real" />;
+    }
+    return (
+      <div className="iph bl2-card__iph" role="img" aria-label={`${post.cat} post placeholder`}>
+        <span>{post.cat}</span>
+      </div>
+    );
   }
-  // TODO(assets): provide /public/blog/<slug>.webp; falling back to placeholder
+  const imgBinding = getConvertedImageBinding(data, {
+    field: `posts.${index}.image`,
+    altField: `posts.${index}.imageAlt`,
+    defaultAlt: post.imageAlt ?? post.title,
+  });
+  if (imgBinding.hasImage) {
+    /* eslint-disable-next-line @next/next/no-img-element */
+    return <img {...imgBinding.props} src={imgBinding.src} alt={imgBinding.alt || post.title} className="bl2-card__img-real" />;
+  }
   return (
-    <div className="iph bl2-card__iph" role="img" aria-label={`${post.cat} post placeholder`}>
+    <div {...imgBinding.props} className="iph bl2-card__iph" role="img" aria-label={`${post.cat} post placeholder`}>
       <span>{post.cat}</span>
     </div>
   );
@@ -53,14 +79,29 @@ export default function Main({ data, posts }: MainProps) {
           const FTitleTag = titleB?.Tag ?? 'h2';
           const FExcerptTag = excerptB?.Tag ?? 'p';
           const FCatTag = catB?.Tag ?? 'span';
+          const featuredImg = fIdx >= 0
+            ? getConvertedImageBinding(data, {
+                field: `posts.${fIdx}.image`,
+                altField: `posts.${fIdx}.imageAlt`,
+                defaultAlt: featured.imageAlt ?? featured.title,
+              })
+            : null;
           return (
             <Link href={featured.href} className="bl2-featured">
               <div className="bl2-featured__media">
-                {featured.image ? (
+                {featuredImg ? (
+                  featuredImg.hasImage ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img {...featuredImg.props} src={featuredImg.src} alt={featuredImg.alt || featured.title} className="bl2-featured__img-real" />
+                  ) : (
+                    <div {...featuredImg.props} className="iph bl2-featured__iph" role="img" aria-label="Featured post placeholder">
+                      <span>{featured.cat}</span>
+                    </div>
+                  )
+                ) : featured.image ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img src={featured.image} alt={featured.imageAlt ?? featured.title} className="bl2-featured__img-real" />
                 ) : (
-                  // TODO(assets): provide /public/blog/<slug>.webp for the featured post; placeholder used.
                   <div className="iph bl2-featured__iph" role="img" aria-label="Featured post placeholder">
                     <span>{featured.cat}</span>
                   </div>
@@ -111,7 +152,7 @@ export default function Main({ data, posts }: MainProps) {
               return (
                 <Link href={p.href} key={p.id} className="bl2-card">
                   <div className="bl2-card__media">
-                    <PostImage post={p} />
+                    <PostImage post={p} data={data} index={pIdx} />
                   </div>
                   <div className="bl2-card__body">
                     <CTag {...(catB?.props ?? {})} className="bl2-badge bl2-badge--primary">{p.cat}</CTag>

@@ -1,7 +1,6 @@
 import Hero from './components/Hero';
 import StatsBar from './components/StatsBar';
 import Comparison from './components/Comparison';
-import GrowthFunnel from './components/GrowthFunnel';
 import WhyDifferent from './components/WhyDifferent';
 import Formula from './components/Formula';
 import SetsApart from './components/SetsApart';
@@ -19,7 +18,6 @@ const registry: ConvertedPageRegistry = {
     { key: 'hero',         label: 'Hero',           icon: '🦸', className: 'sv2-hero',        Component: Hero as never },
     { key: 'stats',        label: 'Stats Bar',      icon: '📊', className: 'sv2-stats',       Component: StatsBar as never },
     { key: 'comparison',   label: 'Comparison',     icon: '⚖️', className: 'sv2-comparison',  Component: Comparison as never },
-    { key: 'growthFunnel', label: 'Growth Funnel',  icon: '🌀', className: 'hp2-gf',          Component: GrowthFunnel as never },
     { key: 'whyDifferent', label: 'Why Different',  icon: '💡', className: 'sv2-why',         Component: WhyDifferent as never },
     { key: 'formula',      label: 'Formula',        icon: '✨', className: 'sv2-formula',     Component: Formula as never },
     { key: 'setsApart',    label: 'Sets Us Apart',  icon: '🏆', className: 'sv2-apart',       Component: SetsApart as never },

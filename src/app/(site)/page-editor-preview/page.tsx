@@ -327,7 +327,9 @@ function updateInsertionLine(lineEl: HTMLDivElement, x: number, y: number, dragB
 function findInspectableElement(target: HTMLElement, root: HTMLElement | null): HTMLElement | null {
   let el: HTMLElement | null = target;
   while (el && el !== root) {
-    if (el.dataset?.field) return el;
+    // An image-field wrapper counts as inspectable even if it doesn't carry a
+    // data-field directly. (Most do — but be defensive in case markup splits.)
+    if (el.dataset?.field || el.dataset?.imageField) return el;
     el = el.parentElement;
   }
   return null;
@@ -339,6 +341,12 @@ function buildNodeSelection(blockId: string, element: HTMLElement) {
     INSPECTED_STYLE_KEYS.map((key) => [key, computed[key]]),
   ) as Record<string, string>;
 
+  const isImageField = element.dataset.imageField === 'true';
+  const className =
+    typeof element.className === 'string'
+      ? element.className
+      : (element as unknown as { className?: { baseVal?: string } }).className?.baseVal ?? '';
+
   return {
     blockId,
     fieldName: element.dataset.field ?? '',
@@ -346,9 +354,11 @@ function buildNodeSelection(blockId: string, element: HTMLElement) {
     tagField: element.dataset.tagField || undefined,
     allowedTags: element.dataset.allowedTags?.split(',').map((tag) => tag.trim()).filter(Boolean),
     tagName: element.tagName.toLowerCase(),
-    className: element.className,
-    textValue: element.innerText || element.textContent || '',
+    className,
+    textValue: isImageField ? '' : (element.innerText || element.textContent || ''),
     computedStyles,
+    isImageField: isImageField || undefined,
+    altField: element.dataset.altField || undefined,
   };
 }
 
@@ -407,6 +417,9 @@ function BlockWrapper({
     if (!el?.dataset?.field) return;
     const fieldName = el.dataset.field;
     if (!fieldName) return;
+    // Image fields don't have inline-editable text — single-click opens the
+    // upload panel via CONVERTED_NODE_SELECTED + isImageField.
+    if (el.dataset.imageField === 'true') return;
     if (!block.blockType.startsWith('cp-') && !INLINE_TEXT_FIELDS.includes(fieldName)) return;
 
     // Snapshot the original plain-text content before editing begins.
@@ -1238,6 +1251,8 @@ function PreviewInner() {
         fieldEl = fieldEl.parentElement;
       }
       if (!fieldEl?.dataset?.field) return;
+      // Image fields are handled by single-click → upload panel, not text edit.
+      if (fieldEl.dataset.imageField === 'true') return;
       const fieldName = fieldEl.dataset.field;
 
       // Find the containing block wrapper (has data-dnd-block-id)

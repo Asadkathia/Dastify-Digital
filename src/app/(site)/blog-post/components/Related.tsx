@@ -1,16 +1,28 @@
 import Link from 'next/link';
 import type { BlogPostSeed } from '../../blog-1/content';
 import type { PageContent } from '../content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 
-function PostMedia({ post }: { post: BlogPostSeed }) {
-  if (post.image) {
+function PostMedia({
+  post,
+  data,
+  index,
+}: {
+  post: BlogPostSeed;
+  data: PageContent['related'];
+  index: number;
+}) {
+  const imgBinding = getConvertedImageBinding(data, {
+    field: `posts.${index}.image`,
+    altField: `posts.${index}.imageAlt`,
+    defaultAlt: post.imageAlt ?? post.title,
+  });
+  if (imgBinding.hasImage) {
     /* eslint-disable-next-line @next/next/no-img-element */
-    return <img src={post.image} alt={post.imageAlt ?? post.title} className="bp2-card__img-real" />;
+    return <img {...imgBinding.props} src={imgBinding.src} alt={imgBinding.alt || post.title} className="bp2-card__img-real" />;
   }
-  // TODO(assets): provide /public/blog/<slug>.webp; placeholder used for related card.
   return (
-    <div className="iph bp2-card__iph" role="img" aria-label={`${post.cat} post placeholder`}>
+    <div {...imgBinding.props} className="iph bp2-card__iph" role="img" aria-label={`${post.cat} post placeholder`}>
       <span>{post.cat}</span>
     </div>
   );
@@ -33,7 +45,7 @@ export default function Related({ data }: { data: PageContent['related'] }) {
             return (
               <Link href={p.href} key={p.id} className="bp2-card">
                 <div className="bp2-card__media">
-                  <PostMedia post={p} />
+                  <PostMedia post={p} data={data} index={i} />
                 </div>
                 <div className="bp2-card__body">
                   <CTag {...cB.props} className="bp2-badge bp2-badge--primary">{p.cat}</CTag>

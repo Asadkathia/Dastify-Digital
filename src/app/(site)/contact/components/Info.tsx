@@ -1,5 +1,5 @@
 import type { PageContent } from '../content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon } from '../../home/components/_icons';
 
 type IconName = 'phone' | 'calendar' | 'search' | 'bolt' | 'check' | 'arrow';
@@ -44,19 +44,26 @@ export default function Info({ data: main }: { data: PageContent['main'] }) {
 
       <div className="ct2-info-card">
         <OfficeTitleTag {...officeTitle.props} className="ct2-info-card__title">{office.title}</OfficeTitleTag>
-        {office.mapImage ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={office.mapImage}
-            alt={office.mapAlt}
-            className="ct2-map"
-          />
-        ) : (
-          // TODO(assets): supply real map image at public/contact/office-map.jpg
-          <div className="ct2-map ct2-map--placeholder iph" aria-label={office.mapAlt}>
-            <span>{office.mapAlt}</span>
-          </div>
-        )}
+        {(() => {
+          const mapImg = getConvertedImageBinding(main, {
+            field: 'info.office.mapImage',
+            altField: 'info.office.mapAlt',
+            defaultAlt: office.mapAlt,
+          });
+          return mapImg.hasImage ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              {...mapImg.props}
+              src={mapImg.src}
+              alt={mapImg.alt || office.mapAlt}
+              className="ct2-map"
+            />
+          ) : (
+            <div {...mapImg.props} className="ct2-map ct2-map--placeholder iph" aria-label={office.mapAlt}>
+              <span>{office.mapAlt}</span>
+            </div>
+          );
+        })()}
         <AddressTag {...address.props} className="ct2-address">
           {office.address.split('\n').map((line, i, arr) => (
             <span key={i}>

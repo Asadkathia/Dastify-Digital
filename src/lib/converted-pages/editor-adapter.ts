@@ -20,7 +20,10 @@ function isMediaObject(value: unknown): value is Record<string, unknown> {
   if (keys.length === 0) return false;
   const allowedKeys = new Set([
     'id',
+    // EditableImage shape (canonical for visual-editor uploads).
+    'mediaId',
     'url',
+    'src',
     'alt',
     'filename',
     'width',
@@ -113,8 +116,21 @@ const buildSelectField = (
 ): FieldBuilder => (name, label) => ({ name, type: 'select', label, options });
 
 const FIELD_BUILDERS_BY_TAIL: Record<string, FieldBuilder> = {
+  // ── Image / media slots ──────────────────────────────────────────────────
+  // Anything ending with one of these tail names gets rendered as an image
+  // upload control in the inspector panel. Inline single-click on a
+  // `data-image-field` element opens the same upload UI directly.
   image: (name, label) => ({ name, type: 'upload', label }),
   logoimage: (name, label) => ({ name, type: 'upload', label }),
+  logo: (name, label) => ({ name, type: 'upload', label }),
+  photo: (name, label) => ({ name, type: 'upload', label }),
+  avatar: (name, label) => ({ name, type: 'upload', label }),
+  bg: (name, label) => ({ name, type: 'upload', label }),
+  background: (name, label) => ({ name, type: 'upload', label }),
+  backgroundimage: (name, label) => ({ name, type: 'upload', label }),
+  media: (name, label) => ({ name, type: 'upload', label }),
+  mapimage: (name, label) => ({ name, type: 'upload', label }),
+  thumbnail: (name, label) => ({ name, type: 'upload', label }),
   icon: (name, label) => ({ name, type: 'icon-upload', label }),
   // Section-type selector: picks which collection backs this card-shaped
   // section. Matches the Dastify brand book canonical section types
