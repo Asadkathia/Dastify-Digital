@@ -27,6 +27,8 @@ export default function AnimCounter({ value, label, sublabel, color, className, 
   const pre = preMatch ? preMatch[0] : '';
   const suf = sufMatch ? sufMatch[0] : '';
   const isDecimal = raw % 1 !== 0;
+  // Preserve thousands separators if the source value used them (e.g. "1,000+").
+  const useGrouping = /\d,\d{3}(?:[^\d]|$)/.test(String(value));
 
   useEffect(() => {
     if (!ref.current) return;
@@ -61,7 +63,9 @@ export default function AnimCounter({ value, label, sublabel, color, className, 
     return () => cancelAnimationFrame(rafId);
   }, [inView, raw, isDecimal]);
 
-  const display = isDecimal ? current.toFixed(2) : Math.floor(current);
+  const display = isDecimal
+    ? current.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping })
+    : Math.floor(current).toLocaleString(undefined, { useGrouping });
 
   return (
     <div className={`hp2-stat${className ? ` ${className}` : ''}`} ref={ref}>

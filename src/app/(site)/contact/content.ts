@@ -165,6 +165,7 @@ export const defaultContent: PageContent = {
           { label: 'Instagram', href: '#' },
           { label: 'X (Twitter)', href: '#' },
         ],
+        // Facebook intentionally removed — do not re-add.
       },
     },
   },

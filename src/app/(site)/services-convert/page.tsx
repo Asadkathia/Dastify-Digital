@@ -28,7 +28,6 @@ export default async function ServicesConvertPage() {
           nav={nav}
           activePath="/services"
           linkListClassName="svc-convert-nav-links"
-          ctaClassName="svc-convert-btn-nav"
         />
       ) : null}
       <main>

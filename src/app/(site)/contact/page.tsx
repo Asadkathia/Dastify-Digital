@@ -37,6 +37,15 @@ export default async function ContactPage() {
   const merged = convertedContent
     ? mergeConvertedContent(defaultContent, convertedContent)
     : defaultContent;
+
+  // Facebook social link is intentionally removed from the contact page;
+  // strip it post-merge in case the visual editor re-adds it via convertedContent.
+  if (merged.main?.info?.social?.links) {
+    merged.main.info.social.links = merged.main.info.social.links.filter(
+      (link) => link.label.toLowerCase() !== 'facebook',
+    );
+  }
+
   const content = merged as unknown as Record<string, unknown>;
   const meta = (merged as PageContent).meta;
 

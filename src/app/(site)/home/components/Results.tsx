@@ -42,7 +42,7 @@ export default function Results({ data }: { data: HomepageContent['results'] }) 
             <div
               className="hp2-proof__map"
               aria-hidden="true"
-              style={{ backgroundImage: "url('/kpi-map.svg')" }}
+              style={{ backgroundImage: "url('/proof-bg.svg')" }}
             />
             <div className="hp2-proof__kpi-grid">
               {data.cards.map((c, i) => {

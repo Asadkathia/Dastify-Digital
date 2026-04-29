@@ -4,14 +4,15 @@ import { getConvertedNodeBinding } from '@/components/converted-editor';
 import { Icon } from './_icons';
 import DragScrollRow from './DragScrollRow';
 
-// One accent per card, rotating every 3 (blue → purple → green → repeat).
+// One accent per card, rotating every 4 (blue → green → purple → orange → repeat).
 // We expose the chosen accent via CSS custom properties on the card root so
-// the stylesheet only needs a single rule per state instead of three.
+// the stylesheet only needs a single rule per state instead of four.
 const ACCENTS = [
   { c: 'var(--blue)',   lt: 'var(--blue-lt)',   bd: 'var(--blue-bd)',   onHover: '#fff' },
-  { c: 'var(--purple)', lt: 'var(--purple-lt)', bd: 'var(--purple-bd)', onHover: '#fff' },
   // Green is too light for white text — flip the whole card to ink-900 on hover.
   { c: 'var(--green)',  lt: 'var(--green-lt)',  bd: 'var(--green-bd)',  onHover: 'var(--ink-900)' },
+  { c: 'var(--purple)', lt: 'var(--purple-lt)', bd: 'var(--purple-bd)', onHover: '#fff' },
+  { c: 'var(--orange)', lt: 'var(--orange-lt)', bd: 'var(--orange-bd)', onHover: '#fff' },
 ] as const;
 
 function accentForIndex(i: number) {
@@ -44,7 +45,7 @@ export default function Services({ data }: { data: HomepageContent['services'] }
           <IntroTag {...intro.props} className="hp2-intro">{data.intro}</IntroTag>
         </div>
 
-        <DragScrollRow className="hp2-disc__row" role="list">
+        <DragScrollRow className="hp2-disc__row" role="list" showArrows>
           {data.items.map((s, i) => {
             const accent = accentForIndex(i);
             const name = getConvertedNodeBinding(data, { field: `items.${i}.name`, defaultTag: 'h3', allowedTags: ['h2', 'h3', 'h4', 'p'] });

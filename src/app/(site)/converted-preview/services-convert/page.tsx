@@ -17,7 +17,6 @@ export default async function ConvertedServicesPreviewPage() {
         nav={nav}
         activePath="/services"
         linkListClassName="svc-convert-nav-links"
-        ctaClassName="svc-convert-btn-nav"
       />
       <main>
         {registry.sections.map((section) => {

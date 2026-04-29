@@ -156,11 +156,7 @@ export default async function GenericPage({ params }: Props) {
                       ? 'blog-post-nav-links'
                       : undefined
               }
-              ctaClassName={
-                convertedPageName === 'services-convert'
-                  ? 'svc-convert-btn-nav'
-                  : 'about-btn-nav'
-              }
+              ctaClassName={undefined}
             />
           ) : null}
           <main>

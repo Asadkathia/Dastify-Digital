@@ -23,7 +23,7 @@ export function SiteNavbar({
   navClassName,
   scrolledClass = 'scrolled',
   linkListClassName = 'nav-links',
-  ctaClassName = 'about-btn-nav',
+  ctaClassName = 'btn-dk nav-cta',
 }: SiteNavbarProps) {
   return (
     <>

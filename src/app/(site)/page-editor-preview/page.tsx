@@ -992,11 +992,7 @@ function SectionsLayout({
                 ? 'svc-convert-nav-links'
                 : undefined
           }
-          ctaClassName={
-            convertedRegistry?.pageName === 'services-convert'
-              ? 'svc-convert-btn-nav'
-              : 'about-btn-nav'
-          }
+          ctaClassName={undefined}
         />
       ) : null}
       {sections.map((section) => {

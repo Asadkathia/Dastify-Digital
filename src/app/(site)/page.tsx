@@ -122,7 +122,7 @@ export default async function Home() {
         {sectionOverrideCss ? <style dangerouslySetInnerHTML={{ __html: sectionOverrideCss }} /> : null}
         <LivePreviewSync enabled={isEnabled} />
         <ScrollRevealController />
-        <SiteNavbar nav={nav} activePath="/" scrolledClass="solid" linkListClassName="nav-links" ctaClassName="btn-dk nav-cta" />
+        <SiteNavbar nav={nav} activePath="/" scrolledClass="solid" linkListClassName="nav-links" />
         <main>
           {registry.sections.map((section) => {
             const Component = section.Component as ComponentType<{ data: unknown }>;
