@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { HomepageContent } from '@/lib/homepage-content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon } from './_icons';
 import AnimCounter from './_AnimCounter';
 import { renderEmHtml } from './_emHtml';
@@ -24,17 +24,25 @@ function TrustLogos({ data, centered }: { data: HomepageContent['hero']; centere
         {data.trustLogos.map((l, i) => {
           const labelBinding = getConvertedNodeBinding(data, { field: `trustLogos.${i}.label`, defaultTag: 'span' });
           const LBTag = labelBinding.Tag;
+          const imgBinding = getConvertedImageBinding(data, { field: `trustLogos.${i}.image`, defaultAlt: l.label });
           const tone = toneForIndex(i);
-          return l.image ? (
+          return imgBinding.hasImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={l.slug}
-              src={l.image}
-              alt={l.label}
+              {...imgBinding.props}
+              src={imgBinding.src}
+              alt={imgBinding.alt || l.label}
               className="hp2-trust-logos__img"
             />
           ) : (
-            <div key={l.slug} className="iph hp2-trust-logos__placeholder" aria-label={l.label} data-tone={tone ?? undefined}>
+            <div
+              key={l.slug}
+              {...imgBinding.props}
+              className="iph hp2-trust-logos__placeholder"
+              aria-label={l.label}
+              data-tone={tone ?? undefined}
+            >
               <LBTag {...labelBinding.props}>{l.label}</LBTag>
             </div>
           );
@@ -95,8 +103,17 @@ function HeroA({ data }: { data: HomepageContent['hero'] }) {
           <TrustLogos data={data} />
         </div>
         <div className="hp2-hero__right">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={data.image} alt={data.imageAlt} className="hp2-hero__img" />
+          {(() => {
+            const heroImg = getConvertedImageBinding(data, { field: 'image', altField: 'imageAlt', defaultAlt: data.imageAlt });
+            return heroImg.hasImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img {...heroImg.props} src={heroImg.src} alt={heroImg.alt} className="hp2-hero__img" />
+            ) : (
+              <div {...heroImg.props} className="iph hp2-hero__img" aria-label={data.imageAlt}>
+                <span>{data.imageAlt}</span>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </section>

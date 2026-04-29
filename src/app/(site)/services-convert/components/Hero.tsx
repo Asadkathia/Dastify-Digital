@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { PageContent } from '../content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon } from '../../home/components/_icons';
 import { renderEmHtml } from '../../home/components/_emHtml';
 
@@ -71,15 +71,24 @@ export default function Hero({ data }: { data: PageContent['hero'] }) {
           </a>
         </div>
         <div className="sv2-hero__hero-img">
-          {/* TODO(assets): drop hero image at public/services/hero-dashboard.webp and set hero.image.src */}
-          {data.image.src ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={data.image.src} alt={data.image.alt} className="sv2-hero__img" />
-          ) : (
-            <div className="iph sv2-hero__img sv2-hero__img-ph" aria-label={data.image.alt}>
-              <span>{data.image.alt}</span>
-            </div>
-          )}
+          {(() => {
+            // Note: bind to the whole `image` object so writes from the upload
+            // panel land at `image = { mediaId, url, alt }`. The helper still
+            // reads the legacy `{ src, alt }` shape via normalizeImageValue.
+            const heroImg = getConvertedImageBinding(data, {
+              field: 'image',
+              altField: 'image.alt',
+              defaultAlt: data.image.alt,
+            });
+            return heroImg.hasImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img {...heroImg.props} src={heroImg.src} alt={heroImg.alt || data.image.alt} className="sv2-hero__img" />
+            ) : (
+              <div {...heroImg.props} className="iph sv2-hero__img sv2-hero__img-ph" aria-label={data.image.alt}>
+                <span>{data.image.alt}</span>
+              </div>
+            );
+          })()}
         </div>
         <div className="sv2-hero__trust">
           <TrustLabelTag {...trustLabel.props} className="sv2-hero__trust-label">{data.trustLabel}</TrustLabelTag>
@@ -87,16 +96,22 @@ export default function Hero({ data }: { data: PageContent['hero'] }) {
             {data.trustLogos.map((logo, i) => {
               const altB = getConvertedNodeBinding(data, { field: `trustLogos.${i}.alt`, defaultTag: 'span' });
               const ATag = altB.Tag;
-              return logo.image ? (
+              const imgBinding = getConvertedImageBinding(data, {
+                field: `trustLogos.${i}.image`,
+                altField: `trustLogos.${i}.alt`,
+                defaultAlt: logo.alt,
+              });
+              return imgBinding.hasImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   key={logo.slug}
-                  src={logo.image}
-                  alt={logo.alt}
+                  {...imgBinding.props}
+                  src={imgBinding.src}
+                  alt={imgBinding.alt || logo.alt}
                   className="sv2-hero__trust-img"
                 />
               ) : (
-                <div key={logo.slug} className="iph sv2-hero__trust-img" aria-label={logo.alt}>
+                <div key={logo.slug} {...imgBinding.props} className="iph sv2-hero__trust-img" aria-label={logo.alt}>
                   <ATag {...altB.props}>{logo.alt}</ATag>
                 </div>
               );

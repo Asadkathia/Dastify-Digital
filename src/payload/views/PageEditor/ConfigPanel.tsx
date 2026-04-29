@@ -1445,6 +1445,197 @@ function SectionPanel({ section }: { section: SectionInstance }) {
 
 // ─── Block styles panel (wrapper around StylesPanel for blocks) ───────────────
 
+function readImageSlot(blockData: Record<string, unknown>, fieldName: string): { url: string; mediaId?: number | string } {
+  const raw = getValueAtPath(blockData, fieldName);
+  if (typeof raw === 'string') return { url: raw };
+  if (raw && typeof raw === 'object') {
+    const v = raw as Record<string, unknown>;
+    const url = typeof v.url === 'string' ? v.url
+      : typeof v.src === 'string' ? v.src
+      : typeof v.filename === 'string' ? `/media/${v.filename}`
+      : '';
+    const mediaId = (typeof v.mediaId === 'number' || typeof v.mediaId === 'string') ? v.mediaId as number | string
+      : (typeof v.id === 'number' || (typeof v.id === 'string' && v.id)) ? v.id as number | string
+      : undefined;
+    return { url, mediaId };
+  }
+  return { url: '' };
+}
+
+function ConvertedImageInspector({
+  blockId,
+  blockData,
+  node,
+}: {
+  blockId: string;
+  blockData: Record<string, unknown>;
+  node: {
+    blockId: string;
+    fieldName: string;
+    altField?: string;
+  };
+}) {
+  const updateBlockData = useEditorStore((s) => s.updateBlockData);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { url, mediaId } = readImageSlot(blockData, node.fieldName);
+  const altPath = node.altField ?? `${node.fieldName}.alt`;
+  const altValue = (() => {
+    const v = getValueAtPath(blockData, altPath);
+    if (typeof v === 'string') return v;
+    // If alt is co-located inside the EditableImage object, expose it.
+    const slot = getValueAtPath(blockData, node.fieldName);
+    if (slot && typeof slot === 'object' && 'alt' in (slot as object)) {
+      const a = (slot as { alt?: unknown }).alt;
+      return typeof a === 'string' ? a : '';
+    }
+    return '';
+  })();
+
+  function writeImage(value: { mediaId?: number | string; url?: string; alt?: string } | null) {
+    // Detect whether the slot is currently stored as a string or object — keep the same shape.
+    const current = getValueAtPath(blockData, node.fieldName);
+    const isStringSlot = typeof current === 'string' || current == null;
+    if (value == null) {
+      if (isStringSlot) {
+        updateBlockData(blockId, node.fieldName, '');
+      } else {
+        updateBlockData(blockId, node.fieldName, { mediaId: undefined, url: '', alt: typeof altValue === 'string' ? altValue : '' });
+      }
+      return;
+    }
+    if (isStringSlot) {
+      // Promote to EditableImage object so we can persist mediaId.
+      updateBlockData(blockId, node.fieldName, {
+        mediaId: value.mediaId,
+        url: value.url ?? '',
+        alt: value.alt ?? altValue ?? '',
+      });
+    } else {
+      updateBlockData(blockId, node.fieldName, {
+        mediaId: value.mediaId,
+        url: value.url ?? '',
+        alt: value.alt ?? altValue ?? '',
+      });
+    }
+  }
+
+  function writeAlt(next: string) {
+    // Always write to altField if it's an explicit external path; if the alt
+    // path is `<image>.alt` and the slot is currently a string, promote it.
+    const current = getValueAtPath(blockData, node.fieldName);
+    if (altPath !== `${node.fieldName}.alt`) {
+      updateBlockData(blockId, altPath, next);
+      return;
+    }
+    if (typeof current === 'string' || current == null) {
+      // Promote to EditableImage so alt can ride alongside.
+      updateBlockData(blockId, node.fieldName, {
+        url: typeof current === 'string' ? current : '',
+        alt: next,
+      });
+    } else {
+      updateBlockData(blockId, altPath, next);
+    }
+  }
+
+  async function handleFileSelect(file: File | null) {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('_payload', JSON.stringify({ alt: altValue || file.name.replace(/\.[^.]+$/, '') }));
+      const res = await fetch('/api/media', { method: 'POST', credentials: 'include', body: formData });
+      if (!res.ok) throw new Error('Upload failed');
+      const raw = await res.json() as { doc?: { id: number | string; url?: string; filename?: string; alt?: string } };
+      const doc = raw.doc;
+      if (!doc) throw new Error('Upload returned no doc');
+      const resolvedUrl = doc.url || (doc.filename ? `/media/${doc.filename}` : '');
+      writeImage({ mediaId: doc.id, url: resolvedUrl, alt: altValue || doc.alt || '' });
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: '14px', padding: '10px', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: '8px' }}>
+      <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: 600, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        Image Slot
+      </p>
+      <div style={{ height: '120px', background: '#000', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: '8px', border: '1px solid #1e1e1e' }}>
+        {url ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={url} alt={altValue} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+        ) : (
+          <span style={{ color: '#444', fontSize: '11px' }}>No image — placeholder shown on site</span>
+        )}
+      </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = ''; }}
+      />
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          style={{ ...actionBtnStyle, padding: '7px 10px', borderRadius: '6px', color: isUploading ? '#555' : '#9ca3af', cursor: isUploading ? 'default' : 'pointer', flex: 1 }}
+        >
+          {isUploading ? 'Uploading…' : 'Upload File'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowLibrary(true)}
+          style={{ ...actionBtnStyle, padding: '7px 10px', borderRadius: '6px', color: '#0ea5e9', cursor: 'pointer', border: '1px solid #0ea5e9', flex: 1 }}
+        >
+          Browse Library
+        </button>
+        {url ? (
+          <button
+            type="button"
+            onClick={() => writeImage(null)}
+            style={{ ...actionBtnStyle, padding: '7px 10px', borderRadius: '6px', color: '#f87171', cursor: 'pointer' }}
+          >
+            Remove
+          </button>
+        ) : null}
+      </div>
+      <div style={{ marginBottom: '4px' }}>
+        <label style={labelStyle}>Alt text</label>
+        <input
+          type="text"
+          value={altValue}
+          onChange={(e) => writeAlt(e.target.value)}
+          placeholder="Describe the image for accessibility"
+          style={inputStyle}
+        />
+      </div>
+      {mediaId != null ? (
+        <p style={{ margin: '6px 0 0', fontSize: '10px', color: '#444' }}>Media ID: <span style={{ fontFamily: 'monospace', color: '#666' }}>{String(mediaId)}</span></p>
+      ) : null}
+
+      {showLibrary ? (
+        <MediaLibraryModal
+          onSelect={(media) => {
+            const resolvedUrl = media.url || (media.filename ? `/media/${media.filename}` : '');
+            writeImage({ mediaId: media.id, url: resolvedUrl, alt: altValue || media.alt || '' });
+            setShowLibrary(false);
+          }}
+          onClose={() => setShowLibrary(false)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 function ConvertedNodeInspector({
   blockId,
   blockData,
@@ -1462,6 +1653,8 @@ function ConvertedNodeInspector({
     className: string;
     textValue: string;
     computedStyles: Record<string, string>;
+    isImageField?: boolean;
+    altField?: string;
   };
 }) {
   const updateBlockData = useEditorStore((s) => s.updateBlockData);
@@ -1483,6 +1676,10 @@ function ConvertedNodeInspector({
         Selected Element
       </p>
 
+      {node.isImageField ? (
+        <ConvertedImageInspector blockId={blockId} blockData={blockData} node={node} />
+      ) : null}
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
         <div>
           <label style={labelStyle}>Tag</label>
@@ -1499,7 +1696,7 @@ function ConvertedNodeInspector({
         <input value={node.fieldName} readOnly style={{ ...inputStyle, color: '#888' }} />
       </div>
 
-      {typeof contentValue === 'string' ? (
+      {!node.isImageField && typeof contentValue === 'string' ? (
         <div style={{ marginBottom: '12px' }}>
           <label style={labelStyle}>Current Text</label>
           <textarea value={contentValue} readOnly rows={2} style={{ ...inputStyle, color: '#888', resize: 'vertical' }} />

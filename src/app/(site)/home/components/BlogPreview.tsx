@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { HomepageContent } from '@/lib/homepage-content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon } from './_icons';
 
 export default function BlogPreview({ data }: { data: HomepageContent['blogPreview'] }) {
@@ -28,17 +28,23 @@ export default function BlogPreview({ data }: { data: HomepageContent['blogPrevi
             const TTitleTag = titleB.Tag;
             const readB = getConvertedNodeBinding(data, { field: `posts.${i}.readTime`, defaultTag: 'span' });
             const ReadTag = readB.Tag;
+            const postImg = getConvertedImageBinding(data, {
+              field: `posts.${i}.image`,
+              altField: `posts.${i}.imageAlt`,
+              defaultAlt: p.imageAlt ?? p.title,
+            });
             return (
               <article key={i} className="hp2-post">
-                {p.image ? (
+                {postImg.hasImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={p.image}
-                    alt={p.imageAlt ?? p.title}
+                    {...postImg.props}
+                    src={postImg.src}
+                    alt={postImg.alt || p.imageAlt || p.title}
                     className="hp2-post__img"
                   />
                 ) : (
-                  <div className="hp2-post__img iph" aria-hidden="true">
+                  <div {...postImg.props} className="hp2-post__img iph" aria-hidden="true">
                     <span>{p.tag.toLowerCase()} visual</span>
                   </div>
                 )}

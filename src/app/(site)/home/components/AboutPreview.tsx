@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { HomepageContent } from '@/lib/homepage-content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon } from './_icons';
 
 export default function AboutPreview({ data }: { data: HomepageContent['aboutPreview'] }) {
@@ -49,8 +49,17 @@ export default function AboutPreview({ data }: { data: HomepageContent['aboutPre
             </div>
           </div>
           <div className="hp2-about__visual">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={data.image} alt={data.imageAlt} className="hp2-about__img" />
+            {(() => {
+              const aboutImg = getConvertedImageBinding(data, { field: 'image', altField: 'imageAlt', defaultAlt: data.imageAlt });
+              return aboutImg.hasImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img {...aboutImg.props} src={aboutImg.src} alt={aboutImg.alt} className="hp2-about__img" />
+              ) : (
+                <div {...aboutImg.props} className="iph hp2-about__img" aria-label={data.imageAlt}>
+                  <span>{data.imageAlt}</span>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>

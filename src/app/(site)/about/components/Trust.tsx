@@ -1,5 +1,5 @@
 import type { PageContent } from '../content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { renderEmHtml } from '../../home/components/_emHtml';
 
 export default function Trust({ data }: { data: PageContent['trust'] }) {
@@ -33,16 +33,22 @@ export default function Trust({ data }: { data: PageContent['trust'] }) {
             {data.badges.map((b, i) => {
               const altB = getConvertedNodeBinding(data, { field: `badges.${i}.alt`, defaultTag: 'span' });
               const ATag = altB.Tag;
-              return b.image ? (
+              const imgBinding = getConvertedImageBinding(data, {
+                field: `badges.${i}.image`,
+                altField: `badges.${i}.alt`,
+                defaultAlt: b.alt,
+              });
+              return imgBinding.hasImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   key={b.slug}
-                  src={b.image}
-                  alt={b.alt}
+                  {...imgBinding.props}
+                  src={imgBinding.src}
+                  alt={imgBinding.alt || b.alt}
                   className="ab2-trust__badge-img"
                 />
               ) : (
-                <div key={b.slug} className="iph ab2-trust__badge-ph" aria-label={b.alt}>
+                <div key={b.slug} {...imgBinding.props} className="iph ab2-trust__badge-ph" aria-label={b.alt}>
                   <ATag {...altB.props}>{b.alt}</ATag>
                 </div>
               );

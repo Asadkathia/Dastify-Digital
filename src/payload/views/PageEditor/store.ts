@@ -130,6 +130,8 @@ type EditorState = {
         className: string;
         textValue: string;
         computedStyles: Record<string, string>;
+        isImageField?: boolean;
+        altField?: string;
       }
     | null;
 

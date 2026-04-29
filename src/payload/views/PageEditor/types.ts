@@ -236,6 +236,10 @@ export type EditorMessage =
             className: string;
             textValue: string;
             computedStyles: Record<string, string>;
+            /** True when the clicked element was tagged data-image-field="true". */
+            isImageField?: boolean;
+            /** Dotted path of the alt-text companion field (when isImageField). */
+            altField?: string;
           }
         | null;
     }
