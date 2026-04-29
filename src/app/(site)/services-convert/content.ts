@@ -65,8 +65,7 @@ export type PageContent = {
     eyebrow: string;
     heading: string;
     intro: string;
-    tabs: { slug: string; label: string }[];
-    tabContent: Record<string, { headline: string; description: string; bullets: string[] }>;
+    tabs: { slug: string; label: string; headline: string; description: string; bullets: string[] }[];
     note: string;
     noteCta: { label: string; href: string };
   }>;
@@ -94,7 +93,7 @@ export const defaultContent: PageContent = {
     image: { src: '', alt: 'Healthcare marketing dashboard' },
     trustLabel: 'Recognized by',
     trustLogos: [
-      { slug: 'best-in-search', alt: 'Best in Search - TopSEOs' },
+      { slug: 'best-in-search', alt: 'Best in Search - TopSEOs', image: '' },
       { slug: 'google-partner', alt: 'Google Partner' },
       { slug: 'upcity-top', alt: 'UpCity Top Digital Agency' },
       { slug: 'clutch-top', alt: 'Clutch Top SEO Company Medical 2024' },
@@ -287,65 +286,72 @@ export const defaultContent: PageContent = {
     heading: 'Built for High-Growth\n<em>Medical Specialties</em>',
     intro:
       'Our strategies are tailored to the unique patient journeys, compliance needs, and competitive landscapes of each specialty.',
-    tabs: [
-      { slug: 'cosmetic', label: 'Cosmetic & Aesthetic' },
-      { slug: 'dental', label: 'Dental' },
-      { slug: 'fertility', label: 'Fertility & IVF' },
-      { slug: 'plastic', label: 'Plastic Surgery' },
-      { slug: 'orthopedic', label: 'Orthopedic & Sports' },
-      { slug: 'dermatology', label: 'Dermatology' },
-      { slug: 'mental-health', label: 'Mental Health' },
-      { slug: 'telehealth', label: 'Telehealth' },
-      { slug: 'cardiology', label: 'Cardiology' },
-    ],
     // TODO(copy): per-specialty descriptions/bullets are not in the design source — placeholder text below.
-    tabContent: {
-      cosmetic: {
+    tabs: [
+      {
+        slug: 'cosmetic',
+        label: 'Cosmetic & Aesthetic',
         headline: 'Cosmetic & Aesthetic Clinics',
         description: 'Patient acquisition strategies tuned for elective, high-consideration aesthetic procedures.',
         bullets: ['Visual-first social campaigns', 'Before/after showcase funnels', 'Consultation booking optimization'],
       },
-      dental: {
+      {
+        slug: 'dental',
+        label: 'Dental',
         headline: 'Dental Practices',
         description: 'Local dominance and recall systems built for dental practices and DSOs.',
         bullets: ['Local SEO & GBP optimization', 'Implant & aligner campaigns', 'Recall & reactivation automation'],
       },
-      fertility: {
+      {
+        slug: 'fertility',
+        label: 'Fertility & IVF',
         headline: 'Fertility & IVF Clinics',
         description: 'Empathy-driven, education-led marketing for long, high-stakes patient decisions.',
         bullets: ['Education-driven content funnels', 'HIPAA-safe inquiry forms', 'Long-cycle nurture sequences'],
       },
-      plastic: {
+      {
+        slug: 'plastic',
+        label: 'Plastic Surgery',
         headline: 'Plastic & Reconstructive Surgery',
         description: 'High-trust marketing for elective and reconstructive surgical practices.',
         bullets: ['Surgeon authority content', 'Procedure-specific landing pages', 'Reputation management'],
       },
-      orthopedic: {
+      {
+        slug: 'orthopedic',
+        label: 'Orthopedic & Sports',
         headline: 'Orthopedic & Sports Medicine',
         description: 'Multi-location SEO and referral channel growth for ortho groups.',
         bullets: ['Multi-location local SEO', 'Referring-physician outreach', 'Procedure-specific PPC'],
       },
-      dermatology: {
+      {
+        slug: 'dermatology',
+        label: 'Dermatology',
         headline: 'Dermatology Clinics',
         description: 'Balanced medical and cosmetic dermatology patient acquisition.',
         bullets: ['Cosmetic + medical funnel split', 'Skin condition content hubs', 'Annual skin-check recall'],
       },
-      'mental-health': {
+      {
+        slug: 'mental-health',
+        label: 'Mental Health',
         headline: 'Mental Health & Behavioral Health',
         description: 'Compliant, sensitive marketing for behavioral and mental health providers.',
         bullets: ['Stigma-aware messaging', 'Insurance-aware funnels', 'Telehealth intake optimization'],
       },
-      telehealth: {
+      {
+        slug: 'telehealth',
+        label: 'Telehealth',
         headline: 'Telehealth & Virtual Care',
         description: 'Conversion-first marketing for virtual-care brands competing on convenience.',
         bullets: ['Multi-state SEO scaling', 'Subscription + visit funnels', 'Activation & retention email'],
       },
-      cardiology: {
+      {
+        slug: 'cardiology',
+        label: 'Cardiology',
         headline: 'Cardiology',
         description: 'Trust-led campaigns for cardiology groups serving high-acuity patient populations.',
         bullets: ['Symptom-led content strategy', 'Referral physician portals', 'Compliance-first paid media'],
       },
-    },
+    ],
     note: 'Can’t find yours here? We work with all healthcare verticals.',
     noteCta: { label: 'Tell Us About Yours', href: '/contact' },
   },

@@ -21,6 +21,7 @@ export type ServiceItem = {
   icon: string;
   name: string;
   description: string;
+  cta?: { label: string };
 };
 
 export type ResultCardItem = {
@@ -108,7 +109,7 @@ export type HomepageContent = {
      * image-upload upgrade) OR an object that carries a label plus an
      * optional uploaded image. The TrustBar component normalizes both shapes.
      */
-    logos: Array<string | { label: string; image?: import('@/components/converted-editor').EditableImage }>;
+    logos: Array<string | { label: string; image?: string | import('@/components/converted-editor').EditableImage }>;
   };
 
   services: {
@@ -241,23 +242,23 @@ export const homepageContent: HomepageContent = {
     imageAlt: 'Healthcare digital marketing',
     trustLogosLabel: 'Recognized by',
     trustLogos: [
-      { slug: 'bis-seo', label: 'Best in Search' },
-      { slug: 'google-partner', label: 'Google Partner' },
-      { slug: 'upcity-top', label: 'UpCity Top Digital Agency' },
-      { slug: 'clutch-top', label: 'Clutch Top SEO Company' },
-      { slug: 'seoblog-top', label: 'SEO Blog Top Rated' },
+      { slug: 'bis-seo', label: 'Best in Search', image: '' },
+      { slug: 'google-partner', label: 'Google Partner', image: '' },
+      { slug: 'upcity-top', label: 'UpCity Top Digital Agency', image: '' },
+      { slug: 'clutch-top', label: 'Clutch Top SEO Company', image: '' },
+      { slug: 'seoblog-top', label: 'SEO Blog Top Rated', image: '' },
     ],
   },
 
   trustBar: {
     label: 'Trusted by 120+ medical practices',
     logos: [
-      { label: 'ORTHO TENNESSEE' },
-      { label: 'CONA' },
-      { label: 'MIDLANDS ORTHO' },
-      { label: 'HOPCO' },
-      { label: 'CVR MEDICAL' },
-      { label: 'SUMMIT HEALTH' },
+      { label: 'ORTHO TENNESSEE', image: '' },
+      { label: 'CONA', image: '' },
+      { label: 'MIDLANDS ORTHO', image: '' },
+      { label: 'HOPCO', image: '' },
+      { label: 'CVR MEDICAL', image: '' },
+      { label: 'SUMMIT HEALTH', image: '' },
     ],
   },
 
@@ -272,31 +273,37 @@ export const homepageContent: HomepageContent = {
         icon: 'search',
         name: 'Medical SEO',
         description: 'Dominate the first page for your highest-revenue procedures — not just your brand name. Specialty-specific keyword strategy, technical optimization, and local authority building.',
+        cta: { label: 'Learn more' },
       },
       {
         icon: 'bolt',
         name: 'Paid Media',
         description: 'Google Ads, Meta, and programmatic campaigns with real-time ROI tracking. Every dollar mapped from click to booked appointment.',
+        cta: { label: 'Learn more' },
       },
       {
         icon: 'users',
         name: 'Social & Content',
         description: 'Physician-led social strategy and educational content that builds trust before the first visit. White-glove production for busy practices.',
+        cta: { label: 'Learn more' },
       },
       {
         icon: 'spark',
         name: 'Custom Websites',
         description: 'Conversion-engineered medical websites with ADA compliance, fast load times, and booking integrations that reduce front-desk friction.',
+        cta: { label: 'Learn more' },
       },
       {
         icon: 'shield',
         name: 'Reputation Management',
         description: 'Review generation, listing accuracy, and physician trust signals across 80+ directories. Your online reputation, actively managed.',
+        cta: { label: 'Learn more' },
       },
       {
         icon: 'chart',
         name: 'Reporting & Attribution',
         description: 'Lead-to-patient attribution wired into your EHR. Know exactly which campaigns drive booked surgeries, not just form fills.',
+        cta: { label: 'Learn more' },
       },
     ],
   },
@@ -449,6 +456,7 @@ export const homepageContent: HomepageContent = {
         priceMonthly: 2990,
         priceAnnual: 2500,
         description: 'For single-location practices ready to get found online.',
+        badge: '',
         color: 'primary',
         features: [
           'Local SEO & GBP Optimization',
@@ -519,16 +527,19 @@ export const homepageContent: HomepageContent = {
         tag: 'SEO',
         title: "The 2026 Medical SEO Playbook: What Changed and What Didn't",
         readTime: '8 min read',
+        image: '',
       },
       {
         tag: 'Paid Media',
         title: 'Why Your Cost-Per-Lead Is Lying to You (And What to Track Instead)',
         readTime: '5 min read',
+        image: '',
       },
       {
         tag: 'Reputation',
         title: 'From 3.2 to 4.8 Stars: A 90-Day Physician Review Strategy',
         readTime: '6 min read',
+        image: '',
       },
     ],
   },

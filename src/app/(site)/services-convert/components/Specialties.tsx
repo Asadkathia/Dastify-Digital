@@ -9,7 +9,8 @@ import { renderEmHtml } from '../../home/components/_emHtml';
 export default function Specialties({ data }: { data: PageContent['specialties'] }) {
   const firstSlug = data.tabs[0]?.slug ?? '';
   const [active, setActive] = useState<string>(firstSlug);
-  const tab = data.tabContent[active];
+  const activeIndex = Math.max(0, data.tabs.findIndex((t) => t.slug === active));
+  const tab = data.tabs[activeIndex];
 
   const eyebrow = getConvertedNodeBinding(data, { field: 'eyebrow', defaultTag: 'div' });
   const EyebrowTag = eyebrow.Tag;
@@ -22,8 +23,8 @@ export default function Specialties({ data }: { data: PageContent['specialties']
   const noteCtaLabel = getConvertedNodeBinding(data, { field: 'noteCta.label', defaultTag: 'span' });
   const NoteCtaLabelTag = noteCtaLabel.Tag;
 
-  const headlineB = tab ? getConvertedNodeBinding(data, { field: `tabContent.${active}.headline`, defaultTag: 'h3', allowedTags: ['h2', 'h3', 'h4', 'p'] }) : null;
-  const descB = tab ? getConvertedNodeBinding(data, { field: `tabContent.${active}.description`, defaultTag: 'p' }) : null;
+  const headlineB = tab ? getConvertedNodeBinding(data, { field: `tabs.${activeIndex}.headline`, defaultTag: 'h3', allowedTags: ['h2', 'h3', 'h4', 'p'] }) : null;
+  const descB = tab ? getConvertedNodeBinding(data, { field: `tabs.${activeIndex}.description`, defaultTag: 'p' }) : null;
 
   return (
     <section className="sv2-specs">
@@ -58,7 +59,7 @@ export default function Specialties({ data }: { data: PageContent['specialties']
             {(() => { const DTag = descB.Tag; return <DTag {...descB.props} className="sv2-specs__panel-desc">{tab.description}</DTag>; })()}
             <ul className="sv2-specs__panel-list">
               {tab.bullets.map((b, i) => {
-                const bB = getConvertedNodeBinding(data, { field: `tabContent.${active}.bullets.${i}`, defaultTag: 'span' });
+                const bB = getConvertedNodeBinding(data, { field: `tabs.${activeIndex}.bullets.${i}`, defaultTag: 'span' });
                 const BTag = bB.Tag;
                 return (
                   <li key={i}>

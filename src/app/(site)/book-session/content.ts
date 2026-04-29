@@ -57,11 +57,9 @@ export type PageContent = {
     heading: string;
     sub: string;
   }>;
-  main: EditableSection<{
-    scheduler: SchedulerData;
-    form: BookingFormData;
-    sidebar: SidebarData;
-  }>;
+  scheduler: EditableSection<SchedulerData>;
+  form: EditableSection<BookingFormData>;
+  sidebar: EditableSection<SidebarData>;
 };
 
 export const defaultContent: PageContent = {
@@ -76,8 +74,7 @@ export const defaultContent: PageContent = {
     sub:
       '30 minutes with a healthcare marketing strategist. No obligation, no pressure — just a clear view of where your practice stands and where it can go.',
   },
-  main: {
-    scheduler: {
+  scheduler: {
       title: 'Select a Date & Time',
       datesLabel: 'Available dates',
       timesLabel: 'Available times (EST)',
@@ -182,7 +179,6 @@ export const defaultContent: PageContent = {
           phoneLabel: '(770) 462-4237',
           phoneHref: 'tel:+17704624237',
         },
-      ],
-    },
+    ],
   },
 };

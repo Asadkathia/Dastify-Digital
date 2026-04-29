@@ -54,10 +54,8 @@ export type PageContent = {
     heading: string;
     sub: string;
   }>;
-  main: EditableSection<{
-    form: FormData;
-    info: InfoData;
-  }>;
+  form: EditableSection<FormData>;
+  info: EditableSection<InfoData>;
 };
 
 export const defaultContent: PageContent = {
@@ -71,8 +69,7 @@ export const defaultContent: PageContent = {
     heading: "Let's start a <em>conversation</em>.",
     sub: "Whether you're exploring options or ready to move, we're here to help your practice grow.",
   },
-  main: {
-    form: {
+  form: {
       title: 'Send us a message',
       sub: "Fill out the form below and we'll get back to you within one business day.",
       rows: [
@@ -142,31 +139,30 @@ export const defaultContent: PageContent = {
       successBody: "We'll be in touch within one business day.",
       errorTitle: "Something didn't go through.",
       errorBody: 'Please try again, or email us directly at hello@dastifydigital.com.',
+  },
+  info: {
+    contact: {
+      title: 'Contact Information',
+      items: [
+        { icon: 'phone', label: 'Phone', value: '(770) 462-4237' },
+        { icon: 'calendar', label: 'Email', value: 'hello@dastifydigital.com' },
+        { icon: 'search', label: 'Office Hours', value: 'Mon–Fri, 9:00 AM – 6:00 PM EST' },
+      ],
     },
-    info: {
-      contact: {
-        title: 'Contact Information',
-        items: [
-          { icon: 'phone', label: 'Phone', value: '(770) 462-4237' },
-          { icon: 'calendar', label: 'Email', value: 'hello@dastifydigital.com' },
-          { icon: 'search', label: 'Office Hours', value: 'Mon–Fri, 9:00 AM – 6:00 PM EST' },
-        ],
-      },
-      office: {
-        title: 'Our Office',
-        mapImage: '',
-        mapAlt: 'Atlanta office',
-        address: 'Dastify Digital\nAtlanta, GA, United States',
-      },
-      social: {
-        title: 'Follow Us',
-        links: [
-          { label: 'LinkedIn', href: '#' },
-          { label: 'Instagram', href: '#' },
-          { label: 'X (Twitter)', href: '#' },
-        ],
-        // Facebook intentionally removed — do not re-add.
-      },
+    office: {
+      title: 'Our Office',
+      mapImage: '',
+      mapAlt: 'Atlanta office',
+      address: 'Dastify Digital\nAtlanta, GA, United States',
+    },
+    social: {
+      title: 'Follow Us',
+      links: [
+        { label: 'LinkedIn', href: '#' },
+        { label: 'Instagram', href: '#' },
+        { label: 'X (Twitter)', href: '#' },
+      ],
+      // Facebook intentionally removed — do not re-add.
     },
   },
 };

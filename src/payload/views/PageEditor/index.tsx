@@ -39,7 +39,14 @@ import { RevisionHistory } from './RevisionHistory';
 // when the editor contains hp-* blocks. New page-builder blocks save to the
 // blocks[] field instead (same path as Pages).
 import { homepageDocToSections, sectionsToHomepagePatch } from '../HomepageEditor/homepage-adapter';
-import { buildConvertedBlockDefinition, convertedPageContentToSections, sectionsToConvertedPageContent } from '@/lib/converted-pages/editor-adapter';
+import {
+  buildConvertedBlockDefinition,
+  convertedPageContentToSections,
+  sectionsToConvertedPageContent,
+  extractSectionOrder,
+  extractSectionInstances,
+  extractDeletedSections,
+} from '@/lib/converted-pages/editor-adapter';
 import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
 import { extractSectionOverrides, SECTION_OVERRIDES_KEY } from '@/lib/converted-pages/section-overrides';
 import type { BlockDefinition } from './types';
@@ -337,7 +344,7 @@ const leftPanelBtnBase: React.CSSProperties = {
 function PageEditorCore({ onSaveDraft, onPublish }: PageEditorCoreProps) {
   const sections = useEditorStore((s) => s.sections);
   const addBlock = useEditorStore((s) => s.addBlock);
-  const moveSection = useEditorStore((s) => s.moveSection);
+  const moveSectionToIndex = useEditorStore((s) => s.moveSectionToIndexDispatch);
   const moveBlockWithinColumn = useEditorStore((s) => s.moveBlockWithinColumn);
   const moveBlockBetweenColumns = useEditorStore((s) => s.moveBlockBetweenColumns);
   const moveColumn = useEditorStore((s) => s.moveColumn);
@@ -387,8 +394,25 @@ function PageEditorCore({ onSaveDraft, onPublish }: PageEditorCoreProps) {
         const [, secId, colId] = overId.split(':');
         addBlock(String(activeData.blockType), secId, colId);
       } else if (overId.startsWith('block:')) {
-        const [, secId, colId] = overId.split(':');
-        addBlock(String(activeData.blockType), secId, colId);
+        // Drop on a specific block → insert before that block, mirroring the
+        // block-to-block move handler below.
+        const [, secId, colId, targetBlockId] = overId.split(':');
+        const col = sections.find((sec) => sec.id === secId)?.columns.find((c) => c.id === colId);
+        const atIndex = col?.blocks.findIndex((b) => b.id === targetBlockId);
+        addBlock(
+          String(activeData.blockType),
+          secId,
+          colId,
+          atIndex !== undefined && atIndex >= 0 ? atIndex : undefined,
+        );
+      } else if (overId.startsWith('section:')) {
+        // Task 4: dropping on bare section background → append to first column.
+        const sectionId = overId.replace('section:', '');
+        const section = sections.find((sec) => sec.id === sectionId);
+        const firstCol = section?.columns[0];
+        if (section && firstCol) {
+          addBlock(String(activeData.blockType), section.id, firstCol.id);
+        }
       }
       return;
     }
@@ -396,7 +420,9 @@ function PageEditorCore({ onSaveDraft, onPublish }: PageEditorCoreProps) {
     if (activeData?.type === 'section') {
       const fromIndex = sections.findIndex((s) => s.id === activeData.sectionId);
       const toIndex = sections.findIndex((s) => s.id === String(over.id).replace('section:', ''));
-      if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) moveSection(fromIndex, toIndex);
+      if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+        moveSectionToIndex(String(activeData.sectionId), toIndex);
+      }
       return;
     }
 
@@ -579,6 +605,10 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
   const setSaveStatus = useEditorStore((s) => s.setSaveStatus);
   const setSectionStyleOverrides = useEditorStore((s) => s.setSectionStyleOverrides);
   const sectionStyleOverrides = useEditorStore((s) => s.sectionStyleOverrides);
+  const setConvertedSectionMeta = useEditorStore((s) => s.setConvertedSectionMeta);
+  const convertedSectionOrder = useEditorStore((s) => s.convertedSectionOrder);
+  const convertedSectionInstances = useEditorStore((s) => s.convertedSectionInstances);
+  const convertedDeletedSections = useEditorStore((s) => s.convertedDeletedSections);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleDirtyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toasts, show: showToast, dismiss } = useToast();
@@ -657,7 +687,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
             const convertedPayload = (await convertedRes.json()) as ConvertedContentResponse;
             const effectiveContent =
               convertedContent
-                ? mergeConvertedContent(convertedPayload.content, convertedContent)
+                ? mergeConvertedContent(convertedPayload.content, convertedContent, convertedName)
                 : convertedPayload.content;
             const nextSections = convertedPageContentToSections(
               convertedName,
@@ -688,6 +718,14 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
             setConvertedBaseContent(effectiveContent);
             setSections(nextSections);
             setSectionStyleOverrides(extractSectionOverrides(effectiveContent));
+            setConvertedSectionMeta({
+              order: nextSections
+                .map((s) => String(s.columns[0]?.blocks[0]?.data.__sectionKey ?? ''))
+                .filter(Boolean),
+              instances: extractSectionInstances(effectiveContent),
+              deleted: extractDeletedSections(effectiveContent),
+              registryOrder: convertedPayload.sections.map((spec) => spec.key),
+            });
             useEditorStore.temporal.getState().clear();
             return;
           }
@@ -792,7 +830,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         const nextSections = convertedPageContentToSections(
           convertedPageName,
           convertedContent
-            ? mergeConvertedContent(payload.content, convertedContent)
+            ? mergeConvertedContent(payload.content, convertedContent, convertedPageName)
             : payload.content,
           payload.sections,
         );
@@ -817,11 +855,19 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
 
         registerRuntimeBlockDefinitions(runtimeDefinitions);
         const effectiveContent = convertedContent
-          ? mergeConvertedContent(payload.content, convertedContent)
+          ? mergeConvertedContent(payload.content, convertedContent, convertedPageName)
           : payload.content;
         setConvertedBaseContent(effectiveContent);
         setSections(nextSections);
         setSectionStyleOverrides(extractSectionOverrides(effectiveContent));
+        setConvertedSectionMeta({
+          order: nextSections
+            .map((s) => String(s.columns[0]?.blocks[0]?.data.__sectionKey ?? ''))
+            .filter(Boolean),
+          instances: extractSectionInstances(effectiveContent),
+          deleted: extractDeletedSections(effectiveContent),
+          registryOrder: payload.sections.map((spec) => spec.key),
+        });
         useEditorStore.temporal.getState().clear();
       } catch {
         if (!cancelled) {
@@ -918,7 +964,11 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
           });
         } else if (editorMode === 'converted' || (editorMode === 'pages' && convertedPageName)) {
           const base = convertedBaseContent ?? {};
-          const nextContent = sectionsToConvertedPageContent(base, sections);
+          const nextContent = sectionsToConvertedPageContent(base, sections, {
+            sectionOrder: convertedSectionOrder,
+            sectionInstances: convertedSectionInstances,
+            deletedSections: convertedDeletedSections,
+          });
           // Persist section style overrides alongside content under a reserved key
           if (Object.keys(sectionStyleOverrides).length > 0) {
             (nextContent as Record<string, unknown>)[SECTION_OVERRIDES_KEY] = sectionStyleOverrides;
@@ -1009,6 +1059,9 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
       sections,
       pageTitle,
       sectionStyleOverrides,
+      convertedSectionOrder,
+      convertedSectionInstances,
+      convertedDeletedSections,
       setSaveStatus,
       showToast,
     ],

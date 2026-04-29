@@ -1368,7 +1368,45 @@ function BreakpointOverridesSection({
 
 // ─── Section editor panel ─────────────────────────────────────────────────────
 
+function ConvertedRedirectNote({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        background: '#0c1a24',
+        border: '1px solid #1e3a5f',
+        borderRadius: '6px',
+        padding: '10px 12px',
+        margin: '8px 0',
+        fontSize: '11px',
+        color: '#7dd3fc',
+        lineHeight: 1.5,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function SectionPanel({ section }: { section: SectionInstance }) {
+  const editorMode = useEditorStore((s) => s.editorMode);
+  const convertedPageName = useEditorStore((s) => s.convertedPageName);
+  const isConverted = editorMode === 'converted' || (editorMode === 'pages' && Boolean(convertedPageName));
+
+  if (isConverted) {
+    return (
+      <div style={{ padding: '16px 14px' }}>
+        <ConvertedRedirectNote>
+          Section spacing, breakpoints, and layout for converted pages live in the <strong>Sections</strong> tab on the left.
+          Per-element style overrides live in the Selected Element panel below the field editors.
+        </ConvertedRedirectNote>
+      </div>
+    );
+  }
+
+  return <NativeSectionPanel section={section} />;
+}
+
+function NativeSectionPanel({ section }: { section: SectionInstance }) {
   const updateSectionStyles = useEditorStore((s) => s.updateSectionStyles);
   const updateSectionLabel = useEditorStore((s) => s.updateSectionLabel);
   const removeSection = useEditorStore((s) => s.removeSection);
@@ -2390,7 +2428,14 @@ export function ConfigPanel({ embedded = false }: ConfigPanelProps) {
                 {selectedNode && selectedNode.blockId === selectedBlock.id && selectedBlock.blockType.startsWith('cp-') ? (
                   <ConvertedNodeInspector blockId={selectedBlock.id} blockData={selectedBlock.data} node={selectedNode} />
                 ) : null}
-                <BlockStylesPanel blockId={selectedBlock.id} styles={selectedBlock.styles} />
+                {selectedBlock.blockType.startsWith('cp-') ? (
+                  <ConvertedRedirectNote>
+                    Section spacing &amp; breakpoints live in the <strong>Sections</strong> tab.
+                    Per-element style overrides live in the Selected Element panel above.
+                  </ConvertedRedirectNote>
+                ) : (
+                  <BlockStylesPanel blockId={selectedBlock.id} styles={selectedBlock.styles} />
+                )}
               </>
             )}
           </>

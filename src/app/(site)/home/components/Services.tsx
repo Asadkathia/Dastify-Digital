@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { HomepageContent } from '@/lib/homepage-content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon } from './_icons';
 import DragScrollRow from './DragScrollRow';
 
@@ -54,6 +54,7 @@ export default function Services({ data }: { data: HomepageContent['services'] }
             const DescTag = desc.Tag;
             const ctaLabel = getConvertedNodeBinding(data, { field: `items.${i}.cta.label`, defaultTag: 'span' });
             const CtaLabelTag = ctaLabel.Tag;
+            const iconB = getConvertedImageBinding(data, { field: `items.${i}.icon`, defaultAlt: s.name });
 
             const cardStyle: CSSProperties = {
               ['--card-c' as string]: accent.c,
@@ -71,10 +72,13 @@ export default function Services({ data }: { data: HomepageContent['services'] }
                 style={cardStyle}
               >
                 <div className="hp2-disc__num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</div>
+                {/* Editor-only binding for the service icon identifier; visually hidden to preserve current layout. */}
+                <span {...iconB.props} hidden aria-hidden="true" />
+
                 <NameTag {...name.props} className="hp2-disc__title">{s.name}</NameTag>
                 <DescTag {...desc.props} className="hp2-disc__desc">{s.description}</DescTag>
                 <span className="hp2-disc__link">
-                  <CtaLabelTag {...ctaLabel.props}>Learn more</CtaLabelTag>
+                  <CtaLabelTag {...ctaLabel.props}>{s.cta?.label ?? 'Learn more'}</CtaLabelTag>
                   <Icon name="arrow" size={14} />
                 </span>
               </article>

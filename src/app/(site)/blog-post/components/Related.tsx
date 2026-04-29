@@ -12,6 +12,7 @@ function PostMedia({
   data: PageContent['related'];
   index: number;
 }) {
+  // collection-fed: bindings are no-ops when posts[] comes from the Blog collection
   const imgBinding = getConvertedImageBinding(data, {
     field: `posts.${index}.image`,
     altField: `posts.${index}.imageAlt`,
@@ -45,8 +46,10 @@ export default function Related({ data }: { data: PageContent['related'] }) {
         <TitleTag {...title.props} className="bp2-related__title">{data.title}</TitleTag>
         <div className="bp2-related__grid">
           {data.posts.map((p, i) => {
+            // collection-fed: bindings are no-ops when posts[] comes from the Blog collection
             const tB = getConvertedNodeBinding(data, { field: `posts.${i}.title`, defaultTag: 'h3', allowedTags: ['h2', 'h3', 'h4', 'p'] });
             const TTag = tB.Tag;
+            // collection-fed: bindings are no-ops when posts[] comes from the Blog collection
             const cB = getConvertedNodeBinding(data, { field: `posts.${i}.cat`, defaultTag: 'span' });
             const CTag = cB.Tag;
             return (

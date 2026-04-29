@@ -1,5 +1,5 @@
 import type { PageContent } from '../content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon, type IconName } from '../../home/components/_icons';
 import { renderEmHtml } from '../../home/components/_emHtml';
 
@@ -21,9 +21,10 @@ export default function Certifications({ data }: { data: PageContent['certificat
             const TTag = tB.Tag;
             const dB = getConvertedNodeBinding(data, { field: `items.${i}.description`, defaultTag: 'p' });
             const DTag = dB.Tag;
+            const iconB = getConvertedImageBinding(data, { field: `items.${i}.icon`, defaultAlt: c.title });
             return (
               <div key={i} className="ab2-certs__card">
-                <div className="ab2-certs__icon">
+                <div className="ab2-certs__icon" {...iconB.props}>
                   <Icon name={c.icon as IconName} size={24} />
                 </div>
                 <TTag {...tB.props}>{c.title}</TTag>

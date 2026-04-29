@@ -92,7 +92,7 @@ export default async function GenericPage({ params }: Props) {
     : null;
   const effectiveConvertedContent =
     fallbackConvertedContent && convertedContent
-      ? mergeConvertedContent(fallbackConvertedContent, convertedContent)
+      ? mergeConvertedContent(fallbackConvertedContent, convertedContent, convertedPageName)
       : (convertedContent ?? fallbackConvertedContent);
   const contentSections = convertedRegistry?.sections.filter((section) => section.key !== 'nav' && section.key !== 'footer') ?? [];
 

@@ -1,5 +1,5 @@
 import type { PageContent } from '../content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon, type IconName } from '../../home/components/_icons';
 import { renderEmHtml } from '../../home/components/_emHtml';
 
@@ -37,6 +37,7 @@ export default function Comparison({ data }: { data: PageContent['comparison'] }
             const GTag = gB.Tag;
             const gsB = getConvertedNodeBinding(data, { field: `rows.${i}.goodSub`, defaultTag: 'p' });
             const GSTag = gsB.Tag;
+            const iconB = getConvertedImageBinding(data, { field: `rows.${i}.icon`, defaultAlt: r.good });
             return (
               <div key={i} className="sv2-compare__row">
                 <div className="sv2-compare__bad">
@@ -47,7 +48,7 @@ export default function Comparison({ data }: { data: PageContent['comparison'] }
                   <Icon name="arrow" size={20} />
                 </div>
                 <div className="sv2-compare__good">
-                  <div className="sv2-compare__good-icon">
+                  <div className="sv2-compare__good-icon" {...iconB.props}>
                     <Icon name={r.icon as IconName} size={20} />
                   </div>
                   <div>

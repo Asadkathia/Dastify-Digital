@@ -10,29 +10,31 @@ function resolveIcon(name: string): IconName {
   return (KNOWN as string[]).includes(name) ? (name as IconName) : 'bolt';
 }
 
-export default function Info({ data: main }: { data: PageContent['main'] }) {
-  const data = main.info;
+export default function Info({ data }: { data: PageContent['info'] }) {
   const { contact, office, social } = data;
-  const contactTitle = getConvertedNodeBinding(main, { field: 'info.contact.title', defaultTag: 'h4', allowedTags: ['h2', 'h3', 'h4', 'p'] });
+  const contactTitle = getConvertedNodeBinding(data, { field: 'contact.title', defaultTag: 'h4', allowedTags: ['h2', 'h3', 'h4', 'p'] });
   const ContactTitleTag = contactTitle.Tag;
-  const officeTitle = getConvertedNodeBinding(main, { field: 'info.office.title', defaultTag: 'h4', allowedTags: ['h2', 'h3', 'h4', 'p'] });
+  const officeTitle = getConvertedNodeBinding(data, { field: 'office.title', defaultTag: 'h4', allowedTags: ['h2', 'h3', 'h4', 'p'] });
   const OfficeTitleTag = officeTitle.Tag;
-  const address = getConvertedNodeBinding(main, { field: 'info.office.address', defaultTag: 'p' });
+  const address = getConvertedNodeBinding(data, { field: 'office.address', defaultTag: 'p' });
   const AddressTag = address.Tag;
-  const socialTitle = getConvertedNodeBinding(main, { field: 'info.social.title', defaultTag: 'h4', allowedTags: ['h2', 'h3', 'h4', 'p'] });
+  const socialTitle = getConvertedNodeBinding(data, { field: 'social.title', defaultTag: 'h4', allowedTags: ['h2', 'h3', 'h4', 'p'] });
   const SocialTitleTag = socialTitle.Tag;
   return (
     <aside className="ct2-sidebar">
       <div className="ct2-info-card">
         <ContactTitleTag {...contactTitle.props} className="ct2-info-card__title">{contact.title}</ContactTitleTag>
         {contact.items.map((item, i) => {
-          const labelB = getConvertedNodeBinding(main, { field: `info.contact.items.${i}.label`, defaultTag: 'b' });
+          const labelB = getConvertedNodeBinding(data, { field: `contact.items.${i}.label`, defaultTag: 'b' });
           const LabelTag = labelB.Tag;
-          const valueB = getConvertedNodeBinding(main, { field: `info.contact.items.${i}.value`, defaultTag: 'span' });
+          const valueB = getConvertedNodeBinding(data, { field: `contact.items.${i}.value`, defaultTag: 'span' });
           const ValueTag = valueB.Tag;
+          const iconB = getConvertedImageBinding(data, { field: `contact.items.${i}.icon`, defaultAlt: item.label });
           return (
             <div key={i} className="ct2-info__row">
-              <Icon name={resolveIcon(item.icon)} size={18} />
+              <span {...iconB.props}>
+                <Icon name={resolveIcon(item.icon)} size={18} />
+              </span>
               <div>
                 <LabelTag {...labelB.props}>{item.label}</LabelTag>
                 <ValueTag {...valueB.props}>{item.value}</ValueTag>
@@ -45,15 +47,17 @@ export default function Info({ data: main }: { data: PageContent['main'] }) {
       <div className="ct2-info-card">
         <OfficeTitleTag {...officeTitle.props} className="ct2-info-card__title">{office.title}</OfficeTitleTag>
         {(() => {
-          const mapImg = getConvertedImageBinding(main, {
-            field: 'info.office.mapImage',
-            altField: 'info.office.mapAlt',
+          const mapImg = getConvertedImageBinding(data, {
+            field: 'office.mapImage',
+            altField: 'office.mapAlt',
             defaultAlt: office.mapAlt,
           });
+          const mapAltNode = getConvertedNodeBinding(data, { field: 'office.mapAlt', defaultTag: 'span' });
+          const MapAltTag = mapAltNode.Tag;
           if (mapImg.hidden) {
             return (
               <div {...mapImg.props} data-image-hidden="true" className="ct2-map ct2-map--placeholder iph" aria-label={office.mapAlt}>
-                <span>{office.mapAlt}</span>
+                <MapAltTag {...mapAltNode.props}>{office.mapAlt}</MapAltTag>
               </div>
             );
           }
@@ -67,7 +71,7 @@ export default function Info({ data: main }: { data: PageContent['main'] }) {
             />
           ) : (
             <div {...mapImg.props} className="ct2-map ct2-map--placeholder iph" aria-label={office.mapAlt}>
-              <span>{office.mapAlt}</span>
+              <MapAltTag {...mapAltNode.props}>{office.mapAlt}</MapAltTag>
             </div>
           );
         })()}
@@ -85,7 +89,7 @@ export default function Info({ data: main }: { data: PageContent['main'] }) {
         <SocialTitleTag {...socialTitle.props} className="ct2-info-card__title">{social.title}</SocialTitleTag>
         <div className="ct2-social">
           {social.links.map((s, i) => {
-            const lB = getConvertedNodeBinding(main, { field: `info.social.links.${i}.label`, defaultTag: 'span' });
+            const lB = getConvertedNodeBinding(data, { field: `social.links.${i}.label`, defaultTag: 'span' });
             const LTag = lB.Tag;
             return (
               <a key={s.label} href={s.href} className="ct2-social__link">

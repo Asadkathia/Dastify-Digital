@@ -224,6 +224,8 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
   const TitleTag = title.Tag;
   const titleEm = getConvertedNodeBinding(data, { field: 'titleEm', defaultTag: 'span' });
   const TitleEmTag = titleEm.Tag;
+  const intro = getConvertedNodeBinding(data, { field: 'intro', defaultTag: 'p' });
+  const IntroTag = intro.Tag;
   const ctaLabel = getConvertedNodeBinding(data, { field: 'ctaLabel', defaultTag: 'span' });
   const CtaLabelTag = ctaLabel.Tag;
 
@@ -246,6 +248,8 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
                   {data.titleLead}{' '}
                   <TitleEmTag {...titleEm.props} className="hp2-gf__title-em">{renderEmHtml(data.titleEm)}</TitleEmTag>
                 </TitleTag>
+                {/* Editor-only binding for `intro`; not rendered in current layout. */}
+                <IntroTag {...intro.props} hidden>{data.intro}</IntroTag>
               </div>
 
               {/* display-sized word labels — replace pills */}

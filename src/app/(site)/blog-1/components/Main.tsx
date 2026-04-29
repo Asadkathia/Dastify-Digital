@@ -157,9 +157,13 @@ export default function Main({ data, posts }: MainProps) {
               const titleB = pIdx >= 0 ? getConvertedNodeBinding(data, { field: `posts.${pIdx}.title`, defaultTag: 'h3', allowedTags: ['h2', 'h3', 'h4', 'p'] }) : null;
               const excerptB = pIdx >= 0 ? getConvertedNodeBinding(data, { field: `posts.${pIdx}.excerpt`, defaultTag: 'p' }) : null;
               const catB = pIdx >= 0 ? getConvertedNodeBinding(data, { field: `posts.${pIdx}.cat`, defaultTag: 'span' }) : null;
+              const dateB = pIdx >= 0 ? getConvertedNodeBinding(data, { field: `posts.${pIdx}.date`, defaultTag: 'span' }) : null;
+              const readB = pIdx >= 0 ? getConvertedNodeBinding(data, { field: `posts.${pIdx}.read`, defaultTag: 'span' }) : null;
               const TTag = titleB?.Tag ?? 'h3';
               const ETag = excerptB?.Tag ?? 'p';
               const CTag = catB?.Tag ?? 'span';
+              const DTag = dateB?.Tag ?? 'span';
+              const RTag = readB?.Tag ?? 'span';
               return (
                 <Link href={p.href} key={p.id} className="bl2-card">
                   <div className="bl2-card__media">
@@ -169,7 +173,11 @@ export default function Main({ data, posts }: MainProps) {
                     <CTag {...(catB?.props ?? {})} className="bl2-badge bl2-badge--primary">{p.cat}</CTag>
                     <TTag {...(titleB?.props ?? {})} className="bl2-card__title">{p.title}</TTag>
                     <ETag {...(excerptB?.props ?? {})} className="bl2-card__excerpt">{p.excerpt}</ETag>
-                    <div className="bl2-card__meta">{p.date} · {p.read}</div>
+                    <div className="bl2-card__meta">
+                      <DTag {...(dateB?.props ?? {})}>{p.date}</DTag>
+                      {' · '}
+                      <RTag {...(readB?.props ?? {})}>{p.read}</RTag>
+                    </div>
                   </div>
                 </Link>
               );

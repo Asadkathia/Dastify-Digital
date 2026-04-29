@@ -191,11 +191,11 @@ export const defaultContent: PageContent = {
     ],
     badgesLabel: 'Recognized by',
     badges: [
-      { slug: 'best-in-search', alt: 'Best in Search' },
-      { slug: 'google-partner', alt: 'Google Partner' },
-      { slug: 'upcity-top', alt: 'UpCity Top Digital Agency' },
-      { slug: 'clutch-top', alt: 'Clutch Top SEO Company' },
-      { slug: 'seoblog-top', alt: 'SEO Blog Top Rated' },
+      { slug: 'best-in-search', alt: 'Best in Search', image: '' },
+      { slug: 'google-partner', alt: 'Google Partner', image: '' },
+      { slug: 'upcity-top', alt: 'UpCity Top Digital Agency', image: '' },
+      { slug: 'clutch-top', alt: 'Clutch Top SEO Company', image: '' },
+      { slug: 'seoblog-top', alt: 'SEO Blog Top Rated', image: '' },
     ],
   },
   certifications: {

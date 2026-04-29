@@ -57,6 +57,18 @@ export default function Results({ data }: { data: HomepageContent['results'] }) 
                     <CTag {...clientB.props} className="hp2-proof__kpi-client">{c.client}</CTag>
                     <VTag {...valueB.props} className="hp2-proof__kpi-value">{c.value}</VTag>
                     <LTag {...labelB.props} className="hp2-proof__kpi-chip">{c.label}</LTag>
+                    {c.subStats?.map((ss, j) => {
+                      const ssvB = getConvertedNodeBinding(data, { field: `cards.${i}.subStats.${j}.value`, defaultTag: 'span' });
+                      const SVT = ssvB.Tag;
+                      const sslB = getConvertedNodeBinding(data, { field: `cards.${i}.subStats.${j}.label`, defaultTag: 'span' });
+                      const SLT = sslB.Tag;
+                      return (
+                        <span key={j} hidden>
+                          <SVT {...ssvB.props}>{ss.value}</SVT>
+                          <SLT {...sslB.props}>{ss.label}</SLT>
+                        </span>
+                      );
+                    })}
                   </div>
                 );
               })}

@@ -1,5 +1,5 @@
 import type { HomepageContent } from '@/lib/homepage-content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon, type IconName } from './_icons';
 
 const TONE_PALETTE = ['primary', 'accent', 'support'] as const;
@@ -38,10 +38,11 @@ export default function WeServe({ data }: { data: HomepageContent['weServe'] }) 
           {data.specialties.map((s, i) => {
             const nameB = getConvertedNodeBinding(data, { field: `specialties.${i}.name`, defaultTag: 'span' });
             const NameTag = nameB.Tag;
+            const iconB = getConvertedImageBinding(data, { field: `specialties.${i}.icon`, defaultAlt: s.name });
             const tone = toneForIndex(i);
             return (
               <div key={i} className="hp2-weserve__card" data-tone={tone ?? undefined}>
-                <div className="hp2-weserve__icon">
+                <div className="hp2-weserve__icon" {...iconB.props}>
                   <Icon name={s.icon as IconName} size={20} />
                 </div>
                 <NameTag {...nameB.props}>{s.name}</NameTag>
@@ -51,6 +52,7 @@ export default function WeServe({ data }: { data: HomepageContent['weServe'] }) 
         </div>
         <p className="hp2-weserve__note">
           <NoteLeadTag {...noteLead.props}>{data.noteLead}</NoteLeadTag>{' '}
+          {/* IA route — label editable, href fixed */}
           <a href="/contact" className="hp2-weserve__note-link">
             <NoteLinkTag {...noteLink.props}>{data.noteLink}</NoteLinkTag>
           </a>

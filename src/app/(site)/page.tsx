@@ -16,6 +16,7 @@ import { PageBlocksRenderer } from '@/components/blocks/PageBlocksRenderer';
 import type { PageBuilderBlock } from '@/components/blocks/types';
 import { loadConvertedPageRegistry } from '@/lib/converted-pages/preview-registry';
 import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
+import { resolveRenderSections } from '@/lib/converted-pages/editor-adapter';
 import { extractSectionOverrides, generateOverrideCss } from '@/lib/converted-pages/section-overrides';
 import type { HomepageContent } from '@/lib/homepage-content';
 import type { Metadata } from 'next';
@@ -112,7 +113,7 @@ export default async function Home() {
   const registry = await loadConvertedPageRegistry('home');
   if (registry && (convertedPageName === 'home' || convertedPageName === '')) {
     const effective = convertedContent
-      ? mergeConvertedContent(registry.defaultContent, convertedContent)
+      ? mergeConvertedContent(registry.defaultContent, convertedContent, registry.pageName)
       : registry.defaultContent;
     const sectionOverrideCss = generateOverrideCss(registry, extractSectionOverrides(effective));
     const effectiveTyped = effective as unknown as HomepageContent;
@@ -124,15 +125,19 @@ export default async function Home() {
         <ScrollRevealController />
         <SiteNavbar nav={nav} activePath="/" scrolledClass="solid" linkListClassName="nav-links" />
         <main>
-          {registry.sections.map((section) => {
-            const Component = section.Component as ComponentType<{ data: unknown }>;
+          {resolveRenderSections(registry.sections, effectiveTyped as unknown as Record<string, unknown>).map((entry) => {
+            const spec = registry.sections.find((s) => s.key === entry.templateKey);
+            if (!spec) return null;
+            const Component = spec.Component as ComponentType<{ data: unknown }>;
+            const raw = (effectiveTyped as unknown as Record<string, unknown>)[entry.key]
+              ?? (effectiveTyped as unknown as Record<string, unknown>)[entry.templateKey];
+            if ((raw as { __hidden?: boolean } | undefined)?.__hidden) return null;
             // Hero needs the top-level heroVariant flag merged into its data
             // so the same content block can render A / B / C layouts.
-            const raw = (effectiveTyped as unknown as Record<string, unknown>)[section.key];
-            const data = section.key === 'hero'
+            const data = entry.templateKey === 'hero'
               ? { ...(raw as object), heroVariant: effectiveTyped.heroVariant ?? 'A' }
               : raw;
-            return <Component key={section.key} data={data} />;
+            return <Component key={entry.key} data={data} />;
           })}
           <TweaksPanel />
         </main>

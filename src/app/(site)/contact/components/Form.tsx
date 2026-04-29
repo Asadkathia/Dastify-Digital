@@ -8,8 +8,7 @@ import { Icon } from '../../home/components/_icons';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
-export default function Form({ data: main }: { data: PageContent['main'] }) {
-  const data = main.form;
+export default function Form({ data }: { data: PageContent['form'] }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -61,21 +60,21 @@ export default function Form({ data: main }: { data: PageContent['main'] }) {
     }
   };
 
-  const titleNode = getConvertedNodeBinding(main, { field: 'form.title', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const titleNode = getConvertedNodeBinding(data, { field: 'title', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
   const TitleTag = titleNode.Tag;
-  const subNode = getConvertedNodeBinding(main, { field: 'form.sub', defaultTag: 'p' });
+  const subNode = getConvertedNodeBinding(data, { field: 'sub', defaultTag: 'p' });
   const SubTag = subNode.Tag;
-  const successTitle = getConvertedNodeBinding(main, { field: 'form.successTitle', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const successTitle = getConvertedNodeBinding(data, { field: 'successTitle', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
   const SuccessTitleTag = successTitle.Tag;
-  const successBody = getConvertedNodeBinding(main, { field: 'form.successBody', defaultTag: 'p' });
+  const successBody = getConvertedNodeBinding(data, { field: 'successBody', defaultTag: 'p' });
   const SuccessBodyTag = successBody.Tag;
-  const consentNode = getConvertedNodeBinding(main, { field: 'form.consent', defaultTag: 'span' });
+  const consentNode = getConvertedNodeBinding(data, { field: 'consent', defaultTag: 'span' });
   const ConsentTag = consentNode.Tag;
-  const errorTitle = getConvertedNodeBinding(main, { field: 'form.errorTitle', defaultTag: 'strong' });
+  const errorTitle = getConvertedNodeBinding(data, { field: 'errorTitle', defaultTag: 'strong' });
   const ErrorTitleTag = errorTitle.Tag;
-  const errorBody = getConvertedNodeBinding(main, { field: 'form.errorBody', defaultTag: 'span' });
+  const errorBody = getConvertedNodeBinding(data, { field: 'errorBody', defaultTag: 'span' });
   const ErrorBodyTag = errorBody.Tag;
-  const submitLabel = getConvertedNodeBinding(main, { field: 'form.submitLabel', defaultTag: 'span' });
+  const submitLabel = getConvertedNodeBinding(data, { field: 'submitLabel', defaultTag: 'span' });
   const SubmitLabelTag = submitLabel.Tag;
 
   if (status === 'success') {
@@ -102,14 +101,22 @@ export default function Form({ data: main }: { data: PageContent['main'] }) {
             {row.fields.map((field, fIdx) => {
               const isError = !!errors[field.name];
               const value = values[field.name] ?? '';
-              const labelB = getConvertedNodeBinding(main, { field: `form.rows.${rIdx}.fields.${fIdx}.label`, defaultTag: 'span' });
+              const labelB = getConvertedNodeBinding(data, { field: `rows.${rIdx}.fields.${fIdx}.label`, defaultTag: 'span' });
               const LabelTag = labelB.Tag;
+              // Bind name + placeholder as internal-edit handles (no visible UI change).
+              const nameB = getConvertedNodeBinding(data, { field: `rows.${rIdx}.fields.${fIdx}.name`, defaultTag: 'span' });
+              const NameTag = nameB.Tag;
+              const placeholderB = getConvertedNodeBinding(data, { field: `rows.${rIdx}.fields.${fIdx}.placeholder`, defaultTag: 'span' });
+              const PlaceholderTag = placeholderB.Tag;
               return (
                 <label
                   key={field.name}
                   className={`ct2-field${field.full ? ' ct2-field--full' : ''}${isError ? ' ct2-field--error' : ''}`}
                 >
                   <LabelTag {...labelB.props} className="ct2-field__label">{field.label}</LabelTag>
+                  {/* Editor-only bindings; not visually rendered. */}
+                  <NameTag {...nameB.props} hidden>{field.name}</NameTag>
+                  {field.placeholder ? <PlaceholderTag {...placeholderB.props} hidden>{field.placeholder}</PlaceholderTag> : null}
                   {field.type === 'textarea' ? (
                     <textarea
                       className="ct2-input"

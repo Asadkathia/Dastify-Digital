@@ -127,9 +127,11 @@ function HeroA({ data }: { data: HomepageContent['hero'] }) {
           {(() => {
             const heroImg = getConvertedImageBinding(data, { field: 'image', altField: 'imageAlt', defaultAlt: data.imageAlt });
             if (heroImg.hidden) {
+              const altNode = getConvertedNodeBinding(data, { field: 'imageAlt', defaultTag: 'span' });
+              const AltTag = altNode.Tag;
               return (
                 <div {...heroImg.props} data-image-hidden="true" className="iph hp2-hero__img" aria-label={data.imageAlt}>
-                  <span>{data.imageAlt}</span>
+                  <AltTag {...altNode.props}>{data.imageAlt}</AltTag>
                 </div>
               );
             }
@@ -183,9 +185,16 @@ function HeroB({ data }: { data: HomepageContent['hero'] }) {
           {data.statTiles.map((t, i) => {
             const valueB = getConvertedNodeBinding(data, { field: `statTiles.${i}.value`, defaultTag: 'span' });
             const VTag = valueB.Tag;
+            const labelB = getConvertedNodeBinding(data, { field: `statTiles.${i}.label`, defaultTag: 'span' });
+            const LTag = labelB.Tag;
+            const sublabelB = getConvertedNodeBinding(data, { field: `statTiles.${i}.sublabel`, defaultTag: 'span' });
+            const SLTag = sublabelB.Tag;
             return (
               <div key={i} className="hp2-hero--b__pill" role="listitem">
                 <VTag {...valueB.props} className="hp2-hero--b__pill-n">{t.value}</VTag>
+                {/* Bind label/sublabel for the editor; not visually rendered in pill — preserves prior layout. */}
+                <LTag {...labelB.props} hidden>{t.label}</LTag>
+                {t.sublabel ? <SLTag {...sublabelB.props} hidden>{t.sublabel}</SLTag> : null}
               </div>
             );
           })}

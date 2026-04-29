@@ -4,8 +4,10 @@ import { ScrollRevealController } from '@/app/components/home/ScrollRevealContro
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteNavbar } from '@/components/SiteNavbar';
 import { JsonLd } from '@/components/JsonLd';
-import { getNavigation, getFooter } from '@/lib/cms/queries';
+import { findOneBySlug, getNavigation, getFooter, isDraftEnabled } from '@/lib/cms/queries';
 import { getPayloadClient } from '@/lib/payload';
+import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
+import { resolveRenderSections } from '@/lib/converted-pages/editor-adapter';
 import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from '@/lib/seo/jsonld';
 import registry from './editor-registry';
 import { defaultContent, type PageContent } from './content';
@@ -70,29 +72,46 @@ async function fetchRelatedPosts(): Promise<BlogPostSeed[]> {
 }
 
 export default async function BlogPostPage() {
-  const [related, nav, footer] = await Promise.all([
+  const draft = await isDraftEnabled();
+  const [related, nav, footer, doc] = await Promise.all([
     fetchRelatedPosts(),
     getNavigation(),
     getFooter(),
+    findOneBySlug('pages', 'blog-post', draft),
   ]);
 
-  const content: PageContent = {
+  const baseContent: PageContent = {
     ...defaultContent,
     related: {
       ...defaultContent.related,
       posts: related.length > 0 ? related : defaultContent.related.posts,
     },
   };
-  const contentMap = content as unknown as Record<string, unknown>;
+  const convertedContent =
+    doc && typeof (doc as { convertedContent?: unknown }).convertedContent === 'object'
+      ? ((doc as { convertedContent?: unknown }).convertedContent as Record<string, unknown> | null)
+      : null;
+  const merged = convertedContent
+    ? (mergeConvertedContent(
+        baseContent as unknown as Record<string, unknown>,
+        convertedContent,
+        registry.pageName,
+      ) as Record<string, unknown>)
+    : (baseContent as unknown as Record<string, unknown>);
+  const contentMap = merged;
 
   return (
     <>
       <ScrollRevealController />
       {nav ? <SiteNavbar nav={nav} activePath="/blog-1" /> : null}
       <main>
-        {registry.sections.map((section) => {
-          const Component = section.Component as ComponentType<{ data: unknown }>;
-          return <Component key={section.key} data={contentMap[section.key]} />;
+        {resolveRenderSections(registry.sections, contentMap).map((entry) => {
+          const spec = registry.sections.find((s) => s.key === entry.templateKey);
+          if (!spec) return null;
+          const Component = spec.Component as ComponentType<{ data: unknown }>;
+          const sectionData = contentMap[entry.key] as { __hidden?: boolean } | undefined;
+          if (sectionData?.__hidden) return null;
+          return <Component key={entry.key} data={sectionData} />;
         })}
       </main>
       <SiteFooter footer={footer} />

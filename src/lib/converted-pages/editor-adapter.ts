@@ -9,6 +9,121 @@ const META_JSON_FIELDS = '__jsonFields';
 const META_SECTION_KEY = '__sectionKey';
 const META_SECTION_LABEL = '__sectionLabel';
 const META_SECTION_ICON = '__sectionIcon';
+const META_SECTION_HIDDEN = '__sectionHidden';
+const META_TEMPLATE_KEY = '__templateKey';
+// On the persisted page-content side, the hide flag lives directly on the
+// section object as `__hidden` so the public renderer can read it without
+// going through the editor adapter. See sectionsToConvertedPageContent /
+// convertedPageContentToSections for the round-trip.
+const PERSISTED_HIDDEN_KEY = '__hidden';
+
+// ─── Reorder / duplicate / soft-delete (Option 2) ────────────────────────────
+// Top-level meta keys persisted on convertedContent. All `__`-prefixed so the
+// existing flatten/rebuild logic skips them naturally.
+export const SECTION_ORDER_KEY = '__sectionOrder';
+export const SECTION_INSTANCES_KEY = '__sectionInstances';
+export const DELETED_SECTIONS_KEY = '__deletedSections';
+
+export type SectionInstanceMeta = { templateKey: string; label?: string };
+export type SectionInstancesMap = Record<string, SectionInstanceMeta>;
+
+export function extractSectionOrder(content: Record<string, unknown> | null | undefined): string[] | null {
+  if (!content) return null;
+  const raw = content[SECTION_ORDER_KEY];
+  if (!Array.isArray(raw)) return null;
+  return raw.filter((v): v is string => typeof v === 'string');
+}
+
+export function extractSectionInstances(
+  content: Record<string, unknown> | null | undefined,
+): SectionInstancesMap {
+  if (!content) return {};
+  const raw = content[SECTION_INSTANCES_KEY];
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const out: SectionInstancesMap = {};
+  for (const [key, val] of Object.entries(raw as Record<string, unknown>)) {
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const tk = (val as Record<string, unknown>).templateKey;
+      const lbl = (val as Record<string, unknown>).label;
+      if (typeof tk === 'string') {
+        out[key] = { templateKey: tk, ...(typeof lbl === 'string' ? { label: lbl } : {}) };
+      }
+    }
+  }
+  return out;
+}
+
+export function extractDeletedSections(content: Record<string, unknown> | null | undefined): string[] {
+  if (!content) return [];
+  const raw = content[DELETED_SECTIONS_KEY];
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((v): v is string => typeof v === 'string');
+}
+
+/**
+ * Resolve the final ordered list of sections to render for a converted page.
+ * Inputs:
+ *   - `registrySections`: keys+labels from the page's editor-registry.ts
+ *   - `content`: merged convertedContent (defaultContent ⊕ override)
+ * Output: `{ key, templateKey }[]` — `key` is the data slot in `content`
+ *   to read; `templateKey` is the registry key whose Component renders it.
+ *
+ * Shape rules:
+ *   1. Soft-deleted keys (`__deletedSections`) are filtered out.
+ *   2. Duplicate instances (`__sectionInstances`) are inserted right after
+ *      their template (when no explicit order is set).
+ *   3. `__sectionOrder` overrides everything when present; missing keys are
+ *      appended at the end so newly-added registry sections still render.
+ */
+export type ResolvedSectionEntry = { key: string; templateKey: string };
+
+export function resolveRenderSections<T extends { key: string }>(
+  registrySections: ReadonlyArray<T>,
+  content: Record<string, unknown> | null | undefined,
+): ResolvedSectionEntry[] {
+  const order = extractSectionOrder(content);
+  const instances = extractSectionInstances(content);
+  const deleted = new Set(extractDeletedSections(content));
+  const registryKeys = registrySections.map((s) => s.key);
+
+  let orderedKeys: string[];
+  if (order && order.length > 0) {
+    const seen = new Set(order);
+    const tail = [...registryKeys, ...Object.keys(instances)].filter((k) => !seen.has(k));
+    orderedKeys = [...order, ...tail];
+  } else {
+    const instancesByTemplate = new Map<string, string[]>();
+    for (const [k, meta] of Object.entries(instances)) {
+      const list = instancesByTemplate.get(meta.templateKey) ?? [];
+      list.push(k);
+      instancesByTemplate.set(meta.templateKey, list);
+    }
+    orderedKeys = [];
+    for (const k of registryKeys) {
+      orderedKeys.push(k);
+      const dups = instancesByTemplate.get(k);
+      if (dups) orderedKeys.push(...dups);
+    }
+  }
+
+  const registrySet = new Set(registryKeys);
+  const result: ResolvedSectionEntry[] = [];
+  for (const key of orderedKeys) {
+    if (deleted.has(key)) continue;
+    if (instances[key]) {
+      // Duplicate instance — render via its template's Component.
+      if (registrySet.has(instances[key].templateKey)) {
+        result.push({ key, templateKey: instances[key].templateKey });
+      }
+      continue;
+    }
+    if (registrySet.has(key)) {
+      result.push({ key, templateKey: key });
+    }
+    // Unknown keys are silently dropped (e.g. registry section removed).
+  }
+  return result;
+}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -211,44 +326,116 @@ function subFieldForName(
   return field;
 }
 
+function buildSectionForKey(
+  pageName: string,
+  content: Record<string, unknown>,
+  sectionKey: string,
+  spec: ConvertedSectionSpec,
+  templateKey: string,
+): SectionInstance {
+  // Section data is stored under `sectionKey` (which equals the template key
+  // for original registry sections, or the synthetic instance key for
+  // duplicates). The block type is keyed off the *template* so the editor
+  // looks up the same field-config as the original.
+  const sectionData = (content[sectionKey] ?? {}) as Record<string, unknown>;
+  const { [PERSISTED_HIDDEN_KEY]: hiddenFlag, ...sectionDataForFlatten } = sectionData;
+  const flat: FlatRecord = {};
+  const jsonFields: string[] = [];
+  flattenObject(sectionDataForFlatten, flat, jsonFields);
+  flat[META_JSON_FIELDS] = jsonFields;
+  flat[META_SECTION_KEY] = sectionKey;
+  flat[META_SECTION_LABEL] = spec.label;
+  flat[META_SECTION_ICON] = spec.icon ?? '🧩';
+  if (templateKey !== sectionKey) flat[META_TEMPLATE_KEY] = templateKey;
+  if (hiddenFlag === true) flat[META_SECTION_HIDDEN] = true;
+
+  return {
+    id: `cp-section-${sectionKey}`,
+    label: spec.label,
+    columns: [
+      {
+        id: `cp-col-${sectionKey}`,
+        width: '1/1',
+        blocks: [
+          {
+            id: `cp-block-${sectionKey}`,
+            blockType: `cp-${pageName}-${templateKey}`,
+            data: flat,
+          },
+        ],
+      },
+    ],
+  };
+}
+
 export function convertedPageContentToSections(
   pageName: string,
   content: Record<string, unknown>,
   specs: ConvertedSectionSpec[],
 ): SectionInstance[] {
-  return specs.map((spec) => {
-    const sectionData = (content[spec.key] ?? {}) as Record<string, unknown>;
-    const flat: FlatRecord = {};
-    const jsonFields: string[] = [];
-    flattenObject(sectionData, flat, jsonFields);
-    flat[META_JSON_FIELDS] = jsonFields;
-    flat[META_SECTION_KEY] = spec.key;
-    flat[META_SECTION_LABEL] = spec.label;
-    flat[META_SECTION_ICON] = spec.icon ?? '🧩';
+  const order = extractSectionOrder(content);
+  const instances = extractSectionInstances(content);
+  const deleted = new Set(extractDeletedSections(content));
+  const specByKey = new Map(specs.map((s) => [s.key, s]));
 
-    return {
-      id: `cp-section-${spec.key}`,
-      label: spec.label,
-      columns: [
-        {
-          id: `cp-col-${spec.key}`,
-          width: '1/1',
-          blocks: [
-            {
-              id: `cp-block-${spec.key}`,
-              blockType: `cp-${pageName}-${spec.key}`,
-              data: flat,
-            },
-          ],
-        },
-      ],
-    };
-  });
+  // Build the union of all known section keys: registry keys + instance keys.
+  // Then resolve final order: explicit `__sectionOrder` wins; otherwise the
+  // registry order with instances appended after their template key.
+  const registryKeys = specs.map((s) => s.key);
+  const instanceKeys = Object.keys(instances);
+
+  let orderedKeys: string[];
+  if (order && order.length > 0) {
+    // Keep order entries that we can resolve, then append any keys missing
+    // from the order so newly-added registry sections still render.
+    const seen = new Set(order);
+    const tail = [...registryKeys, ...instanceKeys].filter((k) => !seen.has(k));
+    orderedKeys = [...order, ...tail];
+  } else {
+    // Default: registry order, with each duplicate appended right after its
+    // template so a fresh duplicate appears next to its original.
+    orderedKeys = [];
+    const instancesByTemplate = new Map<string, string[]>();
+    for (const [k, meta] of Object.entries(instances)) {
+      const list = instancesByTemplate.get(meta.templateKey) ?? [];
+      list.push(k);
+      instancesByTemplate.set(meta.templateKey, list);
+    }
+    for (const k of registryKeys) {
+      orderedKeys.push(k);
+      const dups = instancesByTemplate.get(k);
+      if (dups) orderedKeys.push(...dups);
+    }
+  }
+
+  const result: SectionInstance[] = [];
+  for (const key of orderedKeys) {
+    if (deleted.has(key)) continue;
+    const instance = instances[key];
+    const templateKey = instance ? instance.templateKey : key;
+    const baseSpec = specByKey.get(templateKey);
+    if (!baseSpec) continue; // unknown template — skip
+    const spec: ConvertedSectionSpec = instance
+      ? { ...baseSpec, key, label: instance.label ?? `${baseSpec.label} (copy)` }
+      : baseSpec;
+    result.push(buildSectionForKey(pageName, content, key, spec, templateKey));
+  }
+  return result;
 }
+
+export type ConvertedSectionsMeta = {
+  /** Final desktop section order — superset of registry keys and instance keys. */
+  sectionOrder?: string[];
+  /** Map of synthetic instance key → template metadata. */
+  sectionInstances?: SectionInstancesMap;
+  /** Soft-deleted section keys; their data still lives in convertedContent. */
+  deletedSections?: string[];
+};
 
 export function sectionsToConvertedPageContent(
   baseContent: Record<string, unknown>,
   sections: SectionInstance[],
+  meta?: ConvertedSectionsMeta,
 ): Record<string, unknown> {
   const next = structuredClone(baseContent);
 
@@ -270,9 +457,35 @@ export function sectionsToConvertedPageContent(
           setValueAtPath(rebuilt, key, nextValue);
         }
 
+        // Promote the editor-only `__sectionHidden` meta flag back onto the
+        // persisted section object as `__hidden`, where the public renderer
+        // and merge function can see it. Omit when not hidden so we don't
+        // clutter saved content.
+        if (data[META_SECTION_HIDDEN] === true) {
+          rebuilt[PERSISTED_HIDDEN_KEY] = true;
+        }
+
         next[sectionKey] = rebuilt;
       }
     }
+  }
+
+  // Round-trip the order / duplicate / soft-delete meta. Each is omitted
+  // entirely when empty so we don't clutter saved content with empty arrays.
+  if (meta?.sectionOrder && meta.sectionOrder.length > 0) {
+    next[SECTION_ORDER_KEY] = [...meta.sectionOrder];
+  } else {
+    delete next[SECTION_ORDER_KEY];
+  }
+  if (meta?.sectionInstances && Object.keys(meta.sectionInstances).length > 0) {
+    next[SECTION_INSTANCES_KEY] = structuredClone(meta.sectionInstances);
+  } else {
+    delete next[SECTION_INSTANCES_KEY];
+  }
+  if (meta?.deletedSections && meta.deletedSections.length > 0) {
+    next[DELETED_SECTIONS_KEY] = [...meta.deletedSections];
+  } else {
+    delete next[DELETED_SECTIONS_KEY];
   }
 
   return next;

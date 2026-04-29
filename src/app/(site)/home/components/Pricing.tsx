@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import type { HomepageContent } from '@/lib/homepage-content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon, type IconName } from './_icons';
 
 export default function Pricing({ data }: { data: HomepageContent['pricing'] }) {
@@ -83,6 +83,7 @@ export default function Pricing({ data }: { data: HomepageContent['pricing'] }) 
             const PriceTag = priceB.Tag;
             const ctaLabel = getConvertedNodeBinding(data, { field: `plans.${i}.ctaLabel`, defaultTag: 'span' });
             const CtaLabelTag = ctaLabel.Tag;
+            const iconB = getConvertedImageBinding(data, { field: `plans.${i}.icon`, defaultAlt: p.name });
             return (
               <div
                 key={i}
@@ -91,7 +92,7 @@ export default function Pricing({ data }: { data: HomepageContent['pricing'] }) 
                 {p.featured ? <div className="hp2-plan__glow" aria-hidden="true" /> : null}
                 {p.badge ? <BadgeTag {...badge.props} className="hp2-plan__badge">{p.badge}</BadgeTag> : null}
                 <div className="hp2-plan__top">
-                  <div className="hp2-plan__icon">
+                  <div className="hp2-plan__icon" {...iconB.props}>
                     <Icon name={p.icon as IconName} size={20} />
                   </div>
                   <NameTag {...name.props} className="hp2-plan__name">{p.name}</NameTag>

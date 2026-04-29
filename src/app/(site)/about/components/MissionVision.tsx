@@ -1,5 +1,5 @@
 import type { PageContent } from '../content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon, type IconName } from '../../home/components/_icons';
 
 export default function MissionVision({ data }: { data: PageContent['missionVision'] }) {
@@ -11,19 +11,21 @@ export default function MissionVision({ data }: { data: PageContent['missionVisi
   const VTitleTag = vTitle.Tag;
   const vBody = getConvertedNodeBinding(data, { field: 'vision.body', defaultTag: 'p' });
   const VBodyTag = vBody.Tag;
+  const mIcon = getConvertedImageBinding(data, { field: 'mission.icon', defaultAlt: data.mission.title });
+  const vIcon = getConvertedImageBinding(data, { field: 'vision.icon', defaultAlt: data.vision.title });
   return (
     <section className="ab2-mv">
       <div className="ab2-wrap">
         <div className="ab2-mv__grid">
           <div className="ab2-mv__card">
-            <div className="ab2-mv__icon">
+            <div className="ab2-mv__icon" {...mIcon.props}>
               <Icon name={data.mission.icon as IconName} size={28} />
             </div>
             <MTitleTag {...mTitle.props}>{data.mission.title}</MTitleTag>
             <MBodyTag {...mBody.props}>{data.mission.body}</MBodyTag>
           </div>
           <div className="ab2-mv__card ab2-mv__card--accent">
-            <div className="ab2-mv__icon">
+            <div className="ab2-mv__icon" {...vIcon.props}>
               <Icon name={data.vision.icon as IconName} size={28} />
             </div>
             <VTitleTag {...vTitle.props}>{data.vision.title}</VTitleTag>

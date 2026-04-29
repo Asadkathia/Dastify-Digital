@@ -10,6 +10,10 @@ export default function Hero({ data }: { data: PageContent['hero'] }) {
   const CategoryTag = category.Tag;
   const title = getConvertedNodeBinding(data, { field: 'title', defaultTag: 'h1', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
   const TitleTag = title.Tag;
+  const dateB = getConvertedNodeBinding(data, { field: 'date', defaultTag: 'span' });
+  const DateTag = dateB.Tag;
+  const readB = getConvertedNodeBinding(data, { field: 'read', defaultTag: 'span' });
+  const ReadTag = readB.Tag;
   return (
     <section className="bp2-hero">
       <div className="bp2-hero__bg" aria-hidden="true">
@@ -25,7 +29,7 @@ export default function Hero({ data }: { data: PageContent['hero'] }) {
         <CategoryTag {...category.props} className="bp2-badge bp2-badge--primary bp2-hero__cat">{data.category}</CategoryTag>
         <TitleTag {...title.props} className="bp2-hero__h1">{data.title}</TitleTag>
         <div className="bp2-meta">
-          {data.date} · {data.read} · By {data.author.name}
+          <DateTag {...dateB.props}>{data.date}</DateTag> · <ReadTag {...readB.props}>{data.read}</ReadTag> · By {data.author.name}
         </div>
       </div>
     </section>

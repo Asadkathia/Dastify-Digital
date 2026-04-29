@@ -897,7 +897,13 @@ function ConvertedSectionBlock({
   const sectionKey = String(block.data.__sectionKey ?? '');
   // nav is now a global — rendered outside sections, not per-block
   if (sectionKey === 'nav') return null;
-  const entry = registry.sections.find((s) => s.key === sectionKey);
+  // Duplicate instances carry __templateKey pointing at the original registry
+  // section to render. Fall back to sectionKey for non-duplicates.
+  const templateKey =
+    typeof block.data.__templateKey === 'string'
+      ? (block.data.__templateKey as string)
+      : sectionKey;
+  const entry = registry.sections.find((s) => s.key === templateKey);
   if (!entry) {
     return (
       <BlockWrapper block={block} isSelected={isSelected} responsiveMode={responsiveMode} sectionId={sectionId} columnId={columnId}>
@@ -909,13 +915,25 @@ function ConvertedSectionBlock({
   }
 
   const Component = entry.Component as React.ComponentType<{ data: unknown }>;
+  // Duplicate instances persist data under their synthetic key, so look up by
+  // sectionKey (= instance key for duplicates, = templateKey otherwise).
+  const rawData = (content[sectionKey] as Record<string, unknown> | undefined)
+    ?? (content[entry.key] as Record<string, unknown> | undefined)
+    ?? {};
   const sectionData = entry.key === 'hero'
-    ? { ...(content[entry.key] as Record<string, unknown>), heroVariant: (content as { heroVariant?: 'A' | 'B' | 'C' }).heroVariant ?? 'A' }
-    : (content[entry.key] as Record<string, unknown>);
+    ? { ...rawData, heroVariant: (content as { heroVariant?: 'A' | 'B' | 'C' }).heroVariant ?? 'A' }
+    : rawData;
+
+  // Editor-only: when the section is marked hidden, dim it so marketing can
+  // see at a glance that it won't render publicly. The actual public skip
+  // happens in each route's page.tsx via `__hidden` on the section data.
+  const isHidden = block.data.__sectionHidden === true;
 
   return (
     <BlockWrapper block={block} isSelected={isSelected} responsiveMode={responsiveMode} sectionId={sectionId} columnId={columnId}>
-      <Component data={sectionData} />
+      <div data-section-hidden={isHidden ? 'true' : undefined}>
+        <Component data={sectionData} />
+      </div>
     </BlockWrapper>
   );
 }
@@ -1365,6 +1383,28 @@ function PreviewInner() {
           background-image: repeating-linear-gradient(135deg, transparent 0 8px, rgba(245,158,11,0.12) 8px 16px) !important;
           cursor: pointer !important;
           position: relative !important;
+        }
+        /* Editor-only: dim sections marked hidden in the Sections panel so
+           marketing can see they won't render publicly. */
+        [data-section-hidden="true"] {
+          opacity: 0.4 !important;
+          position: relative !important;
+        }
+        [data-section-hidden="true"]::after {
+          content: "Hidden on public site";
+          position: absolute;
+          top: 8px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #7c2d12;
+          color: #fdba74;
+          font: 700 10px/1 ui-sans-serif, system-ui, sans-serif;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          padding: 5px 10px;
+          border-radius: 4px;
+          z-index: 25;
+          pointer-events: none;
         }
         [data-image-hidden="true"]::before {
           content: "Hidden — click to manage";

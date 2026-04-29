@@ -4,7 +4,9 @@ import { ScrollRevealController } from '@/app/components/home/ScrollRevealContro
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteNavbar } from '@/components/SiteNavbar';
 import { JsonLd } from '@/components/JsonLd';
-import { getNavigation, getFooter } from '@/lib/cms/queries';
+import { findOneBySlug, getNavigation, getFooter, isDraftEnabled } from '@/lib/cms/queries';
+import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
+import { resolveRenderSections } from '@/lib/converted-pages/editor-adapter';
 import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from '@/lib/seo/jsonld';
 import registry from './editor-registry';
 import { defaultContent } from './content';
@@ -17,8 +19,20 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ServicesConvertPage() {
-  const [nav, footer] = await Promise.all([getNavigation(), getFooter()]);
-  const content = defaultContent as unknown as Record<string, unknown>;
+  const draft = await isDraftEnabled();
+  const [nav, footer, doc] = await Promise.all([
+    getNavigation(),
+    getFooter(),
+    findOneBySlug('pages', 'services-convert', draft),
+  ]);
+  const convertedContent =
+    doc && typeof (doc as { convertedContent?: unknown }).convertedContent === 'object'
+      ? ((doc as { convertedContent?: unknown }).convertedContent as Record<string, unknown> | null)
+      : null;
+  const merged = convertedContent
+    ? mergeConvertedContent(defaultContent as unknown as Record<string, unknown>, convertedContent, registry.pageName)
+    : (defaultContent as unknown as Record<string, unknown>);
+  const content = merged as Record<string, unknown>;
 
   return (
     <>
@@ -31,9 +45,13 @@ export default async function ServicesConvertPage() {
         />
       ) : null}
       <main>
-        {registry.sections.map((section) => {
-          const Component = section.Component as ComponentType<{ data: unknown }>;
-          return <Component key={section.key} data={content[section.key]} />;
+        {resolveRenderSections(registry.sections, content).map((entry) => {
+          const spec = registry.sections.find((s) => s.key === entry.templateKey);
+          if (!spec) return null;
+          const Component = spec.Component as ComponentType<{ data: unknown }>;
+          const sectionData = content[entry.key] as { __hidden?: boolean } | undefined;
+          if (sectionData?.__hidden) return null;
+          return <Component key={entry.key} data={sectionData} />;
         })}
       </main>
       <SiteFooter footer={footer} />

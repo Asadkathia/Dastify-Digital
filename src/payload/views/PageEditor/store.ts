@@ -62,10 +62,40 @@ function updateNestedBlockData(data: Record<string, unknown>, field: string, val
   }
 
   // Converted-page blocks store data as a flat record keyed by dotted paths
-  // (e.g. "form.note"). In that case, update the flat key directly — running
-  // setValueAtPath would create a parallel nested `form` object that
-  // overwrites the sibling flat keys on the next rebuild.
+  // (e.g. "form.note", "info.contact.items"). For an exact flat-key match we
+  // update in place — running setValueAtPath would create a parallel nested
+  // `form` object that overwrites the sibling flat keys on the next rebuild.
   if (Object.prototype.hasOwnProperty.call(next, field)) {
+    next[field] = value;
+    return next;
+  }
+
+  // For deeper paths into a flat-storage block (e.g. inline-editing
+  // "info.contact.items.0.value" when the flat key is "info.contact.items"
+  // holding the full array), walk up the dotted path to find the longest
+  // existing flat-key prefix and mutate inside its value, then write back
+  // under that same flat key. Without this, setValueAtPath would create a
+  // sibling nested object at "info"; on save, sectionsToConvertedPageContent
+  // iterates Object.entries and writes that nested "info" last, wiping
+  // every other flat key under the same root (so editing one contact item
+  // would silently delete the others).
+  const isFlatStorage =
+    '__sectionKey' in next || Object.keys(next).some((key) => key.includes('.'));
+  if (isFlatStorage) {
+    const parts = field.split('.');
+    for (let i = parts.length - 1; i >= 1; i -= 1) {
+      const prefix = parts.slice(0, i).join('.');
+      if (!Object.prototype.hasOwnProperty.call(next, prefix)) continue;
+      const tail = parts.slice(i).join('.');
+      const existing = next[prefix];
+      const container =
+        existing && typeof existing === 'object'
+          ? structuredClone(existing as Record<string, unknown>)
+          : (/^\d+$/.test(parts[i] ?? '') ? [] : {});
+      setValueAtPath(container as Record<string, unknown>, tail, value);
+      next[prefix] = container;
+      return next;
+    }
     next[field] = value;
     return next;
   }
@@ -102,11 +132,32 @@ export type SectionStyleOverrides = Record<
   Partial<Record<SectionOverrideBreakpoint, SectionOverrideValues>>
 >;
 
+/** Synthetic instance metadata for duplicated converted-page sections. */
+export type ConvertedSectionInstancesMap = Record<
+  string,
+  { templateKey: string; label?: string }
+>;
+
 type EditorState = {
   pageId: string | null;
   editorMode: 'pages' | 'homepage' | 'converted';
   convertedPageName: string | null;
   sections: SectionInstance[];
+  /** Final ordered list of section keys for the converted page. Mirrors the
+   *  visual order of `sections` for `cp-*` blocks. Persisted as
+   *  `__sectionOrder` on convertedContent. Empty for non-converted modes. */
+  convertedSectionOrder: string[];
+  /** Synthetic instance map for duplicate sections. Persisted as
+   *  `__sectionInstances`. Keys are synthetic section keys (e.g. `services-2`),
+   *  values point at the original registry section the duplicate was cloned from. */
+  convertedSectionInstances: ConvertedSectionInstancesMap;
+  /** Soft-deleted section keys. Their data stays on convertedContent so a
+   *  marketing user can restore them; they're just filtered out of the
+   *  active editor / public renderer. Persisted as `__deletedSections`. */
+  convertedDeletedSections: string[];
+  /** Cached registry order snapshot used when restoring a deleted section to
+   *  its original position. Set on load; not persisted. */
+  convertedRegistryOrder: string[];
   /** Per-section, per-breakpoint spacing/size overrides for converted pages. */
   sectionStyleOverrides: SectionStyleOverrides;
   /** Currently active section key in the Sections panel. */
@@ -146,6 +197,40 @@ type EditorState = {
   setResponsiveMode: (mode: ResponsiveMode) => void;
   setIframeReady: (ready: boolean) => void;
   setSelectedNode: (node: EditorState['selectedNode']) => void;
+
+  // ── Converted-page section meta (order / duplicate / soft-delete) ────────
+  setConvertedSectionMeta: (meta: {
+    order: string[];
+    instances: ConvertedSectionInstancesMap;
+    deleted: string[];
+    registryOrder: string[];
+  }) => void;
+  /** Move a converted-page section block up one slot. No-op if first or not found. */
+  moveConvertedSectionUp: (blockId: string) => void;
+  /** Move a converted-page section block down one slot. No-op if last or not found. */
+  moveConvertedSectionDown: (blockId: string) => void;
+  /** Clone a converted-page section. Inserts the duplicate immediately below
+   *  the original; new instance key is `<templateKey>-<n>` (next available). */
+  duplicateConvertedSection: (blockId: string) => void;
+  /** Soft-delete a converted-page section: drop it from `sections` and append
+   *  its key to `convertedDeletedSections`. Restoration is reversible because
+   *  the section's data still lives in `convertedContent`. */
+  deleteConvertedSection: (blockId: string) => void;
+  /** Restore a previously soft-deleted converted-page section. Re-inserts it
+   *  at its original registry position (or at the end for instance keys). */
+  restoreConvertedSection: (sectionKey: string) => void;
+  /** Mode-aware dispatcher: in converted mode, call the converted variant; in
+   *  pages/homepage modes, fall through to the existing block-tree action. */
+  moveSectionUpDispatch: (blockOrSectionId: string) => void;
+  moveSectionDownDispatch: (blockOrSectionId: string) => void;
+  duplicateSectionDispatch: (blockOrSectionId: string) => void;
+  deleteSectionDispatch: (blockOrSectionId: string) => void;
+  /** Mode-aware drag-reorder: routes to native moveSection (pages/homepage) or
+   *  to a converted variant that updates `convertedSectionOrder`. The id is the
+   *  section id (for native) or any section id (for converted — we resolve the
+   *  underlying cp-* block from the section). `newIndex` is the destination
+   *  index in the current section list. */
+  moveSectionToIndexDispatch: (sectionId: string, newIndex: number) => void;
 
   // ── Section style overrides (converted pages) ────────────────────────────
   setSectionStyleOverrides: (overrides: SectionStyleOverrides) => void;
@@ -191,6 +276,10 @@ type EditorState = {
   updateBlockStyles: (blockId: string, styles: Partial<BlockStyles>) => void;
   toggleBlockLocked: (blockId: string) => void;
   toggleBlockHidden: (blockId: string) => void;
+  /** Converted-page parity for `toggleBlockHidden`: flips the `__sectionHidden`
+   *  meta flag on the synthetic block's flat data. The adapter promotes it to
+   *  `__hidden` on the persisted section on save. */
+  toggleSectionHidden: (blockId: string) => void;
   updateArrayItem: (blockId: string, arrayField: string, index: number, subField: string, value: unknown) => void;
   addArrayItem: (blockId: string, arrayField: string, newItem: Record<string, unknown>) => void;
   removeArrayItem: (blockId: string, arrayField: string, index: number) => void;
@@ -298,6 +387,10 @@ export const useEditorStore = create<EditorState>()(
       editorMode: 'pages',
       convertedPageName: null,
       sections: [],
+      convertedSectionOrder: [],
+      convertedSectionInstances: {},
+      convertedDeletedSections: [],
+      convertedRegistryOrder: [],
       sectionStyleOverrides: {},
       activeSectionKey: null,
       activeSectionBreakpoint: 'desktop',
@@ -353,6 +446,276 @@ export const useEditorStore = create<EditorState>()(
         }),
       setActiveSectionKey: (activeSectionKey) => set({ activeSectionKey }),
       setActiveSectionBreakpoint: (activeSectionBreakpoint) => set({ activeSectionBreakpoint }),
+
+      // ── Converted-page section meta (Option 2) ──────────────────────────
+      setConvertedSectionMeta: ({ order, instances, deleted, registryOrder }) =>
+        set({
+          convertedSectionOrder: order,
+          convertedSectionInstances: instances,
+          convertedDeletedSections: deleted,
+          convertedRegistryOrder: registryOrder,
+        }),
+
+      moveConvertedSectionUp: (blockId) =>
+        set((state) => {
+          // Find the section index that contains this block. For converted
+          // pages each section holds exactly one cp-* block. Also accept a
+          // section id directly so callers don't have to drill into columns.
+          const idx = state.sections.findIndex((s) =>
+            s.id === blockId || s.columns.some((c) => c.blocks.some((b) => b.id === blockId)),
+          );
+          if (idx <= 0) return state;
+          const sections = [...state.sections];
+          [sections[idx - 1], sections[idx]] = [sections[idx], sections[idx - 1]];
+          const order = sections
+            .map((s) => {
+              const block = s.columns[0]?.blocks[0];
+              return block ? String(block.data.__sectionKey ?? '') : '';
+            })
+            .filter(Boolean);
+          return { sections, convertedSectionOrder: order, saveStatus: 'dirty' };
+        }),
+
+      moveConvertedSectionDown: (blockId) =>
+        set((state) => {
+          const idx = state.sections.findIndex((s) =>
+            s.id === blockId || s.columns.some((c) => c.blocks.some((b) => b.id === blockId)),
+          );
+          if (idx === -1 || idx >= state.sections.length - 1) return state;
+          const sections = [...state.sections];
+          [sections[idx], sections[idx + 1]] = [sections[idx + 1], sections[idx]];
+          const order = sections
+            .map((s) => {
+              const block = s.columns[0]?.blocks[0];
+              return block ? String(block.data.__sectionKey ?? '') : '';
+            })
+            .filter(Boolean);
+          return { sections, convertedSectionOrder: order, saveStatus: 'dirty' };
+        }),
+
+      duplicateConvertedSection: (blockId) =>
+        set((state) => {
+          const idx = state.sections.findIndex((s) =>
+            s.id === blockId || s.columns.some((c) => c.blocks.some((b) => b.id === blockId)),
+          );
+          if (idx === -1) return state;
+          const source = state.sections[idx];
+          const block = source.columns[0]?.blocks[0];
+          if (!block) return state;
+          const sourceKey = String(block.data.__sectionKey ?? '');
+          if (!sourceKey) return state;
+
+          // Resolve template: if the source is itself a duplicate, the new
+          // duplicate clones from the same template; otherwise the template
+          // is the source's own key.
+          const sourceTemplate =
+            (block.data.__templateKey as string | undefined) ?? sourceKey;
+          const sourceLabel =
+            typeof block.data.__sectionLabel === 'string'
+              ? (block.data.__sectionLabel as string)
+              : sourceTemplate;
+
+          // Find next available instance key. We scan both existing instance
+          // keys and current sections so the suffix never collides.
+          const existingKeys = new Set<string>([
+            ...Object.keys(state.convertedSectionInstances),
+            ...state.sections.flatMap((s) =>
+              s.columns.flatMap((c) =>
+                c.blocks.map((b) => String(b.data.__sectionKey ?? '')),
+              ),
+            ),
+          ]);
+          let n = 2;
+          while (existingKeys.has(`${sourceTemplate}-${n}`)) n += 1;
+          const newKey = `${sourceTemplate}-${n}`;
+
+          const clonedData = structuredClone(block.data) as Record<string, unknown>;
+          clonedData.__sectionKey = newKey;
+          clonedData.__templateKey = sourceTemplate;
+          delete clonedData.__sectionHidden;
+
+          const duplicate: SectionInstance = {
+            id: `cp-section-${newKey}`,
+            label: `${source.label ?? sourceLabel} (copy)`,
+            columns: [
+              {
+                id: `cp-col-${newKey}`,
+                width: '1/1',
+                blocks: [
+                  {
+                    id: `cp-block-${newKey}`,
+                    blockType: block.blockType, // same blockType → same field config
+                    data: clonedData,
+                  },
+                ],
+              },
+            ],
+          };
+
+          const sections = [...state.sections];
+          sections.splice(idx + 1, 0, duplicate);
+          const order = sections
+            .map((s) => {
+              const b = s.columns[0]?.blocks[0];
+              return b ? String(b.data.__sectionKey ?? '') : '';
+            })
+            .filter(Boolean);
+
+          const instances: ConvertedSectionInstancesMap = {
+            ...state.convertedSectionInstances,
+            [newKey]: {
+              templateKey: sourceTemplate,
+              label: `${sourceLabel} (copy)`,
+            },
+          };
+
+          return {
+            sections,
+            convertedSectionOrder: order,
+            convertedSectionInstances: instances,
+            saveStatus: 'dirty',
+          };
+        }),
+
+      deleteConvertedSection: (blockId) =>
+        set((state) => {
+          const idx = state.sections.findIndex((s) =>
+            s.id === blockId || s.columns.some((c) => c.blocks.some((b) => b.id === blockId)),
+          );
+          if (idx === -1) return state;
+          const block = state.sections[idx].columns[0]?.blocks[0];
+          if (!block) return state;
+          const sectionKey = String(block.data.__sectionKey ?? '');
+          if (!sectionKey) return state;
+
+          const sections = state.sections.filter((_, i) => i !== idx);
+          const order = sections
+            .map((s) => {
+              const b = s.columns[0]?.blocks[0];
+              return b ? String(b.data.__sectionKey ?? '') : '';
+            })
+            .filter(Boolean);
+          const deleted = state.convertedDeletedSections.includes(sectionKey)
+            ? state.convertedDeletedSections
+            : [...state.convertedDeletedSections, sectionKey];
+
+          // Clear active section pointer if it referenced the deleted key.
+          const nextActive =
+            state.activeSectionKey === sectionKey ? null : state.activeSectionKey;
+
+          return {
+            sections,
+            convertedSectionOrder: order,
+            convertedDeletedSections: deleted,
+            activeSectionKey: nextActive,
+            selection: null,
+            saveStatus: 'dirty',
+          };
+        }),
+
+      restoreConvertedSection: (sectionKey) =>
+        set((state) => {
+          if (!state.convertedDeletedSections.includes(sectionKey)) return state;
+          const deleted = state.convertedDeletedSections.filter((k) => k !== sectionKey);
+
+          // Compute an insertion index honouring the original registry order
+          // for native keys; instance keys go to the end of the array.
+          const registryIndex = state.convertedRegistryOrder.indexOf(sectionKey);
+          let insertAt = state.sections.length;
+          if (registryIndex !== -1) {
+            // Walk current sections; place the restored section just before
+            // the first section whose registry-rank is greater.
+            for (let i = 0; i < state.sections.length; i += 1) {
+              const otherKey = String(
+                state.sections[i].columns[0]?.blocks[0]?.data.__sectionKey ?? '',
+              );
+              const otherRank = state.convertedRegistryOrder.indexOf(otherKey);
+              if (otherRank === -1) continue; // ignore instance keys for ranking
+              if (otherRank > registryIndex) {
+                insertAt = i;
+                break;
+              }
+            }
+          }
+
+          // The restored section's flat data isn't in the editor right now —
+          // we trigger a reload by appending the key to the order. The next
+          // load (post-save) will rebuild the flat block from convertedContent.
+          // For an immediate visual restore we'd need the convertedBaseContent;
+          // until then surface a save-required state.
+          const order = [...state.convertedSectionOrder];
+          if (!order.includes(sectionKey)) {
+            // Insert into order at the same logical position.
+            const before = order.slice(0, insertAt);
+            const after = order.slice(insertAt);
+            order.splice(0, order.length, ...before, sectionKey, ...after);
+          }
+          return {
+            convertedDeletedSections: deleted,
+            convertedSectionOrder: order,
+            saveStatus: 'dirty',
+          };
+        }),
+
+      moveSectionUpDispatch: (id) => {
+        const state = get();
+        if (state.editorMode === 'converted' || (state.editorMode === 'pages' && state.convertedPageName)) {
+          state.moveConvertedSectionUp(id);
+          return;
+        }
+        const idx = state.sections.findIndex((s) => s.id === id);
+        if (idx > 0) state.moveSection(idx, idx - 1);
+      },
+      moveSectionDownDispatch: (id) => {
+        const state = get();
+        if (state.editorMode === 'converted' || (state.editorMode === 'pages' && state.convertedPageName)) {
+          state.moveConvertedSectionDown(id);
+          return;
+        }
+        const idx = state.sections.findIndex((s) => s.id === id);
+        if (idx !== -1 && idx < state.sections.length - 1) state.moveSection(idx, idx + 1);
+      },
+      duplicateSectionDispatch: (id) => {
+        const state = get();
+        if (state.editorMode === 'converted' || (state.editorMode === 'pages' && state.convertedPageName)) {
+          state.duplicateConvertedSection(id);
+          return;
+        }
+        state.duplicateSection(id);
+      },
+      deleteSectionDispatch: (id) => {
+        const state = get();
+        if (state.editorMode === 'converted' || (state.editorMode === 'pages' && state.convertedPageName)) {
+          state.deleteConvertedSection(id);
+          return;
+        }
+        state.removeSection(id);
+      },
+
+      moveSectionToIndexDispatch: (sectionId, newIndex) =>
+        set((state) => {
+          const fromIndex = state.sections.findIndex((s) => s.id === sectionId);
+          if (fromIndex === -1) return state;
+          const clamped = Math.max(0, Math.min(newIndex, state.sections.length - 1));
+          if (clamped === fromIndex) return state;
+          const sections = [...state.sections];
+          const [moved] = sections.splice(fromIndex, 1);
+          sections.splice(clamped, 0, moved);
+          const isConverted =
+            state.editorMode === 'converted' ||
+            (state.editorMode === 'pages' && Boolean(state.convertedPageName));
+          if (!isConverted) {
+            return { sections, saveStatus: 'dirty' };
+          }
+          // Recompute convertedSectionOrder from the new section ordering.
+          const order = sections
+            .map((s) => {
+              const block = s.columns[0]?.blocks[0];
+              return block ? String(block.data.__sectionKey ?? '') : '';
+            })
+            .filter(Boolean);
+          return { sections, convertedSectionOrder: order, saveStatus: 'dirty' };
+        }),
 
       // ── Selection ────────────────────────────────────────────────────────
       selectBlock: (sectionId, columnId, blockId) =>
@@ -686,6 +1049,15 @@ export const useEditorStore = create<EditorState>()(
           sections: mapBlock(state.sections, blockId, (b) => ({
             ...b,
             isHidden: !b.isHidden,
+          })),
+          saveStatus: 'dirty',
+        })),
+
+      toggleSectionHidden: (blockId) =>
+        set((state) => ({
+          sections: mapBlock(state.sections, blockId, (b) => ({
+            ...b,
+            data: { ...b.data, __sectionHidden: !b.data.__sectionHidden },
           })),
           saveStatus: 'dirty',
         })),

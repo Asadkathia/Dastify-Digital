@@ -68,3 +68,168 @@ describe('mergeConvertedContent', () => {
     expect(fallback).toEqual(original);
   });
 });
+
+describe('mergeConvertedContent — legacy-shape migration', () => {
+  it('lifts contact main.{form,info} to top-level', () => {
+    const fallback = {
+      hero: { title: 'Contact' },
+      form: { title: 'Default form' },
+      info: { contact: { title: 'Default info' } },
+    };
+    const override = {
+      hero: { title: 'Saved hero' },
+      main: {
+        form: { title: 'Saved form' },
+        info: { contact: { title: 'Saved info' } },
+      },
+    };
+    const merged = mergeConvertedContent(fallback, override, 'contact') as {
+      form: { title: string };
+      info: { contact: { title: string } };
+      main?: unknown;
+    };
+    expect(merged.form.title).toBe('Saved form');
+    expect(merged.info.contact.title).toBe('Saved info');
+    expect(merged.main).toBeUndefined();
+  });
+
+  it('lifts book-session main.{scheduler,form,sidebar} to top-level', () => {
+    const fallback = {
+      scheduler: { title: 'Default sched' },
+      form: { title: 'Default form' },
+      sidebar: { title: 'Default sidebar' },
+    };
+    const override = {
+      main: {
+        scheduler: { title: 'Saved sched' },
+        form: { title: 'Saved form' },
+        sidebar: { title: 'Saved sidebar' },
+      },
+    };
+    const merged = mergeConvertedContent(fallback, override, 'book-session') as {
+      scheduler: { title: string };
+      form: { title: string };
+      sidebar: { title: string };
+      main?: unknown;
+    };
+    expect(merged.scheduler.title).toBe('Saved sched');
+    expect(merged.form.title).toBe('Saved form');
+    expect(merged.sidebar.title).toBe('Saved sidebar');
+    expect(merged.main).toBeUndefined();
+  });
+
+  it('lifts blog-1 main.{posts,categories} to top-level', () => {
+    const fallback = {
+      posts: [],
+      categories: [],
+    };
+    const override = {
+      main: {
+        posts: [{ title: 'Saved post' }],
+        categories: ['SEO'],
+      },
+    };
+    const merged = mergeConvertedContent(fallback, override, 'blog-1') as {
+      posts: Array<{ title: string }>;
+      categories: string[];
+      main?: unknown;
+    };
+    expect(merged.posts).toHaveLength(1);
+    expect(merged.posts[0].title).toBe('Saved post');
+    expect(merged.categories).toEqual(['SEO']);
+    expect(merged.main).toBeUndefined();
+  });
+
+  it('preserves non-lifted keys under main wrapper (e.g. meta)', () => {
+    const fallback = { hero: { title: 'C' }, form: { title: 'F' }, info: {}, main: { meta: { x: 1 } } };
+    const override = {
+      main: {
+        form: { title: 'Saved form' },
+        meta: { x: 42 },
+      },
+    };
+    const merged = mergeConvertedContent(fallback, override, 'contact') as {
+      form: { title: string };
+      main: { meta: { x: number } };
+    };
+    expect(merged.form.title).toBe('Saved form');
+    expect(merged.main.meta.x).toBe(42);
+  });
+
+  it('does not overwrite already-new-shape top-level keys (idempotency)', () => {
+    const fallback = { form: { title: 'F' }, info: { contact: { title: 'I' } } };
+    const override = {
+      form: { title: 'New form' },
+      main: { form: { title: 'Old form' } }, // legacy override; should be ignored
+    };
+    const merged = mergeConvertedContent(fallback, override, 'contact') as {
+      form: { title: string };
+      main?: unknown;
+    };
+    expect(merged.form.title).toBe('New form');
+    expect(merged.main).toBeUndefined();
+  });
+
+  it('is a no-op when pageName is not provided', () => {
+    const fallback = { form: {} };
+    const override = { main: { form: { title: 'X' } } };
+    const merged = mergeConvertedContent(fallback, override) as {
+      form: { title?: string };
+      main: { form: { title: string } };
+    };
+    // No migration → main is preserved; form stays empty.
+    expect(merged.main.form.title).toBe('X');
+    expect((merged.form as { title?: string }).title).toBeUndefined();
+  });
+
+  it('merges services-convert specialties.tabContent[slug] into tabs[i] by slug', () => {
+    const fallback = {
+      specialties: {
+        tabs: [
+          { slug: 'cosmetic', label: 'Cosmetic', headline: 'Default H', description: 'Default D', bullets: [] },
+          { slug: 'dental', label: 'Dental', headline: 'Default H', description: 'Default D', bullets: [] },
+        ],
+      },
+    };
+    const override = {
+      specialties: {
+        tabs: [
+          { slug: 'cosmetic', label: 'Cosmetic' },
+          { slug: 'dental', label: 'Dental' },
+        ],
+        tabContent: {
+          cosmetic: { headline: 'Saved cosmetic H', description: 'Saved cosmetic D', bullets: ['a', 'b'] },
+          dental: { headline: 'Saved dental H', description: 'Saved dental D', bullets: ['c'] },
+        },
+      },
+    };
+    const merged = mergeConvertedContent(fallback, override, 'services-convert') as {
+      specialties: {
+        tabs: Array<{ slug: string; headline: string; description: string; bullets: string[] }>;
+        tabContent?: unknown;
+      };
+    };
+    expect(merged.specialties.tabContent).toBeUndefined();
+    expect(merged.specialties.tabs[0].headline).toBe('Saved cosmetic H');
+    expect(merged.specialties.tabs[0].bullets).toEqual(['a', 'b']);
+    expect(merged.specialties.tabs[1].headline).toBe('Saved dental H');
+  });
+
+  it('services-convert: leaves new-shape tabs alone when tabContent is absent', () => {
+    const fallback = {
+      specialties: {
+        tabs: [{ slug: 'a', headline: 'D', description: 'D', bullets: [] }],
+      },
+    };
+    const override = {
+      specialties: {
+        tabs: [{ slug: 'a', headline: 'Saved', description: 'Saved', bullets: ['x'] }],
+      },
+    };
+    const merged = mergeConvertedContent(fallback, override, 'services-convert') as {
+      specialties: { tabs: Array<{ headline: string; bullets: string[] }> };
+    };
+    expect(merged.specialties.tabs[0].headline).toBe('Saved');
+    expect(merged.specialties.tabs[0].bullets).toEqual(['x']);
+  });
+});

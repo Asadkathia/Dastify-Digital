@@ -1,5 +1,5 @@
 import type { PageContent } from '../content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon, type IconName } from '../../home/components/_icons';
 
 export default function Formula({ data }: { data: PageContent['formula'] }) {
@@ -19,9 +19,10 @@ export default function Formula({ data }: { data: PageContent['formula'] }) {
             const TTag = tB.Tag;
             const dB = getConvertedNodeBinding(data, { field: `items.${i}.desc`, defaultTag: 'p' });
             const DTag = dB.Tag;
+            const iconB = getConvertedImageBinding(data, { field: `items.${i}.icon`, defaultAlt: it.title });
             return (
               <div key={i} className="sv2-formula__card">
-                <div className="sv2-formula__icon">
+                <div className="sv2-formula__icon" {...iconB.props}>
                   <Icon name={it.icon as IconName} size={28} />
                 </div>
                 <TTag {...tB.props}>{it.title}</TTag>

@@ -3,6 +3,10 @@ import {
   convertedPageContentToSections,
   sectionsToConvertedPageContent,
   buildConvertedBlockDefinition,
+  resolveRenderSections,
+  SECTION_ORDER_KEY,
+  SECTION_INSTANCES_KEY,
+  DELETED_SECTIONS_KEY,
 } from './editor-adapter';
 import type { ConvertedSectionSpec } from './types';
 
@@ -115,6 +119,149 @@ describe('convertedPageContentToSections / sectionsToConvertedPageContent', () =
     expect(blockData['image']).toEqual(content.hero.image);
     const rebuilt = sectionsToConvertedPageContent(content, sections);
     expect(rebuilt).toEqual(content);
+  });
+});
+
+describe('resolveRenderSections / order, instances, deleted', () => {
+  const SPECS = [
+    { key: 'hero', label: 'Hero' },
+    { key: 'services', label: 'Services' },
+    { key: 'cta', label: 'CTA' },
+  ] as const;
+
+  it('returns registry order when no meta is present', () => {
+    const out = resolveRenderSections(SPECS, { hero: {}, services: {}, cta: {} });
+    expect(out.map((e) => e.key)).toEqual(['hero', 'services', 'cta']);
+    expect(out.every((e) => e.key === e.templateKey)).toBe(true);
+  });
+
+  it('honours __sectionOrder', () => {
+    const content = {
+      hero: {},
+      services: {},
+      cta: {},
+      [SECTION_ORDER_KEY]: ['cta', 'hero', 'services'],
+    };
+    const out = resolveRenderSections(SPECS, content);
+    expect(out.map((e) => e.key)).toEqual(['cta', 'hero', 'services']);
+  });
+
+  it('skips keys in __deletedSections', () => {
+    const content = {
+      hero: {},
+      services: {},
+      cta: {},
+      [DELETED_SECTIONS_KEY]: ['services'],
+    };
+    const out = resolveRenderSections(SPECS, content);
+    expect(out.map((e) => e.key)).toEqual(['hero', 'cta']);
+  });
+
+  it('resolves duplicate instances to their template renderer', () => {
+    const content = {
+      hero: {},
+      services: {},
+      'services-2': {},
+      cta: {},
+      [SECTION_INSTANCES_KEY]: {
+        'services-2': { templateKey: 'services', label: 'Services (copy)' },
+      },
+    };
+    const out = resolveRenderSections(SPECS, content);
+    // Default order: registry with duplicates appended right after their template.
+    expect(out.map((e) => e.key)).toEqual(['hero', 'services', 'services-2', 'cta']);
+    const dup = out.find((e) => e.key === 'services-2')!;
+    expect(dup.templateKey).toBe('services');
+  });
+
+  it('combines order, instances, and deleted', () => {
+    const content = {
+      hero: {},
+      services: {},
+      'services-2': {},
+      cta: {},
+      [SECTION_INSTANCES_KEY]: {
+        'services-2': { templateKey: 'services' },
+      },
+      [SECTION_ORDER_KEY]: ['cta', 'services-2', 'hero', 'services'],
+      [DELETED_SECTIONS_KEY]: ['hero'],
+    };
+    const out = resolveRenderSections(SPECS, content);
+    expect(out.map((e) => e.key)).toEqual(['cta', 'services-2', 'services']);
+  });
+});
+
+describe('sectionsToConvertedPageContent / meta round-trip', () => {
+  const SPECS: ConvertedSectionSpec[] = [
+    { key: 'hero', label: 'Hero' },
+    { key: 'cta', label: 'CTA' },
+  ];
+
+  it('writes __sectionOrder, __sectionInstances, __deletedSections when provided', () => {
+    const content = { hero: { title: 'h' }, cta: { label: 'c' } };
+    const sections = convertedPageContentToSections('demo', content, SPECS);
+    const out = sectionsToConvertedPageContent(content, sections, {
+      sectionOrder: ['cta', 'hero'],
+      sectionInstances: { 'cta-2': { templateKey: 'cta', label: 'CTA (copy)' } },
+      deletedSections: ['hero'],
+    });
+    expect(out[SECTION_ORDER_KEY]).toEqual(['cta', 'hero']);
+    expect(out[SECTION_INSTANCES_KEY]).toEqual({
+      'cta-2': { templateKey: 'cta', label: 'CTA (copy)' },
+    });
+    expect(out[DELETED_SECTIONS_KEY]).toEqual(['hero']);
+  });
+
+  it('omits empty meta keys to keep saved content tidy', () => {
+    const content = { hero: { title: 'h' }, cta: { label: 'c' } };
+    const sections = convertedPageContentToSections('demo', content, SPECS);
+    const out = sectionsToConvertedPageContent(content, sections, {
+      sectionOrder: [],
+      sectionInstances: {},
+      deletedSections: [],
+    });
+    expect(out[SECTION_ORDER_KEY]).toBeUndefined();
+    expect(out[SECTION_INSTANCES_KEY]).toBeUndefined();
+    expect(out[DELETED_SECTIONS_KEY]).toBeUndefined();
+  });
+});
+
+describe('convertedPageContentToSections / order + duplicate', () => {
+  const SPECS: ConvertedSectionSpec[] = [
+    { key: 'hero', label: 'Hero' },
+    { key: 'cta', label: 'CTA' },
+  ];
+
+  it('builds sections in __sectionOrder when present and resolves duplicates via __sectionInstances', () => {
+    const content = {
+      hero: { title: 'Hi' },
+      cta: { label: 'Go' },
+      'cta-2': { label: 'Go again' },
+      [SECTION_INSTANCES_KEY]: { 'cta-2': { templateKey: 'cta' } },
+      [SECTION_ORDER_KEY]: ['cta-2', 'hero', 'cta'],
+    };
+    const sections = convertedPageContentToSections('demo', content, SPECS);
+    expect(sections.map((s) => String(s.columns[0].blocks[0].data.__sectionKey))).toEqual([
+      'cta-2',
+      'hero',
+      'cta',
+    ]);
+    // The duplicate section's blockType should match its template's blockType
+    // so the runtime block-definition lookup hits the same field config.
+    const dupBlock = sections[0].columns[0].blocks[0];
+    const ctaBlock = sections[2].columns[0].blocks[0];
+    expect(dupBlock.blockType).toBe(ctaBlock.blockType);
+    expect(dupBlock.data.__templateKey).toBe('cta');
+  });
+
+  it('skips deleted sections', () => {
+    const content = {
+      hero: { title: 'Hi' },
+      cta: { label: 'Go' },
+      [DELETED_SECTIONS_KEY]: ['cta'],
+    };
+    const sections = convertedPageContentToSections('demo', content, SPECS);
+    expect(sections.map((s) => String(s.columns[0].blocks[0].data.__sectionKey))).toEqual(['hero']);
   });
 });
 

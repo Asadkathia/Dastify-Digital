@@ -12,6 +12,8 @@ export default function Testimonial({ data }: { data: HomepageContent['testimoni
   const NameTag = name.Tag;
   const role = getConvertedNodeBinding(data, { field: 'authorRole', defaultTag: 'div' });
   const RoleTag = role.Tag;
+  const initials = getConvertedNodeBinding(data, { field: 'authorInitials', defaultTag: 'span' });
+  const InitialsTag = initials.Tag;
   return (
     <section className="hp2-testimonial">
       <div className="hp2-wrap">
@@ -38,7 +40,7 @@ export default function Testimonial({ data }: { data: HomepageContent['testimoni
           </div>
           <div className="hp2-testimonial__author">
             <div className="hp2-testimonial__avatar" aria-hidden="true">
-              {data.authorInitials}
+              <InitialsTag {...initials.props}>{data.authorInitials}</InitialsTag>
             </div>
             <div>
               <NameTag {...name.props} className="hp2-testimonial__name">{data.authorName}</NameTag>

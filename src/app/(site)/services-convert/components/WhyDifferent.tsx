@@ -1,5 +1,5 @@
 import type { PageContent } from '../content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon, type IconName } from '../../home/components/_icons';
 import { renderEmHtml } from '../../home/components/_emHtml';
 
@@ -26,9 +26,10 @@ export default function WhyDifferent({ data }: { data: PageContent['whyDifferent
             const PTag = pB.Tag;
             const sB = getConvertedNodeBinding(data, { field: `challenges.${i}.solution`, defaultTag: 'p' });
             const STag = sB.Tag;
+            const iconB = getConvertedImageBinding(data, { field: `challenges.${i}.icon`, defaultAlt: c.title });
             return (
               <div key={i} className="sv2-why__card">
-                <div className="sv2-why__card-icon">
+                <div className="sv2-why__card-icon" {...iconB.props}>
                   <Icon name={c.icon as IconName} size={22} />
                 </div>
                 <TTag {...tB.props}>{c.title}</TTag>

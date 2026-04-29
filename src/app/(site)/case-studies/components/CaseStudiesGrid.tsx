@@ -57,6 +57,7 @@ export default function CaseStudiesGrid({ data }: { data: PageContent['caseStudi
                 </div>
                 <ClientTag {...clientB.props} className="cs2-card__client">
                   {cs.slug ? (
+                    // IA route — label editable, href fixed
                     <Link href={`/case-studies/${cs.slug}`} className="cs2-card__client-link">
                       {cs.client}
                     </Link>

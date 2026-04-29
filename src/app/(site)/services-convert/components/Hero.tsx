@@ -50,7 +50,16 @@ export default function Hero({ data }: { data: PageContent['hero'] }) {
         </BadgeTag>
         <HeadingTag {...heading.props} className="sv2-hero__h1">{renderEmHtml(data.heading)}</HeadingTag>
         <div className="sv2-hero__animated">
-          <span className={'sv2-hero__word' + (visible ? ' is-visible' : '')}>{words[idx]}</span>
+          {(() => {
+            const safeIdx = data.cyclingWords.length > 0 ? idx % data.cyclingWords.length : 0;
+            const wB = getConvertedNodeBinding(data, { field: `cyclingWords.${safeIdx}`, defaultTag: 'span' });
+            const WTag = wB.Tag;
+            return (
+              <WTag {...wB.props} className={'sv2-hero__word' + (visible ? ' is-visible' : '')}>
+                {words[idx]}
+              </WTag>
+            );
+          })()}
         </div>
         <SubTag {...sub.props} className="sv2-hero__sub">{data.sub}</SubTag>
         <div className="sv2-hero__pills">
@@ -75,15 +84,20 @@ export default function Hero({ data }: { data: PageContent['hero'] }) {
             // Note: bind to the whole `image` object so writes from the upload
             // panel land at `image = { mediaId, url, alt }`. The helper still
             // reads the legacy `{ src, alt }` shape via normalizeImageValue.
+            // The image binding writes `{ url, alt }` from the upload panel.
+            // The node binding registers `image.alt` so it's editable as text
+            // in the inspector (and satisfies the editor-binding lint).
             const heroImg = getConvertedImageBinding(data, {
               field: 'image',
               altField: 'image.alt',
               defaultAlt: data.image.alt,
             });
+            const altB = getConvertedNodeBinding(data, { field: 'image.alt', defaultTag: 'span' });
+            const AltTag = altB.Tag;
             if (heroImg.hidden) {
               return (
                 <div {...heroImg.props} data-image-hidden="true" className="iph sv2-hero__img sv2-hero__img-ph" aria-label={data.image.alt}>
-                  <span>{data.image.alt}</span>
+                  <AltTag {...altB.props}>{data.image.alt}</AltTag>
                 </div>
               );
             }
@@ -92,7 +106,7 @@ export default function Hero({ data }: { data: PageContent['hero'] }) {
               <img {...heroImg.props} src={heroImg.src} alt={heroImg.alt || data.image.alt} className="sv2-hero__img" />
             ) : (
               <div {...heroImg.props} className="iph sv2-hero__img sv2-hero__img-ph" aria-label={data.image.alt}>
-                <span>{data.image.alt}</span>
+                <AltTag {...altB.props}>{data.image.alt}</AltTag>
               </div>
             );
           })()}

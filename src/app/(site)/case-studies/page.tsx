@@ -4,9 +4,11 @@ import { ScrollRevealController } from '@/app/components/home/ScrollRevealContro
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteNavbar } from '@/components/SiteNavbar';
 import { JsonLd } from '@/components/JsonLd';
-import { getNavigation, getFooter } from '@/lib/cms/queries';
+import { findOneBySlug, getNavigation, getFooter, isDraftEnabled } from '@/lib/cms/queries';
 import { getPayloadClient } from '@/lib/payload';
 import { getSiteSettings } from '@/lib/site-settings';
+import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
+import { resolveRenderSections } from '@/lib/converted-pages/editor-adapter';
 import { buildMetadata } from '@/lib/seo/metadata';
 import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from '@/lib/seo/jsonld';
 import registry from './editor-registry';
@@ -72,10 +74,12 @@ function docToSeed(doc: CaseStudyDoc, index: number): CaseStudySeed {
 }
 
 export default async function CaseStudiesPage() {
-  const [docs, nav, footer] = await Promise.all([
+  const draft = await isDraftEnabled();
+  const [docs, nav, footer, doc] = await Promise.all([
     fetchCaseStudies(),
     getNavigation(),
     getFooter(),
+    findOneBySlug('pages', 'case-studies', draft),
   ]);
 
   // If Payload has docs, render those; otherwise fall back to verbatim static seed.
@@ -83,19 +87,30 @@ export default async function CaseStudiesPage() {
     ? docs.map(docToSeed)
     : defaultContent.caseStudies.items;
 
-  const content: Record<string, unknown> = {
+  const baseContent: Record<string, unknown> = {
     ...defaultContent,
     caseStudies: { ...defaultContent.caseStudies, items },
   };
+  const convertedContent =
+    doc && typeof (doc as { convertedContent?: unknown }).convertedContent === 'object'
+      ? ((doc as { convertedContent?: unknown }).convertedContent as Record<string, unknown> | null)
+      : null;
+  const content = convertedContent
+    ? (mergeConvertedContent(baseContent, convertedContent, registry.pageName) as Record<string, unknown>)
+    : baseContent;
 
   return (
     <>
       <ScrollRevealController />
       {nav ? <SiteNavbar nav={nav} activePath="/case-studies" /> : null}
       <main>
-        {registry.sections.map((section) => {
-          const Component = section.Component as ComponentType<{ data: unknown }>;
-          return <Component key={section.key} data={content[section.key]} />;
+        {resolveRenderSections(registry.sections, content).map((entry) => {
+          const spec = registry.sections.find((s) => s.key === entry.templateKey);
+          if (!spec) return null;
+          const Component = spec.Component as ComponentType<{ data: unknown }>;
+          const sectionData = content[entry.key] as { __hidden?: boolean } | undefined;
+          if (sectionData?.__hidden) return null;
+          return <Component key={entry.key} data={sectionData} />;
         })}
       </main>
       <SiteFooter footer={footer} />

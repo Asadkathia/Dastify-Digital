@@ -1,5 +1,5 @@
 import type { PageContent } from '../content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon, type IconName } from '../../home/components/_icons';
 import { renderEmHtml } from '../../home/components/_emHtml';
 
@@ -21,10 +21,11 @@ export default function SetsApart({ data }: { data: PageContent['setsApart'] }) 
             const TTag = tB.Tag;
             const dB = getConvertedNodeBinding(data, { field: `items.${i}.desc`, defaultTag: 'p' });
             const DTag = dB.Tag;
+            const iconB = getConvertedImageBinding(data, { field: `items.${i}.icon`, defaultAlt: it.title });
             return (
               <div key={i} className="sv2-apart__card">
                 <div className="sv2-apart__num">{String(i + 1).padStart(2, '0')}</div>
-                <div className="sv2-apart__icon">
+                <div className="sv2-apart__icon" {...iconB.props}>
                   <Icon name={it.icon as IconName} size={22} />
                 </div>
                 <TTag {...tB.props}>{it.title}</TTag>

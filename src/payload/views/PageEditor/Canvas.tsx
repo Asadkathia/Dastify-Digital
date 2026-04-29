@@ -270,8 +270,8 @@ type SectionCardProps = {
 
 const SectionCard = memo(function SectionCard({ section, selectedBlockId, selectedSectionId, searchMatchIds }: SectionCardProps) {
   const addBlock = useEditorStore((s) => s.addBlock);
-  const removeSection = useEditorStore((s) => s.removeSection);
-  const duplicateSection = useEditorStore((s) => s.duplicateSection);
+  const removeSection = useEditorStore((s) => s.deleteSectionDispatch);
+  const duplicateSection = useEditorStore((s) => s.duplicateSectionDispatch);
   const addColumn = useEditorStore((s) => s.addColumnToSection);
   const selectSection = useEditorStore((s) => s.selectSection);
 

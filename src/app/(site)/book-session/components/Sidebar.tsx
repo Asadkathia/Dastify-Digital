@@ -1,5 +1,5 @@
 import type { PageContent } from '../content';
-import { getConvertedNodeBinding } from '@/components/converted-editor';
+import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon } from '../../home/components/_icons';
 
 type IconName = 'check' | 'bolt' | 'calendar' | 'phone';
@@ -9,12 +9,11 @@ function resolveIcon(name: string): IconName {
   return (KNOWN as string[]).includes(name) ? (name as IconName) : 'check';
 }
 
-export default function Sidebar({ data: main }: { data: PageContent['main'] }) {
-  const data = main.sidebar;
+export default function Sidebar({ data }: { data: PageContent['sidebar'] }) {
   return (
     <aside className="bk2-sidebar">
       {data.cards.map((card, i) => {
-        const titleB = getConvertedNodeBinding(main, { field: `sidebar.cards.${i}.title`, defaultTag: 'h4', allowedTags: ['h2', 'h3', 'h4', 'p'] });
+        const titleB = getConvertedNodeBinding(data, { field: `cards.${i}.title`, defaultTag: 'h4', allowedTags: ['h2', 'h3', 'h4', 'p'] });
         const TitleTag = titleB.Tag;
         if (card.kind === 'list') {
           return (
@@ -22,10 +21,12 @@ export default function Sidebar({ data: main }: { data: PageContent['main'] }) {
               <TitleTag {...titleB.props} className="bk2-info-card__title">{card.title}</TitleTag>
               <ul className="bk2-expect">
                 {card.items.map((item, j) => {
-                  const tB = getConvertedNodeBinding(main, { field: `sidebar.cards.${i}.items.${j}.text`, defaultTag: 'span' });
+                  const tB = getConvertedNodeBinding(data, { field: `cards.${i}.items.${j}.text`, defaultTag: 'span' });
                   const TTag = tB.Tag;
+                  const iconB = getConvertedImageBinding(data, { field: `cards.${i}.items.${j}.icon`, defaultAlt: item.text });
                   return (
                     <li key={j}>
+                      <span {...iconB.props} hidden aria-hidden="true" data-binding-only="true" />
                       <Icon name={resolveIcon(item.icon)} size={16} />
                       <TTag {...tB.props}>{item.text}</TTag>
                     </li>
@@ -36,7 +37,7 @@ export default function Sidebar({ data: main }: { data: PageContent['main'] }) {
           );
         }
         if (card.kind === 'note') {
-          const bB = getConvertedNodeBinding(main, { field: `sidebar.cards.${i}.body`, defaultTag: 'p' });
+          const bB = getConvertedNodeBinding(data, { field: `cards.${i}.body`, defaultTag: 'p' });
           const BTag = bB.Tag;
           return (
             <div key={i} className="bk2-info-card">
@@ -46,9 +47,9 @@ export default function Sidebar({ data: main }: { data: PageContent['main'] }) {
           );
         }
         // call
-        const bB = getConvertedNodeBinding(main, { field: `sidebar.cards.${i}.body`, defaultTag: 'p' });
+        const bB = getConvertedNodeBinding(data, { field: `cards.${i}.body`, defaultTag: 'p' });
         const BTag = bB.Tag;
-        const phB = getConvertedNodeBinding(main, { field: `sidebar.cards.${i}.phoneLabel`, defaultTag: 'span' });
+        const phB = getConvertedNodeBinding(data, { field: `cards.${i}.phoneLabel`, defaultTag: 'span' });
         const PhTag = phB.Tag;
         return (
           <div key={i} className="bk2-info-card">
