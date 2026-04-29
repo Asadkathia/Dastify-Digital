@@ -2,7 +2,6 @@ import Link from 'next/link';
 import type { HomepageContent } from '@/lib/homepage-content';
 import { getConvertedNodeBinding } from '@/components/converted-editor';
 import { Icon } from './_icons';
-import AnimCounter from './_AnimCounter';
 
 export default function Results({ data }: { data: HomepageContent['results'] }) {
   const eyebrow = getConvertedNodeBinding(data, { field: 'eyebrow', defaultTag: 'div' });
@@ -15,51 +14,54 @@ export default function Results({ data }: { data: HomepageContent['results'] }) 
   const IntroTag = intro.Tag;
   const ctaLabel = getConvertedNodeBinding(data, { field: 'ctaLabel', defaultTag: 'span' });
   const CtaLabelTag = ctaLabel.Tag;
+
   return (
-    <section className="hp2-results">
+    <section className="hp2-proof">
       <div className="hp2-wrap">
-        <div className="hp2-section-head is-light">
-          <EyebrowTag {...eyebrow.props} className="hp2-eyebrow is-light">{data.eyebrow}</EyebrowTag>
-          <TitleTag {...title.props} className="hp2-h2 is-light">
-            {data.titleLead}
-            <br />
-            <TitleTailTag {...titleTail.props}>{data.titleTail}</TitleTailTag>
-          </TitleTag>
-          <IntroTag {...intro.props} className="hp2-intro is-light">{data.intro}</IntroTag>
-        </div>
-        <div className="hp2-results__grid">
-          {data.cards.map((c, i) => {
-            const clientB = getConvertedNodeBinding(data, { field: `cards.${i}.client`, defaultTag: 'div' });
-            const CTag = clientB.Tag;
-            const valueB = getConvertedNodeBinding(data, { field: `cards.${i}.value`, defaultTag: 'span' });
-            const labelB = getConvertedNodeBinding(data, { field: `cards.${i}.label`, defaultTag: 'span' });
-            return (
-              <div key={i} className={`hp2-result-card${c.featured ? ' hp2-result-card--feature' : ''}`}>
-                <CTag {...clientB.props} className="hp2-result-card__client">{c.client}</CTag>
-                <AnimCounter value={c.value} label={c.label} color="#fff" valueProps={valueB.props} labelProps={labelB.props} />
-                <div className="hp2-result-card__bar">
-                  <i style={{ width: `${c.barPercent}%` }} />
-                </div>
-                {c.subStats ? (
-                  <div className="hp2-result-card__detail">
-                    {c.subStats.map((s, j) => {
-                      const sV = getConvertedNodeBinding(data, { field: `cards.${i}.subStats.${j}.value`, defaultTag: 'span' });
-                      const sL = getConvertedNodeBinding(data, { field: `cards.${i}.subStats.${j}.label`, defaultTag: 'span' });
-                      return (
-                        <AnimCounter key={j} value={s.value} label={s.label} color="#fff" valueProps={sV.props} labelProps={sL.props} />
-                      );
-                    })}
+        <div className="hp2-proof__grid">
+          {/* ── Left column: copy + CTA ── */}
+          <div className="hp2-proof__copy">
+            <EyebrowTag {...eyebrow.props} className="hp2-proof__eyebrow">
+              <span className="hp2-proof__eyebrow-dot" aria-hidden="true" />
+              {data.eyebrow}
+            </EyebrowTag>
+            <TitleTag {...title.props} className="hp2-proof__title">
+              {data.titleLead}
+              <br />
+              <TitleTailTag {...titleTail.props}>{data.titleTail}</TitleTailTag>
+            </TitleTag>
+            <IntroTag {...intro.props} className="hp2-proof__intro">{data.intro}</IntroTag>
+            <Link href={data.ctaHref} className="hp2-btn hp2-btn--primary hp2-btn--lg hp2-proof__cta">
+              <CtaLabelTag {...ctaLabel.props}>{data.ctaLabel}</CtaLabelTag>
+              <Icon name="arrow" size={16} />
+            </Link>
+          </div>
+
+          {/* ── Right column: KPI tiles over world-map backdrop ── */}
+          <div className="hp2-proof__kpis">
+            <div
+              className="hp2-proof__map"
+              aria-hidden="true"
+              style={{ backgroundImage: "url('/kpi-map.svg')" }}
+            />
+            <div className="hp2-proof__kpi-grid">
+              {data.cards.map((c, i) => {
+                const clientB = getConvertedNodeBinding(data, { field: `cards.${i}.client`, defaultTag: 'div' });
+                const CTag = clientB.Tag;
+                const valueB = getConvertedNodeBinding(data, { field: `cards.${i}.value`, defaultTag: 'div' });
+                const VTag = valueB.Tag;
+                const labelB = getConvertedNodeBinding(data, { field: `cards.${i}.label`, defaultTag: 'span' });
+                const LTag = labelB.Tag;
+                return (
+                  <div key={i} className="hp2-proof__kpi">
+                    <CTag {...clientB.props} className="hp2-proof__kpi-client">{c.client}</CTag>
+                    <VTag {...valueB.props} className="hp2-proof__kpi-value">{c.value}</VTag>
+                    <LTag {...labelB.props} className="hp2-proof__kpi-chip">{c.label}</LTag>
                   </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-        <div className="hp2-results__cta">
-          <Link href={data.ctaHref} className="hp2-btn hp2-btn--outline-light hp2-btn--lg">
-            <CtaLabelTag {...ctaLabel.props}>{data.ctaLabel}</CtaLabelTag>
-            <Icon name="arrow" size={16} />
-          </Link>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -71,7 +71,7 @@ const SOCIAL_LABELS: Record<SiteFooterSocial['platform'], string> = {
 export function SiteFooter({ footer }: SiteFooterProps) {
   if (!footer) return null;
 
-  const { brand, columns, ctaColumn, copyright, badges } = footer;
+  const { brand, columns, ctaColumn, copyright } = footer;
 
   return (
     <footer className="site-footer">
@@ -180,18 +180,6 @@ export function SiteFooter({ footer }: SiteFooterProps) {
             <Link href="/terms" className="site-footer-legal-link">Terms</Link>
             <Link href="/hipaa" className="site-footer-legal-link">HIPAA Policy</Link>
           </div>
-          {badges.length > 0 && (
-            <div className="site-footer-badges">
-              {badges.map((badge) => (
-                <span
-                  key={badge.label}
-                  className={`f-badge${badge.tone && badge.tone !== 'purple' ? ` ${badge.tone}` : ''}`}
-                >
-                  {badge.label}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </footer>

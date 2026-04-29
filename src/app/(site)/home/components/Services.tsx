@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import type { HomepageContent } from '@/lib/homepage-content';
 import { getConvertedNodeBinding } from '@/components/converted-editor';
 import { Icon } from './_icons';
+import DragScrollRow from './DragScrollRow';
 
 // One accent per card, rotating every 3 (blue → purple → green → repeat).
 // We expose the chosen accent via CSS custom properties on the card root so
@@ -43,7 +44,7 @@ export default function Services({ data }: { data: HomepageContent['services'] }
           <IntroTag {...intro.props} className="hp2-intro">{data.intro}</IntroTag>
         </div>
 
-        <div className="hp2-disc__row" role="list">
+        <DragScrollRow className="hp2-disc__row" role="list">
           {data.items.map((s, i) => {
             const accent = accentForIndex(i);
             const name = getConvertedNodeBinding(data, { field: `items.${i}.name`, defaultTag: 'h3', allowedTags: ['h2', 'h3', 'h4', 'p'] });
@@ -78,7 +79,7 @@ export default function Services({ data }: { data: HomepageContent['services'] }
               </article>
             );
           })}
-        </div>
+        </DragScrollRow>
       </div>
     </section>
   );
