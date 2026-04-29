@@ -4156,13 +4156,46 @@ body.mobile-menu-open {
   font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
   color: rgba(255,255,255,.45);
 }
-.sv2-hero__trust-logos { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; justify-content: center; }
-.sv2-hero__trust-img {
-  height: 32px; min-width: 90px; padding: 6px 10px;
-  background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.12);
-  color: rgba(255,255,255,.55); font-size: 10px;
-  opacity: .8; transition: opacity .2s var(--expo);
+.sv2-hero__trust-logos {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+  flex-wrap: nowrap;            /* force single horizontal line */
+  justify-content: center;
+  width: 100%;
+  overflow-x: auto;             /* graceful overflow on tiny viewports */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.sv2-hero__trust-logos::-webkit-scrollbar { display: none; }
+.sv2-hero__trust-img {
+  /* Override the inherited .iph card chrome — no dashed border, no fill, no overlay */
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  height: 28px;
+  min-width: 0;
+  max-width: clamp(80px, 12vw, 140px);
+  flex: 0 0 auto;
+  color: rgba(255,255,255,.6);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: .85;
+  transition: opacity .2s var(--expo);
+}
+.sv2-hero__trust-img > * {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+}
+.sv2-hero__trust-img::before { display: none !important; }   /* kill the .iph overlay gradient */
 .sv2-hero__trust-img:hover { opacity: 1; }
 
 /* ──────────────── STATS BAR ──────────────── */
