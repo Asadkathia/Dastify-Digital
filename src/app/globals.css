@@ -2853,31 +2853,58 @@ body.mobile-menu-open {
 }
 .hp2-trust-logos__row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-wrap: nowrap;
+  gap: clamp(12px, 2vw, 24px);
   align-items: center;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.hp2-trust-logos__row::-webkit-scrollbar { display: none; }
 .hp2-trust-logos.is-center .hp2-trust-logos__row { justify-content: center; }
 .hp2-trust-logos__placeholder {
-  height: 40px;
-  min-width: 100px;
-  padding: 0 12px;
+  /* Override the inherited .iph card chrome — single-line, no fill, no border, no overlay */
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  height: 28px;
+  min-width: 0;
+  max-width: clamp(80px, 12vw, 140px);
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255,255,255,.06);
-  border: 1px dashed rgba(255,255,255,.2);
-  border-radius: 8px;
   color: rgba(255,255,255,.6);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: .06em;
   text-transform: uppercase;
   text-align: center;
-  opacity: .8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: .85;
   transition: opacity .2s ease;
 }
+.hp2-trust-logos__placeholder > * {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+}
+.hp2-trust-logos__placeholder::before { display: none !important; }
 .hp2-trust-logos__placeholder:hover { opacity: 1; }
+.hp2-trust-logos__img {
+  height: 28px;
+  max-width: clamp(80px, 12vw, 140px);
+  flex: 0 0 auto;
+  object-fit: contain;
+  opacity: .85;
+  transition: opacity .2s ease;
+}
+.hp2-trust-logos__img:hover { opacity: 1; }
 
 /* ═══ TRUST BAR ═══════════════════════════════════════════ */
 .hp2-trustbar { background: #fff; padding: 48px 0; border-bottom: 1px solid var(--bd-lg); }
@@ -2891,12 +2918,21 @@ body.mobile-menu-open {
 }
 .hp2-trustbar__track {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
-  gap: 32px;
+  gap: clamp(16px, 2.4vw, 32px);
   align-items: center;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.hp2-trustbar__track::-webkit-scrollbar { display: none; }
 .hp2-trustbar__logo {
+  /* Override any inherited .iph chrome for placeholder slots */
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
   font-family: var(--fd);
   font-size: 13px;
   font-weight: 800;
@@ -2904,7 +2940,27 @@ body.mobile-menu-open {
   color: var(--t2);
   opacity: .65;
   white-space: nowrap;
+  flex: 0 0 auto;
+  max-width: clamp(100px, 14vw, 180px);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+.hp2-trustbar__logo > * {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+.hp2-trustbar__logo::before { display: none !important; }
+.hp2-trustbar__logo-img {
+  height: 28px;
+  max-width: clamp(100px, 14vw, 180px);
+  flex: 0 0 auto;
+  object-fit: contain;
+  opacity: .85;
+  transition: opacity .2s ease;
+}
+.hp2-trustbar__logo-img:hover { opacity: 1; }
 
 /* ═══ SERVICES — "Six disciplines" horizontal cards ═══════ */
 .hp2-services { background: var(--bg2); padding: 100px 0; }
