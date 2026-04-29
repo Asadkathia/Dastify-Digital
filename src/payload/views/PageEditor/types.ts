@@ -240,6 +240,8 @@ export type EditorMessage =
             isImageField?: boolean;
             /** Dotted path of the alt-text companion field (when isImageField). */
             altField?: string;
+            /** Dotted path of the boolean "hide this slot" companion field (when isImageField). */
+            hiddenField?: string;
           }
         | null;
     }

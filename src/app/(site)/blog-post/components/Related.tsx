@@ -17,6 +17,13 @@ function PostMedia({
     altField: `posts.${index}.imageAlt`,
     defaultAlt: post.imageAlt ?? post.title,
   });
+  if (imgBinding.hidden) {
+    return (
+      <div {...imgBinding.props} data-image-hidden="true" className="iph bp2-card__iph" role="img" aria-label={`${post.cat} post placeholder`}>
+        <span>{post.cat}</span>
+      </div>
+    );
+  }
   if (imgBinding.hasImage) {
     /* eslint-disable-next-line @next/next/no-img-element */
     return <img {...imgBinding.props} src={imgBinding.src} alt={imgBinding.alt || post.title} className="bp2-card__img-real" />;

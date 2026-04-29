@@ -26,6 +26,13 @@ function TrustLogos({ data, centered }: { data: HomepageContent['hero']; centere
           const LBTag = labelBinding.Tag;
           const imgBinding = getConvertedImageBinding(data, { field: `trustLogos.${i}.image`, defaultAlt: l.label });
           const tone = toneForIndex(i);
+          if (imgBinding.hidden) {
+            return (
+              <div key={l.slug} {...imgBinding.props} data-image-hidden="true" className="iph hp2-trust-logos__placeholder" aria-label={l.label}>
+                <span>{l.label}</span>
+              </div>
+            );
+          }
           return imgBinding.hasImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -105,6 +112,13 @@ function HeroA({ data }: { data: HomepageContent['hero'] }) {
         <div className="hp2-hero__right">
           {(() => {
             const heroImg = getConvertedImageBinding(data, { field: 'image', altField: 'imageAlt', defaultAlt: data.imageAlt });
+            if (heroImg.hidden) {
+              return (
+                <div {...heroImg.props} data-image-hidden="true" className="iph hp2-hero__img" aria-label={data.imageAlt}>
+                  <span>{data.imageAlt}</span>
+                </div>
+              );
+            }
             return heroImg.hasImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img {...heroImg.props} src={heroImg.src} alt={heroImg.alt} className="hp2-hero__img" />

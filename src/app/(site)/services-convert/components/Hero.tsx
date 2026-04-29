@@ -80,6 +80,13 @@ export default function Hero({ data }: { data: PageContent['hero'] }) {
               altField: 'image.alt',
               defaultAlt: data.image.alt,
             });
+            if (heroImg.hidden) {
+              return (
+                <div {...heroImg.props} data-image-hidden="true" className="iph sv2-hero__img sv2-hero__img-ph" aria-label={data.image.alt}>
+                  <span>{data.image.alt}</span>
+                </div>
+              );
+            }
             return heroImg.hasImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img {...heroImg.props} src={heroImg.src} alt={heroImg.alt || data.image.alt} className="sv2-hero__img" />
@@ -101,6 +108,13 @@ export default function Hero({ data }: { data: PageContent['hero'] }) {
                 altField: `trustLogos.${i}.alt`,
                 defaultAlt: logo.alt,
               });
+              if (imgBinding.hidden) {
+                return (
+                  <div key={logo.slug} {...imgBinding.props} data-image-hidden="true" className="iph sv2-hero__trust-img" aria-label={logo.alt}>
+                    <ATag {...altB.props}>{logo.alt}</ATag>
+                  </div>
+                );
+              }
               return imgBinding.hasImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

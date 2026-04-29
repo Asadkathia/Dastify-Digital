@@ -325,11 +325,18 @@ function updateInsertionLine(lineEl: HTMLDivElement, x: number, y: number, dragB
 }
 
 function findInspectableElement(target: HTMLElement, root: HTMLElement | null): HTMLElement | null {
+  // First pass: prefer an image-field ancestor. Image placeholders often
+  // contain inline-edit text nodes (e.g. a label span inside an .iph div); a
+  // click on those should still resolve to the surrounding image slot.
   let el: HTMLElement | null = target;
   while (el && el !== root) {
-    // An image-field wrapper counts as inspectable even if it doesn't carry a
-    // data-field directly. (Most do — but be defensive in case markup splits.)
-    if (el.dataset?.field || el.dataset?.imageField) return el;
+    if (el.dataset?.imageField) return el;
+    el = el.parentElement;
+  }
+  // Second pass: fall back to any data-field ancestor.
+  el = target;
+  while (el && el !== root) {
+    if (el.dataset?.field) return el;
     el = el.parentElement;
   }
   return null;
@@ -359,6 +366,7 @@ function buildNodeSelection(blockId: string, element: HTMLElement) {
     computedStyles,
     isImageField: isImageField || undefined,
     altField: element.dataset.altField || undefined,
+    hiddenField: element.dataset.imageHiddenField || undefined,
   };
 }
 
@@ -1349,6 +1357,33 @@ function PreviewInner() {
         [data-dnd-block-id]:hover { cursor: default; }
         [data-widget-id]:hover > .widget-dnd-handle { opacity: 1 !important; }
         [data-widget-id]:hover { outline: 1px dashed #93c5fd !important; cursor: default; }
+        /* Editor-only: surface hidden image slots so marketing can click to unhide.
+           Globally hidden via display:none on the public site (globals.css). */
+        [data-image-hidden="true"] {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          opacity: 0.5 !important;
+          outline: 2px dashed #f59e0b !important;
+          outline-offset: 2px !important;
+          background-image: repeating-linear-gradient(135deg, transparent 0 8px, rgba(245,158,11,0.12) 8px 16px) !important;
+          cursor: pointer !important;
+          position: relative !important;
+        }
+        [data-image-hidden="true"]::before {
+          content: "Hidden — click to manage";
+          position: absolute;
+          top: 6px;
+          left: 6px;
+          background: #f59e0b;
+          color: #1a1a1a;
+          font: 600 10px/1 ui-sans-serif, system-ui, sans-serif;
+          letter-spacing: 0.04em;
+          padding: 4px 8px;
+          border-radius: 4px;
+          z-index: 2;
+          pointer-events: none;
+        }
       `}</style>
       {sectionOverrideCss ? (
         <style dangerouslySetInnerHTML={{ __html: sectionOverrideCss }} />

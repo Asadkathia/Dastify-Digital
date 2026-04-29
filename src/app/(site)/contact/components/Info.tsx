@@ -50,6 +50,13 @@ export default function Info({ data: main }: { data: PageContent['main'] }) {
             altField: 'info.office.mapAlt',
             defaultAlt: office.mapAlt,
           });
+          if (mapImg.hidden) {
+            return (
+              <div {...mapImg.props} data-image-hidden="true" className="ct2-map ct2-map--placeholder iph" aria-label={office.mapAlt}>
+                <span>{office.mapAlt}</span>
+              </div>
+            );
+          }
           return mapImg.hasImage ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img

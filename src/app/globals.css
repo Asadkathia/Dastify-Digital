@@ -193,6 +193,12 @@ img {
   padding: 80px 0;
 }
 
+/* Hidden image slots — marketing toggled "Hide" in the visual editor.
+   The placeholder div still renders in the DOM (so it remains clickable in
+   the editor preview, where this rule is overridden) but is removed from the
+   public layout so users see nothing in its place. */
+[data-image-hidden="true"] { display: none !important; }
+
 /* ─ IMAGE PLACEHOLDER ─ */
 .iph {
   display: flex;
