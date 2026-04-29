@@ -102,7 +102,13 @@ export type HomepageContent = {
 
   trustBar: {
     label: string;
-    logos: string[];
+    /**
+     * Each entry can be a plain string label (legacy seed shape, kept for
+     * backwards compatibility with `convertedContent` JSON saved before the
+     * image-upload upgrade) OR an object that carries a label plus an
+     * optional uploaded image. The TrustBar component normalizes both shapes.
+     */
+    logos: Array<string | { label: string; image?: import('@/components/converted-editor').EditableImage }>;
   };
 
   services: {
@@ -245,7 +251,14 @@ export const homepageContent: HomepageContent = {
 
   trustBar: {
     label: 'Trusted by 120+ medical practices',
-    logos: ['ORTHO TENNESSEE', 'CONA', 'MIDLANDS ORTHO', 'HOPCO', 'CVR MEDICAL', 'SUMMIT HEALTH'],
+    logos: [
+      { label: 'ORTHO TENNESSEE' },
+      { label: 'CONA' },
+      { label: 'MIDLANDS ORTHO' },
+      { label: 'HOPCO' },
+      { label: 'CVR MEDICAL' },
+      { label: 'SUMMIT HEALTH' },
+    ],
   },
 
   services: {
