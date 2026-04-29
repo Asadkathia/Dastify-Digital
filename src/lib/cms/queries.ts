@@ -253,7 +253,6 @@ const FOOTER_FALLBACK: SiteFooterData = {
       { platform: 'x', href: '#' },
       { platform: 'linkedin', href: '#' },
       { platform: 'youtube', href: '#' },
-      { platform: 'facebook', href: '#' },
     ],
   },
   columns: [

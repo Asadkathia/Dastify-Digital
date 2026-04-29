@@ -24,6 +24,7 @@ import { migration as collectionBlocksFields } from './20260421_0022_collection_
 import { migration as homepageBlocksField } from './20260421_0023_homepage_blocks_field.ts';
 import { migration as sectionBlockSpacingFields } from './20260421_0024_section_block_spacing_fields.ts';
 import { migration as sectionBlockBreakpointStyles } from './20260421_0025_section_block_breakpoint_styles.ts';
+import { migration as removeFacebookSocials } from './20260429_0026_remove_facebook_socials.ts';
 
 export const migrations: Migration[] = [
   usersRole,
@@ -51,4 +52,5 @@ export const migrations: Migration[] = [
   homepageBlocksField,
   sectionBlockSpacingFields,
   sectionBlockBreakpointStyles,
+  removeFacebookSocials,
 ];

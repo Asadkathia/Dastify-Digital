@@ -162,7 +162,6 @@ export const defaultContent: PageContent = {
         title: 'Follow Us',
         links: [
           { label: 'LinkedIn', href: '#' },
-          { label: 'Facebook', href: '#' },
           { label: 'Instagram', href: '#' },
           { label: 'X (Twitter)', href: '#' },
         ],

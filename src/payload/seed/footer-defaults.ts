@@ -11,7 +11,6 @@ export const footerDefaults: SiteFooterData = {
       { platform: 'x', href: '#' },
       { platform: 'linkedin', href: '#' },
       { platform: 'youtube', href: '#' },
-      { platform: 'facebook', href: '#' },
     ],
   },
   columns: [

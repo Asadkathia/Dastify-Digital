@@ -14,6 +14,7 @@ import * as migration_20260421_195925_section_block_spacing_fields from './20260
 import * as migration_20260421_201250_section_block_min_height from './20260421_201250_section_block_min_height';
 import * as migration_20260421_204703_section_block_breakpoint_styles from './20260421_204703_section_block_breakpoint_styles';
 import * as migration_20260429_120000_services_hide_hero_image from './20260429_120000_services_hide_hero_image';
+import * as migration_20260429_140000_remove_facebook_socials from './20260429_140000_remove_facebook_socials';
 
 export const migrations = [
   {
@@ -95,5 +96,10 @@ export const migrations = [
     up: migration_20260429_120000_services_hide_hero_image.up,
     down: migration_20260429_120000_services_hide_hero_image.down,
     name: '20260429_120000_services_hide_hero_image',
+  },
+  {
+    up: migration_20260429_140000_remove_facebook_socials.up,
+    down: migration_20260429_140000_remove_facebook_socials.down,
+    name: '20260429_140000_remove_facebook_socials',
   },
 ];
