@@ -53,6 +53,7 @@ export default async function ServiceDetailPage({ params }: Props) {
   const heroImageObj = doc.heroImage && typeof doc.heroImage === 'object' ? doc.heroImage as { url?: string; alt?: string } : null;
   const heroImageUrl = typeof heroImageObj?.url === 'string' ? heroImageObj.url : null;
   const heroImageAlt = typeof heroImageObj?.alt === 'string' ? heroImageObj.alt : title;
+  const hideHeroImage = doc.hideHeroImage === true;
   const rawOutcomes = Array.isArray(doc.outcomes) ? doc.outcomes as Array<{ text: string }> : [];
   const outcomesTitle = typeof doc.outcomesTitle === 'string' ? doc.outcomesTitle : 'What you get';
   const cta = doc.cta as { label?: string; href?: string } | null | undefined;
@@ -108,17 +109,29 @@ export default async function ServiceDetailPage({ params }: Props) {
             </div>
           </section>
 
-          {/* Hero image */}
-          {heroImageUrl !== null ? (
+          {/* Hero image — image when uploaded, brand placeholder when missing,
+              nothing when explicitly hidden via the Services collection toggle. */}
+          {!hideHeroImage && (
             <div className="wrap" style={{ maxWidth: '940px', marginTop: '24px', marginBottom: '48px' }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={heroImageUrl}
-                alt={heroImageAlt}
-                style={{ width: '100%', borderRadius: '12px', display: 'block' }}
-              />
+              {heroImageUrl !== null ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={heroImageUrl}
+                  alt={heroImageAlt}
+                  style={{ width: '100%', borderRadius: '12px', display: 'block' }}
+                />
+              ) : (
+                <div
+                  className="iph"
+                  role="img"
+                  aria-label={heroImageAlt || title}
+                  style={{ width: '100%', aspectRatio: '16 / 9', borderRadius: '12px' }}
+                >
+                  <span>{heroImageAlt || title}</span>
+                </div>
+              )}
             </div>
-          ) : null}
+          )}
 
           {/* Outcomes */}
           {rawOutcomes.length > 0 && (

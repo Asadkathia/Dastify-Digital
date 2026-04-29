@@ -79,7 +79,13 @@ export const Services: CollectionConfig = {
       name: 'heroImage',
       type: 'upload',
       relationTo: 'media',
-      admin: { description: 'Used on the standalone /services/[slug] detail page as the hero.' },
+      admin: { description: 'Used on the standalone /services/[slug] detail page as the hero. When empty, a placeholder renders unless "Hide Hero Image" is checked.' },
+    },
+    {
+      name: 'hideHeroImage',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: { description: 'When checked, the hero image area is hidden completely on /services/[slug] (no placeholder either).' },
     },
     {
       name: 'hoverImage',

@@ -901,7 +901,9 @@ function ConvertedSectionBlock({
   }
 
   const Component = entry.Component as React.ComponentType<{ data: unknown }>;
-  const sectionData = content[entry.key] as Record<string, unknown>;
+  const sectionData = entry.key === 'hero'
+    ? { ...(content[entry.key] as Record<string, unknown>), heroVariant: (content as { heroVariant?: 'A' | 'B' | 'C' }).heroVariant ?? 'A' }
+    : (content[entry.key] as Record<string, unknown>);
 
   return (
     <BlockWrapper block={block} isSelected={isSelected} responsiveMode={responsiveMode} sectionId={sectionId} columnId={columnId}>
