@@ -38,8 +38,8 @@ export default function WeServe({ data }: { data: HomepageContent['weServe'] }) 
     <section className="hp2-weserve">
       <div className="hp2-wrap">
         <div className="hp2-section-head hp2-section-head--center">
-          <TitleTag {...title.props} className="hp2-h2">
-            {data.titleLead}
+          <TitleTag className="hp2-h2">
+            <span {...title.props}>{data.titleLead}</span>
             <br />
             of <TitleEmTag {...titleEm.props}>{data.titleEm.replace(/^of\s+/i, '')}</TitleEmTag>
           </TitleTag>

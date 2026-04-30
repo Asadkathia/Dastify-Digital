@@ -459,6 +459,14 @@ function BlockWrapper({
     // upload panel via CONVERTED_NODE_SELECTED + isImageField.
     if (el.dataset.imageField === 'true') return;
     if (!block.blockType.startsWith('cp-') && !INLINE_TEXT_FIELDS.includes(fieldName)) return;
+    // Nested bindings: contentEditable on a parent captures every descendant
+    // text node — including text from inner [data-field] children. On blur
+    // we'd write the combined text back to the parent's field, then on the
+    // next render the inner field still emits its own text on top, producing
+    // visible duplication. Refuse inline-edit at the parent in this case;
+    // marketing can click the inner fragment directly, or edit through the
+    // inspector's "Current Text" input.
+    if (el.querySelector('[data-field]')) return;
 
     el.contentEditable = 'true';
     el.focus();
