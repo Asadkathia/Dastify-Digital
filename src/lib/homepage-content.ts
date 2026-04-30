@@ -21,7 +21,7 @@ export type ServiceItem = {
   icon: string;
   name: string;
   description: string;
-  cta?: { label: string };
+  cta?: { label: string; href: string };
 };
 
 export type ResultCardItem = {
@@ -34,8 +34,18 @@ export type ResultCardItem = {
 };
 
 export type SpecialtyItem = {
-  icon: string;
+  /** Stable identifier for inline-edit persistence across reorders. */
+  id: string;
+  /** Layout variant. Exactly one item should be 'featured' (must be index 0). */
+  variant: 'featured' | 'compact';
+  /** "Service 0X" eyebrow label shown on the card. */
+  label: string;
+  /** Icon key — only consumed for compact variants. Optional on featured. */
+  icon?: string;
   name: string;
+  /** Hero image — only consumed when variant === 'featured'. */
+  image?: string | import('@/components/converted-editor').EditableImage;
+  imageAlt?: string;
 };
 
 export type PricingPlan = {
@@ -151,7 +161,6 @@ export type HomepageContent = {
   };
 
   weServe: {
-    eyebrow: string;
     titleLead: string;
     titleEm: string;
     intro: string;
@@ -273,37 +282,37 @@ export const homepageContent: HomepageContent = {
         icon: 'search',
         name: 'Medical SEO',
         description: 'Dominate the first page for your highest-revenue procedures — not just your brand name. Specialty-specific keyword strategy, technical optimization, and local authority building.',
-        cta: { label: 'Learn more' },
+        cta: { label: 'Learn more', href: '/services/medical-seo' },
       },
       {
         icon: 'bolt',
         name: 'Paid Media',
         description: 'Google Ads, Meta, and programmatic campaigns with real-time ROI tracking. Every dollar mapped from click to booked appointment.',
-        cta: { label: 'Learn more' },
+        cta: { label: 'Learn more', href: '/services/paid-media' },
       },
       {
         icon: 'users',
         name: 'Social & Content',
         description: 'Physician-led social strategy and educational content that builds trust before the first visit. White-glove production for busy practices.',
-        cta: { label: 'Learn more' },
+        cta: { label: 'Learn more', href: '/services/social-content' },
       },
       {
         icon: 'spark',
         name: 'Custom Websites',
         description: 'Conversion-engineered medical websites with ADA compliance, fast load times, and booking integrations that reduce front-desk friction.',
-        cta: { label: 'Learn more' },
+        cta: { label: 'Learn more', href: '/services/custom-websites' },
       },
       {
         icon: 'shield',
         name: 'Reputation Management',
         description: 'Review generation, listing accuracy, and physician trust signals across 80+ directories. Your online reputation, actively managed.',
-        cta: { label: 'Learn more' },
+        cta: { label: 'Learn more', href: '/services/reputation-management' },
       },
       {
         icon: 'chart',
         name: 'Reporting & Attribution',
         description: 'Lead-to-patient attribution wired into your EHR. Know exactly which campaigns drive booked surgeries, not just form fills.',
-        cta: { label: 'Learn more' },
+        cta: { label: 'Learn more', href: '/services/reporting-attribution' },
       },
     ],
   },
@@ -406,20 +415,29 @@ export const homepageContent: HomepageContent = {
   },
 
   weServe: {
-    eyebrow: 'Who We Serve',
     titleLead: 'Our Medical Specialties',
     titleEm: 'of Focus',
     intro: 'Tailored strategies for the unique patient journeys, compliance needs, and competitive landscapes of each specialty.',
     specialties: [
-      { icon: 'heart', name: 'Cosmetic & Aesthetic Clinics' },
-      { icon: 'stethoscope', name: 'Dental Practices' },
-      { icon: 'pulse', name: 'Fertility & IVF Clinics' },
-      { icon: 'spark', name: 'Plastic & Reconstructive Surgery' },
-      { icon: 'bolt', name: 'Orthopedic & Sports Medicine' },
-      { icon: 'shield', name: 'Dermatology Clinics' },
-      { icon: 'users', name: 'Mental Health & Behavioral Health' },
-      { icon: 'calendar', name: 'Telehealth & Virtual Care' },
-      { icon: 'pulse', name: 'Cardiology' },
+      {
+        id: 'cosmetic-aesthetic',
+        variant: 'featured',
+        label: 'Service 01',
+        name: 'Cosmetic & Aesthetic Clinics',
+        // Placeholder. Drop a real photo at /public/images/specialties/cosmetic-hero.jpg
+        // and set image: '/images/specialties/cosmetic-hero.jpg' here, or upload via
+        // the visual editor's image picker on the featured card.
+        image: '',
+        imageAlt: 'Cosmetic & aesthetic clinic interior',
+      },
+      { id: 'dental',         variant: 'compact', label: 'Service 02', icon: 'tooth',       name: 'Dental Practices' },
+      { id: 'dermatology',    variant: 'compact', label: 'Service 03', icon: 'scan-face',   name: 'Dermatology Clinics' },
+      { id: 'fertility',      variant: 'compact', label: 'Service 04', icon: 'flower-2',    name: 'Fertility & IVF Clinics' },
+      { id: 'cardiology',     variant: 'compact', label: 'Service 05', icon: 'heart-pulse', name: 'Cardiology' },
+      { id: 'plastic-surgery',variant: 'compact', label: 'Service 06', icon: 'scissors',    name: 'Plastic & Reconstructive Surgery' },
+      { id: 'telehealth',     variant: 'compact', label: 'Service 07', icon: 'video',       name: 'Telehealth & Virtual Care' },
+      { id: 'orthopedic',     variant: 'compact', label: 'Service 08', icon: 'bone',        name: 'Orthopedic & Sports Medicine' },
+      { id: 'mental-health',  variant: 'compact', label: 'Service 09', icon: 'brain',       name: 'Mental Health & Behavioral Health' },
     ],
     noteLead: "Can't find yours? We work with all healthcare verticals.",
     noteLink: 'Tell us about yours',
