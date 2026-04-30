@@ -708,6 +708,17 @@ function SliderRow({ slider, values, onWrite, onReset, onApplyToAll }: SliderRow
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (rafId.current !== null) {
+        cancelAnimationFrame(rafId.current);
+        rafId.current = null;
+      }
+      pendingValue.current = null;
+      isDragging.current = false;
+    };
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Final commit on release. Cancel any pending rAF so we don't double-write.
     if (rafId.current !== null) {

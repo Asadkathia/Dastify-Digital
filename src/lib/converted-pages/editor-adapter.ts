@@ -1,6 +1,16 @@
 import type { BlockDefinition, EditorField, SectionInstance } from '@/payload/views/PageEditor/types';
 import type { ConvertedSectionSpec } from './types';
 import { setValueAtPath } from './object-path';
+import { smartLabel, categorizeField, type FieldGroup } from './field-labels';
+
+type CuratedFieldOverrides = {
+  fieldLabels?: Record<string, string>;
+  fieldGroups?: Record<string, FieldGroup>;
+};
+
+function resolveLabel(name: string, curated?: Record<string, string>): string {
+  return curated?.[name] ?? smartLabel(name);
+}
 
 type FlatRecord = Record<string, unknown>;
 
@@ -301,9 +311,9 @@ const FIELD_BUILDERS_BY_TAIL: Record<string, FieldBuilder> = {
   iconoffsety: (name, label) => ({ name, type: 'number', label, min: -100, max: 100, step: 1 }),
 };
 
-function fieldForName(name: string, value: unknown): EditorField {
+function fieldForName(name: string, value: unknown, curatedLabels?: Record<string, string>): EditorField {
   const tail = name.split('.').pop()?.toLowerCase() ?? '';
-  const label = prettifyLabel(name);
+  const label = resolveLabel(name, curatedLabels);
 
   const builder = FIELD_BUILDERS_BY_TAIL[tail];
   if (builder) return builder(name, label);
@@ -314,16 +324,18 @@ function fieldForName(name: string, value: unknown): EditorField {
 function subFieldForName(
   name: string,
   value: unknown,
+  curatedLabels?: Record<string, string>,
+  curatedGroups?: Record<string, FieldGroup>,
 ): Exclude<EditorField, { type: 'array' }> {
-  const field = fieldForName(name, value);
-  if (field.type === 'array') {
-    return {
-      name,
-      type: 'text',
-      label: prettifyLabel(name),
-    };
-  }
-  return field;
+  const field = fieldForName(name, value, curatedLabels);
+  const base: Exclude<EditorField, { type: 'array' }> =
+    field.type === 'array'
+      ? { name, type: 'text', label: resolveLabel(name, curatedLabels) }
+      : field;
+  const group =
+    curatedGroups?.[name] ??
+    categorizeField({ name, fieldType: base.type, isJsonField: false });
+  return { ...base, group };
 }
 
 function buildSectionForKey(
@@ -496,11 +508,25 @@ export function buildConvertedBlockDefinition(
   label: string,
   icon: string,
   data: FlatRecord,
+  spec?: CuratedFieldOverrides,
 ): BlockDefinition {
   const fields: BlockDefinition['fields'] = [];
   const jsonFieldSet = new Set(
     Array.isArray(data[META_JSON_FIELDS]) ? (data[META_JSON_FIELDS] as string[]) : [],
   );
+  const curatedLabels = spec?.fieldLabels;
+  const curatedGroups = spec?.fieldGroups;
+
+  const annotateGroup = <F extends EditorField>(field: F): F => {
+    const group =
+      curatedGroups?.[field.name] ??
+      categorizeField({
+        name: field.name,
+        fieldType: field.type,
+        isJsonField: jsonFieldSet.has(field.name),
+      });
+    return { ...field, group };
+  };
 
   for (const [key, value] of Object.entries(data)) {
     if (key.startsWith(META_PREFIX)) continue;
@@ -508,29 +534,37 @@ export function buildConvertedBlockDefinition(
     if (Array.isArray(value)) {
       const sample = value.find((item) => item != null);
       if (isPlainObject(sample)) {
-        fields.push({
-          name: key,
-          type: 'array',
-          label: prettifyLabel(key),
-          subFields: Object.keys(sample).map((sampleKey) => subFieldForName(sampleKey, sample[sampleKey])),
-        });
+        fields.push(
+          annotateGroup({
+            name: key,
+            type: 'array',
+            label: resolveLabel(key, curatedLabels),
+            subFields: Object.keys(sample).map((sampleKey) =>
+              subFieldForName(sampleKey, sample[sampleKey], curatedLabels, curatedGroups),
+            ),
+          }),
+        );
       } else {
-        fields.push({
-          name: key,
-          type: 'array',
-          label: prettifyLabel(key),
-          subFields: [{ name: 'value', type: 'text', label: 'Value' }],
-        });
+        fields.push(
+          annotateGroup({
+            name: key,
+            type: 'array',
+            label: resolveLabel(key, curatedLabels),
+            subFields: [{ name: 'value', type: 'text', label: 'Value' }],
+          }),
+        );
       }
       continue;
     }
 
     if (jsonFieldSet.has(key)) {
-      fields.push({
-        name: key,
-        type: 'textarea',
-        label: `${prettifyLabel(key)} (JSON)`,
-      });
+      fields.push(
+        annotateGroup({
+          name: key,
+          type: 'textarea',
+          label: `${resolveLabel(key, curatedLabels)} (JSON)`,
+        }),
+      );
       continue;
     }
 
@@ -538,7 +572,7 @@ export function buildConvertedBlockDefinition(
       continue;
     }
 
-    fields.push(fieldForName(key, value));
+    fields.push(annotateGroup(fieldForName(key, value, curatedLabels)));
   }
 
   return {

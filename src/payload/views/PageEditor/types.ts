@@ -1,9 +1,12 @@
+import type { FieldGroup } from '@/lib/converted-pages/field-labels';
+
 export type EditorFieldType = 'text' | 'textarea' | 'number' | 'select' | 'upload' | 'icon-upload' | 'checkbox' | 'array' | 'link';
 
 export type EditorFieldBase = {
   name: string;
   label: string;
   required?: boolean;
+  group?: FieldGroup;
 };
 
 export type TextField = EditorFieldBase & { type: 'text' };

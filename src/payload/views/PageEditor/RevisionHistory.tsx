@@ -2,6 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { useEditorStore, deserializeSectionsFromPayload } from './store';
+import {
+  buildConvertedBlockDefinition,
+  convertedPageContentToSections,
+  extractSectionInstances,
+  extractDeletedSections,
+} from '@/lib/converted-pages/editor-adapter';
+import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
+import { extractSectionOverrides } from '@/lib/converted-pages/section-overrides';
+import {
+  registerRuntimeBlockDefinitions,
+  clearRuntimeBlockDefinitions,
+} from './block-registry';
+import type { BlockDefinition } from './types';
 
 type Version = {
   id: string;
@@ -9,20 +22,41 @@ type Version = {
   autosave?: boolean;
   version: {
     _status?: string;
+    blocks?: Record<string, unknown>[];
+    convertedContent?: Record<string, unknown> | null;
   };
+};
+
+type ConvertedSectionSpec = {
+  key: string;
+  label: string;
+  icon?: string;
+  fieldLabels?: Record<string, string>;
+  fieldGroups?: Record<string, import('@/lib/converted-pages/field-labels').FieldGroup>;
+};
+
+type ConvertedContentResponse = {
+  page: string;
+  sections: ConvertedSectionSpec[];
+  content: Record<string, unknown>;
 };
 
 type RevisionHistoryProps = {
   pageId: string;
   onClose: () => void;
+  setConvertedBaseContent?: (content: Record<string, unknown> | null) => void;
 };
 
-export function RevisionHistory({ pageId, onClose }: RevisionHistoryProps) {
+export function RevisionHistory({ pageId, onClose, setConvertedBaseContent }: RevisionHistoryProps) {
   const [versions, setVersions] = useState<Version[]>([]);
   const [loading, setLoading] = useState(true);
   const [restoring, setRestoring] = useState<string | null>(null);
   const setSections = useEditorStore((s) => s.setSections);
   const setSaveStatus = useEditorStore((s) => s.setSaveStatus);
+  const setSectionStyleOverrides = useEditorStore((s) => s.setSectionStyleOverrides);
+  const setConvertedSectionMeta = useEditorStore((s) => s.setConvertedSectionMeta);
+  const editorMode = useEditorStore((s) => s.editorMode);
+  const convertedPageName = useEditorStore((s) => s.convertedPageName);
 
   useEffect(() => {
     setLoading(true);
@@ -45,8 +79,72 @@ export function RevisionHistory({ pageId, onClose }: RevisionHistoryProps) {
     try {
       const res = await fetch(`/api/pages/versions/${versionId}`, { credentials: 'include' });
       if (!res.ok) return;
-      const data: { version?: { blocks?: Record<string, unknown>[] } } = await res.json();
-      const blocks = data.version?.blocks;
+      const data: { version?: Version['version'] } = await res.json();
+      const version = data.version;
+      if (!version) return;
+
+      const convertedContent =
+        version.convertedContent && typeof version.convertedContent === 'object'
+          ? (version.convertedContent as Record<string, unknown>)
+          : null;
+      const blocks = version.blocks;
+      const isConvertedVersion =
+        convertedContent !== null ||
+        (editorMode === 'converted' && (!Array.isArray(blocks) || blocks.length === 0));
+
+      if (isConvertedVersion && convertedPageName) {
+        const convertedRes = await fetch(
+          `/api/admin/converted-page-content?page=${encodeURIComponent(convertedPageName)}`,
+          { credentials: 'include' },
+        );
+        if (!convertedRes.ok) return;
+        const payload = (await convertedRes.json()) as ConvertedContentResponse;
+
+        const effectiveContent = convertedContent
+          ? mergeConvertedContent(payload.content, convertedContent, convertedPageName)
+          : payload.content;
+        const nextSections = convertedPageContentToSections(
+          convertedPageName,
+          effectiveContent,
+          payload.sections,
+        );
+
+        clearRuntimeBlockDefinitions(`cp-${convertedPageName}-`);
+        const specByKey = new Map(payload.sections.map((spec) => [spec.key, spec]));
+        const runtimeDefinitions: Record<string, BlockDefinition> = {};
+        for (const section of nextSections) {
+          for (const column of section.columns) {
+            for (const block of column.blocks) {
+              const keyPart = block.blockType.replace(`cp-${convertedPageName}-`, '');
+              const spec = specByKey.get(keyPart);
+              runtimeDefinitions[block.blockType] = buildConvertedBlockDefinition(
+                block.blockType,
+                spec?.label ?? section.label ?? keyPart,
+                spec?.icon ?? '🧩',
+                block.data as Record<string, unknown>,
+                spec ? { fieldLabels: spec.fieldLabels, fieldGroups: spec.fieldGroups } : undefined,
+              );
+            }
+          }
+        }
+        registerRuntimeBlockDefinitions(runtimeDefinitions);
+
+        setSections(nextSections);
+        setConvertedBaseContent?.(effectiveContent);
+        setSectionStyleOverrides(extractSectionOverrides(effectiveContent));
+        setConvertedSectionMeta({
+          order: nextSections
+            .map((s) => String(s.columns[0]?.blocks[0]?.data.__sectionKey ?? ''))
+            .filter(Boolean),
+          instances: extractSectionInstances(effectiveContent),
+          deleted: extractDeletedSections(effectiveContent),
+          registryOrder: payload.sections.map((spec) => spec.key),
+        });
+        setSaveStatus('dirty');
+        onClose();
+        return;
+      }
+
       if (Array.isArray(blocks)) {
         setSections(deserializeSectionsFromPayload(blocks));
         setSaveStatus('dirty');

@@ -50,6 +50,7 @@ export default async function AboutPage() {
           if (!spec) return null;
           const Component = spec.Component as ComponentType<{ data: unknown }>;
           const sectionData = content[entry.key] as { __hidden?: boolean } | undefined;
+          if (sectionData === undefined) return null;
           if (sectionData?.__hidden) return null;
           return <Component key={entry.key} data={sectionData} />;
         })}

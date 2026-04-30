@@ -69,6 +69,85 @@ describe('mergeConvertedContent', () => {
   });
 });
 
+// Regression coverage for the catch-all converted-page renderer at
+// `src/app/(site)/[...slug]/page.tsx`. The renderer merges
+// defaults ⊕ saved convertedContent and feeds the result into
+// resolveRenderSections + extractSectionOverrides — both of which key off the
+// reserved `__*` and `_sectionOverrides` keys. If those keys ever silently
+// disappear in the merge, the saved order/duplicates/deletions/styles all break.
+describe('mergeConvertedContent — catch-all renderer regression (reserved keys)', () => {
+  it('7. precedence: defaults underneath, saved override on top, deep-merged at section data level', () => {
+    const defaults = {
+      hero: { title: 'Default hero', subtitle: 'Default sub', cta: { label: 'Default' } },
+      features: { items: [{ title: 'A' }, { title: 'B' }] },
+      cta: { label: 'Default cta' },
+    };
+    const saved = {
+      // Saved override touches some fields; untouched fields fall through.
+      hero: { title: 'Saved hero', cta: { label: 'Saved' } },
+      features: { items: [{ title: 'A2' }] },
+    };
+    const merged = mergeConvertedContent(defaults, saved) as typeof defaults;
+    expect(merged.hero.title).toBe('Saved hero');
+    expect(merged.hero.subtitle).toBe('Default sub'); // deep-merge preserved
+    expect(merged.hero.cta.label).toBe('Saved');
+    expect(merged.features.items).toEqual([{ title: 'A2' }]); // array follows override length
+    expect(merged.cta.label).toBe('Default cta'); // section absent in saved → default
+  });
+
+  it('8. reserved keys preserved when present only in saved content', () => {
+    const defaults = {
+      hero: { title: 'Default' },
+      cta: { label: 'Default cta' },
+    };
+    const saved = {
+      hero: { title: 'Saved' },
+      __sectionOrder: ['cta', 'hero'],
+      __sectionInstances: { 'hero-2': { templateKey: 'hero', label: 'Hero (copy)' } },
+      __deletedSections: ['cta'],
+      _sectionOverrides: {
+        hero: { desktop: { paddingTop: '32px' } },
+      },
+      // Duplicate-instance data slot is also preserved.
+      'hero-2': { title: 'Second hero' },
+    };
+    const merged = mergeConvertedContent(defaults, saved) as Record<string, unknown>;
+    expect(merged.__sectionOrder).toEqual(['cta', 'hero']);
+    expect(merged.__sectionInstances).toEqual({
+      'hero-2': { templateKey: 'hero', label: 'Hero (copy)' },
+    });
+    expect(merged.__deletedSections).toEqual(['cta']);
+    expect(merged._sectionOverrides).toEqual({
+      hero: { desktop: { paddingTop: '32px' } },
+    });
+    expect(merged['hero-2']).toEqual({ title: 'Second hero' });
+    // Cloned, not referenced — protect against later mutation leaking back.
+    expect(merged.__sectionOrder).not.toBe(saved.__sectionOrder);
+    expect(merged._sectionOverrides).not.toBe(saved._sectionOverrides);
+  });
+
+  it('9. missing section in saved content falls back to default — no undefined leaks through', () => {
+    const defaults = {
+      hero: { title: 'Default hero' },
+      features: { items: ['x', 'y'] },
+      cta: { label: 'Default cta' },
+    };
+    const saved = {
+      // Only `hero` saved; features + cta should come from defaults intact.
+      hero: { title: 'Saved hero' },
+    };
+    const merged = mergeConvertedContent(defaults, saved) as typeof defaults;
+    expect(merged.features).toEqual({ items: ['x', 'y'] });
+    expect(merged.cta).toEqual({ label: 'Default cta' });
+    // Confirm no undefined data leaks: every default key has a defined value.
+    for (const k of Object.keys(defaults) as Array<keyof typeof defaults>) {
+      expect(merged[k]).toBeDefined();
+    }
+    // Cloned, not referenced.
+    expect(merged.features).not.toBe(defaults.features);
+  });
+});
+
 describe('mergeConvertedContent — legacy-shape migration', () => {
   it('lifts contact main.{form,info} to top-level', () => {
     const fallback = {

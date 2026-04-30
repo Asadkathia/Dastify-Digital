@@ -20,7 +20,12 @@ function buildDates(daysToShow: number): Date[] {
   return out;
 }
 
-const fmtKey = (d: Date) => d.toISOString().split('T')[0];
+const fmtKey = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
 const fmtFullDate = (d: Date) =>
   d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
@@ -73,7 +78,7 @@ export default function Scheduler({ data: scheduler }: { data: PageContent['sche
         <div className="bk2-times">
           <TimesLabelTag {...timesLabel.props} className="bk2-dates__label">{scheduler.timesLabel}</TimesLabelTag>
           <div className="bk2-times__grid">
-            {scheduler.times.map((t, i) => {
+            {(scheduler.times ?? []).map((t, i) => {
               const tB = getConvertedNodeBinding(scheduler, { field: `times.${i}`, defaultTag: 'span' });
               return (
                 <button
@@ -96,7 +101,10 @@ export default function Scheduler({ data: scheduler }: { data: PageContent['sche
           <div className="bk2-confirm__badge">
             <Icon name="check" size={16} />
             <span>
-              {fmtFullDate(new Date(`${selectedDate}T12:00:00`))} at {selectedTime}{' '}
+              {(() => {
+                const [y, m, d] = selectedDate.split('-').map(Number);
+                return fmtFullDate(new Date(y, m - 1, d));
+              })()} at {selectedTime}{' '}
               <TzLabelTag {...tzLabel.props}>{scheduler.timezoneLabel}</TzLabelTag>
             </span>
           </div>

@@ -93,7 +93,7 @@ const INSPECTED_STYLE_KEYS = [
 ] as const;
 
 function sendToParent(msg: EditorMessage) {
-  window.parent.postMessage(msg, '*');
+  window.parent.postMessage(msg, window.location.origin);
 }
 
 // ─── Drag engine ─────────────────────────────────────────────────────────────
@@ -1258,6 +1258,8 @@ function PreviewInner() {
 
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
+      if (event.source !== window.parent) return;
+      if (event.origin !== window.location.origin) return;
       const data = event.data as EditorMessage;
       if (!data?.type) return;
 

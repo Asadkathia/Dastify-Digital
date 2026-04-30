@@ -8,6 +8,7 @@ import { ScrollRevealController } from '@/app/components/home/ScrollRevealContro
 import { loadConvertedPageContent } from '@/lib/converted-pages/content-map';
 import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
 import { loadConvertedPageRegistry } from '@/lib/converted-pages/preview-registry';
+import { resolveRenderSections } from '@/lib/converted-pages/editor-adapter';
 import { extractSectionOverrides, generateOverrideCss } from '@/lib/converted-pages/section-overrides';
 import { fetchCardsFromCollection } from '@/lib/converted-pages/section-cards';
 import { resolveSectionType } from '@/lib/converted-pages/section-types';
@@ -94,7 +95,11 @@ export default async function GenericPage({ params }: Props) {
     fallbackConvertedContent && convertedContent
       ? mergeConvertedContent(fallbackConvertedContent, convertedContent, convertedPageName)
       : (convertedContent ?? fallbackConvertedContent);
-  const contentSections = convertedRegistry?.sections.filter((section) => section.key !== 'nav' && section.key !== 'footer') ?? [];
+  const renderEntries = convertedRegistry
+    ? resolveRenderSections(convertedRegistry.sections, effectiveConvertedContent).filter(
+        (entry) => entry.templateKey !== 'nav' && entry.templateKey !== 'footer',
+      )
+    : [];
 
   // For each section that has sectionType pointing at a collection, fetch the
   // cards server-side and stash them in a map keyed by section key. The
@@ -104,12 +109,13 @@ export default async function GenericPage({ params }: Props) {
   const sectionCardsByKey: Record<string, SectionCard[] | undefined> = {};
   if (convertedRegistry && effectiveConvertedContent) {
     await Promise.all(
-      contentSections.map(async (section) => {
-        const data = effectiveConvertedContent[section.key];
+      renderEntries.map(async (entry) => {
+        const data = effectiveConvertedContent[entry.key];
         if (!data || typeof data !== 'object') return;
         const d = data as Record<string, unknown>;
+        if (d.__hidden) return;
         const sectionType = typeof d.sectionType === 'string' ? d.sectionType : undefined;
-        const resolved = resolveSectionType(sectionType as Parameters<typeof resolveSectionType>[0], section.key);
+        const resolved = resolveSectionType(sectionType as Parameters<typeof resolveSectionType>[0], entry.templateKey);
         if (resolved === 'static') return;
         const source = typeof d.source === 'string' ? d.source : undefined;
         const filter = source === 'category'
@@ -125,7 +131,7 @@ export default async function GenericPage({ params }: Props) {
         });
         // Empty collection → fall back to static posts[] from content.ts
         // (brand book Rule 01 + Rule 03: preserve provided content, show placeholders).
-        sectionCardsByKey[section.key] = fetched.length > 0 ? fetched : undefined;
+        sectionCardsByKey[entry.key] = fetched.length > 0 ? fetched : undefined;
       }),
     );
   }
@@ -160,13 +166,19 @@ export default async function GenericPage({ params }: Props) {
             />
           ) : null}
           <main>
-            {contentSections.map((section) => {
-              const Component = section.Component as ComponentType<{ data: unknown; cards?: SectionCard[] }>;
+            {renderEntries.map((entry) => {
+              const spec = convertedRegistry.sections.find((s) => s.key === entry.templateKey);
+              if (!spec) return null;
+              const Component = spec.Component as ComponentType<{ data: unknown; cards?: SectionCard[] }>;
+              const sectionData = effectiveConvertedContent[entry.key] as
+                | { __hidden?: boolean }
+                | undefined;
+              if (sectionData?.__hidden) return null;
               return (
                 <Component
-                  key={section.key}
-                  data={effectiveConvertedContent[section.key]}
-                  cards={sectionCardsByKey[section.key]}
+                  key={entry.key}
+                  data={sectionData}
+                  cards={sectionCardsByKey[entry.key]}
                 />
               );
             })}

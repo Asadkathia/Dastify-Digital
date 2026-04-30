@@ -37,6 +37,7 @@ import { TableBlock } from './TableBlock.ts';
 import { TimelineBlock } from './TimelineBlock.ts';
 import { StepsBlock } from './StepsBlock.ts';
 import { AnnouncementBarBlock } from './AnnouncementBarBlock.ts';
+import { WidgetContainerBlock } from './WidgetContainerBlock.ts';
 
 // Leaf blocks (used standalone and inside SectionBlock columns)
 export const leafBlocks = [
@@ -80,5 +81,7 @@ export const leafBlocks = [
   AnnouncementBarBlock,
 ];
 
+const widgetBlocks = process.env.NEXT_PUBLIC_WIDGET_EDITOR === '1' ? [WidgetContainerBlock] : [];
+
 // Top-level page builder blocks — SectionBlock wraps everything
-export const pageBuilderBlocks = [SectionBlock, ...leafBlocks];
+export const pageBuilderBlocks = [SectionBlock, ...leafBlocks, ...widgetBlocks];

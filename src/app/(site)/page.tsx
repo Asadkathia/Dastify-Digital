@@ -135,7 +135,7 @@ export default async function Home() {
             // Hero needs the top-level heroVariant flag merged into its data
             // so the same content block can render A / B / C layouts.
             const data = entry.templateKey === 'hero'
-              ? { ...(raw as object), heroVariant: effectiveTyped.heroVariant ?? 'A' }
+              ? { ...((raw as Record<string, unknown> | undefined) ?? {}), heroVariant: effectiveTyped.heroVariant ?? 'A' }
               : raw;
             return <Component key={entry.key} data={data} />;
           })}

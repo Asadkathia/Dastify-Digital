@@ -81,10 +81,10 @@ function selfTest() {
   const wildBindings = synthetic.bindings.map((b) => b.replace(/\$\{[^}]+\}/g, '*'));
   const wildContent = synthetic.contentLeaves.map((c) => c.replace(/\.\d+(?=\.|$)/g, '.*'));
   const covered = wildContent.every((c) => wildBindings.some((b) => b === c));
-  console.assert(covered, 'self-test: ${i} ↔ array-index matching broken');
+  if (!covered) throw new Error('self-test: ${i} ↔ array-index matching broken');
   // sanitize to '*' on both sides
-  console.assert('items.*.title' === 'items.0.title'.replace(/\.\d+(?=\.|$)/g, '.*'), 'index→* failed');
-  console.assert('items.*.title' === 'items.${i}.title'.replace(/\$\{[^}]+\}/g, '*'), 'tpl→* failed');
+  if (!('items.*.title' === 'items.0.title'.replace(/\.\d+(?=\.|$)/g, '.*'))) throw new Error('index→* failed');
+  if (!('items.*.title' === 'items.${i}.title'.replace(/\$\{[^}]+\}/g, '*'))) throw new Error('tpl→* failed');
 }
 selfTest();
 

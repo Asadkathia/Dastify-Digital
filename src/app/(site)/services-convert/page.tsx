@@ -25,9 +25,10 @@ export default async function ServicesConvertPage() {
     getFooter(),
     findOneBySlug('pages', 'services-convert', draft),
   ]);
+  const rawConvertedContent = doc ? (doc as { convertedContent?: unknown }).convertedContent : null;
   const convertedContent =
-    doc && typeof (doc as { convertedContent?: unknown }).convertedContent === 'object'
-      ? ((doc as { convertedContent?: unknown }).convertedContent as Record<string, unknown> | null)
+    rawConvertedContent !== null && typeof rawConvertedContent === 'object' && !Array.isArray(rawConvertedContent)
+      ? (rawConvertedContent as Record<string, unknown>)
       : null;
   const merged = convertedContent
     ? mergeConvertedContent(defaultContent as unknown as Record<string, unknown>, convertedContent, registry.pageName)

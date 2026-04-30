@@ -10,6 +10,7 @@ import { LinkFieldEditor } from './LinkFieldEditor';
 import { MediaLibraryModal } from './MediaLibraryModal';
 import type { EditorField, BlockStyles, BreakpointOverrides, SectionInstance, WidgetInstance, WidgetField, WidgetStyles } from './types';
 import { getValueAtPath } from '@/lib/converted-pages/object-path';
+import { FIELD_GROUP_ORDER, type FieldGroup } from '@/lib/converted-pages/field-labels';
 
 // Local state mirrors the prop; debounces writes to the store by `delay` ms.
 function useDebouncedField(
@@ -94,6 +95,44 @@ function UploadFieldEditor({
       : fieldName === 'image'
         ? 'imageAlt'
         : null;
+
+  // Probe for a sibling alt/hidden field. The shape `${fieldName}Alt` is the
+  // dominant convention in this codebase (heroImage + heroImageAlt). Fall back
+  // to a same-parent `alt`/`hidden` sibling, then to a nested `.alt` inside the
+  // media object itself.
+  const blockData = (block?.data ?? {}) as Record<string, unknown>;
+  function siblingPath(lower: 'alt' | 'hidden'): string | null {
+    const suffixed = `${fieldName}${lower.charAt(0).toUpperCase()}${lower.slice(1)}`;
+    if (suffixed in blockData) return suffixed;
+    const replaced = fieldName.replace(/[^.]+$/, lower);
+    if (replaced !== fieldName && replaced in blockData) return replaced;
+    return null;
+  }
+  const altSiblingPath = siblingPath('alt') ?? companionAltField;
+  const hiddenSiblingPath = siblingPath('hidden');
+
+  const inlineAltFromMedia =
+    value && typeof value === 'object' && 'alt' in (value as object)
+      ? (value as { alt?: unknown }).alt
+      : undefined;
+  const altDisplayValue = (() => {
+    if (altSiblingPath && typeof blockData[altSiblingPath] === 'string') {
+      return blockData[altSiblingPath] as string;
+    }
+    if (typeof inlineAltFromMedia === 'string') return inlineAltFromMedia;
+    return '';
+  })();
+  function writeAlt(next: string) {
+    if (altSiblingPath) {
+      updateBlockData(blockId, altSiblingPath, next);
+      return;
+    }
+    if (value && typeof value === 'object') {
+      updateBlockData(blockId, fieldName, { ...(value as Record<string, unknown>), alt: next });
+    }
+  }
+  const hiddenValue = hiddenSiblingPath ? blockData[hiddenSiblingPath] === true : false;
+  const showMissingAltWarning = imgSrc.length > 0 && altDisplayValue.trim() === '';
 
   // Focal point: stored as `objectPosition` CSS string (e.g. "60% 30%") so
   // it maps directly to the objectPosition prop every block renderer expects.
@@ -306,6 +345,36 @@ function UploadFieldEditor({
           </button>
         )}
       </div>
+
+      {(altSiblingPath || (typeof value === 'object' && value !== null)) && (
+        <div style={{ marginTop: '8px' }}>
+          <label style={{ ...labelStyle, fontSize: '10px', color: '#777' }}>Alt text</label>
+          <input
+            type="text"
+            value={altDisplayValue}
+            onChange={(e) => writeAlt(e.target.value)}
+            style={inputStyle}
+            placeholder="Describe the image for accessibility"
+          />
+          {showMissingAltWarning && (
+            <div style={{ marginTop: '4px', fontSize: '10px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>⚠ Missing alt text</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {hiddenSiblingPath && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', cursor: 'pointer', fontSize: '11px', color: '#cbd5e1' }}>
+          <input
+            type="checkbox"
+            checked={hiddenValue}
+            onChange={(e) => updateBlockData(blockId, hiddenSiblingPath, e.target.checked || undefined)}
+            style={{ accentColor: '#fbbf24' }}
+          />
+          <span>Hide on public site</span>
+        </label>
+      )}
 
       {showLibrary && (
         <MediaLibraryModal
@@ -1678,6 +1747,11 @@ function ConvertedImageInspector({
           placeholder="Describe the image for accessibility"
           style={inputStyle}
         />
+        {url && altValue.trim() === '' ? (
+          <div style={{ marginTop: '4px', fontSize: '10px', color: '#fbbf24' }}>
+            <span>⚠ Missing alt text</span>
+          </div>
+        ) : null}
       </div>
       {mediaId != null ? (
         <p style={{ margin: '6px 0 0', fontSize: '10px', color: '#444' }}>Media ID: <span style={{ fontFamily: 'monospace', color: '#666' }}>{String(mediaId)}</span></p>
@@ -2417,14 +2491,57 @@ export function ConfigPanel({ embedded = false }: ConfigPanelProps) {
               <WidgetContainerPanel blockId={selectedBlock.id} />
             ) : (
               <>
-                {def.fields.map((field) => (
-                  <FieldEditor
-                    key={field.name}
-                    blockId={selectedBlock.id}
-                    field={field}
-                    value={selectedBlock.data[field.name]}
-                  />
-                ))}
+                {selectedBlock.blockType.startsWith('cp-') ? (
+                  (() => {
+                    const grouped = new Map<FieldGroup, typeof def.fields>();
+                    for (const f of def.fields) {
+                      const g = (f.group ?? 'Content') as FieldGroup;
+                      const arr = grouped.get(g) ?? [];
+                      arr.push(f);
+                      grouped.set(g, arr);
+                    }
+                    let firstRendered = true;
+                    return FIELD_GROUP_ORDER.map((group) => {
+                      const items = grouped.get(group);
+                      if (!items || items.length === 0) return null;
+                      const headerStyle: React.CSSProperties = {
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: '#666',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        marginBottom: '8px',
+                        marginTop: firstRendered ? 0 : '16px',
+                        paddingTop: firstRendered ? 0 : '12px',
+                        borderTop: firstRendered ? 'none' : '1px solid #1a1a1a',
+                      };
+                      firstRendered = false;
+                      return (
+                        <div key={group}>
+                          <div style={headerStyle}>{group}</div>
+                          {items.map((field) => (
+                            <div key={field.name} title={field.name}>
+                              <FieldEditor
+                                blockId={selectedBlock.id}
+                                field={field}
+                                value={selectedBlock.data[field.name]}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    });
+                  })()
+                ) : (
+                  def.fields.map((field) => (
+                    <FieldEditor
+                      key={field.name}
+                      blockId={selectedBlock.id}
+                      field={field}
+                      value={selectedBlock.data[field.name]}
+                    />
+                  ))
+                )}
                 {selectedNode && selectedNode.blockId === selectedBlock.id && selectedBlock.blockType.startsWith('cp-') ? (
                   <ConvertedNodeInspector blockId={selectedBlock.id} blockData={selectedBlock.data} node={selectedNode} />
                 ) : null}

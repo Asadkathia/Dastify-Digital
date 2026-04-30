@@ -266,14 +266,18 @@ type SectionCardProps = {
   selectedBlockId: string | null;
   selectedSectionId: string | null;
   searchMatchIds: Set<string>;
+  isFirst: boolean;
+  isLast: boolean;
 };
 
-const SectionCard = memo(function SectionCard({ section, selectedBlockId, selectedSectionId, searchMatchIds }: SectionCardProps) {
+const SectionCard = memo(function SectionCard({ section, selectedBlockId, selectedSectionId, searchMatchIds, isFirst, isLast }: SectionCardProps) {
   const addBlock = useEditorStore((s) => s.addBlock);
   const removeSection = useEditorStore((s) => s.deleteSectionDispatch);
   const duplicateSection = useEditorStore((s) => s.duplicateSectionDispatch);
   const addColumn = useEditorStore((s) => s.addColumnToSection);
   const selectSection = useEditorStore((s) => s.selectSection);
+  const moveSectionUp = useEditorStore((s) => s.moveSectionUpDispatch);
+  const moveSectionDown = useEditorStore((s) => s.moveSectionDownDispatch);
 
   const isSelected = section.id === selectedSectionId;
 
@@ -314,6 +318,20 @@ const SectionCard = memo(function SectionCard({ section, selectedBlockId, select
           </span>
           <span style={{ fontSize: '10px', color: '#333' }}>{section.columns.length} col{section.columns.length !== 1 ? 's' : ''}</span>
           <div style={{ display: 'flex', gap: '3px' }} onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={(e) => { e.stopPropagation(); if (!isFirst) moveSectionUp(section.id); }}
+              disabled={isFirst}
+              style={{ ...toolbarBtnStyle, opacity: isFirst ? 0.3 : 1, cursor: isFirst ? 'default' : 'pointer' }}
+              aria-label="Move section up"
+              title="Move section up"
+            >↑</button>
+            <button
+              onClick={(e) => { e.stopPropagation(); if (!isLast) moveSectionDown(section.id); }}
+              disabled={isLast}
+              style={{ ...toolbarBtnStyle, opacity: isLast ? 0.3 : 1, cursor: isLast ? 'default' : 'pointer' }}
+              aria-label="Move section down"
+              title="Move section down"
+            >↓</button>
             <button onClick={() => addColumn(section.id)} style={{ ...toolbarBtnStyle, fontSize: '10px' }} title="Add column">+ col</button>
             <button onClick={() => duplicateSection(section.id)} style={toolbarBtnStyle} title="Duplicate section">⧉</button>
             <button onClick={() => removeSection(section.id)} style={{ ...toolbarBtnStyle, color: '#f87171' }} title="Delete section">✕</button>
@@ -490,13 +508,15 @@ export function Canvas({ activeDrag: _activeDrag, embedded = false }: CanvasProp
         ) : (
           <div style={{ padding: '8px' }}>
             <SortableContext items={sectionDragIds} strategy={verticalListSortingStrategy}>
-              {sections.map((section) => (
+              {sections.map((section, idx, arr) => (
                 <SectionCard
                   key={section.id}
                   section={section}
                   selectedBlockId={selectedBlockId}
                   selectedSectionId={selectedSectionId}
                   searchMatchIds={searchMatchIds}
+                  isFirst={idx === 0}
+                  isLast={idx === arr.length - 1}
                 />
               ))}
             </SortableContext>

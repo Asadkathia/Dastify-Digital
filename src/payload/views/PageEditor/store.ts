@@ -1312,6 +1312,15 @@ export function selectSelectedBlock(state: EditorState): BlockInstance | null {
   return findBlock(state.sections, state.selection.blockId)?.block ?? null;
 }
 
+/** True when any block in the current sections tree is a `widget-container`.
+ *  Used to gate publish: the public site has no renderer for these blocks
+ *  yet, so allowing publish would silently drop content. Drafts are still OK. */
+export function hasWidgetContainerBlocks(sections: SectionInstance[]): boolean {
+  return sections.some((s) =>
+    s.columns.some((c) => c.blocks.some((b) => b.blockType === 'widget-container')),
+  );
+}
+
 export function selectSelectedSection(state: EditorState): SectionInstance | null {
   if (!state.selection) return null;
   const sectionId =

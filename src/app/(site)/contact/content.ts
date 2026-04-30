@@ -145,7 +145,7 @@ export const defaultContent: PageContent = {
       title: 'Contact Information',
       items: [
         { icon: 'phone', label: 'Phone', value: '(770) 462-4237' },
-        { icon: 'calendar', label: 'Email', value: 'hello@dastifydigital.com' },
+        { icon: 'mail', label: 'Email', value: 'hello@dastifydigital.com' },
         { icon: 'search', label: 'Office Hours', value: 'Mon–Fri, 9:00 AM – 6:00 PM EST' },
       ],
     },

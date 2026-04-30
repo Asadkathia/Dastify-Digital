@@ -7,6 +7,9 @@ import payloadConfig from '@payload-config';
 import { getConvertedPageContentConfig, loadConvertedPageContent } from '@/lib/converted-pages/content-map';
 import type { FormDefinition } from '@/lib/forms/types';
 import { buildPayloadFormFields } from '@/lib/forms/build-fields';
+import { buildUploadReport, type UploadReport } from '@/lib/converted-pages/upload-report';
+import { hasAdminSession } from '@/lib/auth/has-admin-session';
+import type { ConvertedPageRegistry } from '@/lib/converted-pages/types';
 
 const SITE_DIR = path.resolve(process.cwd(), 'src/app/(site)');
 
@@ -79,35 +82,6 @@ async function upsertPayloadForm(
   return (created as { id?: string | number }).id ?? null;
 }
 
-async function hasAdminSession(request: Request): Promise<boolean> {
-  const auth = request.headers.get('authorization');
-  const secret = process.env.PAYLOAD_SECRET;
-
-  if (secret && auth === `Bearer ${secret}`) {
-    return true;
-  }
-
-  const cookie = request.headers.get('cookie');
-  if (!cookie) return false;
-
-  try {
-    const meRes = await fetch(new URL('/api/users/me', request.url), {
-      headers: { cookie },
-      cache: 'no-store',
-    });
-
-    if (!meRes.ok) return false;
-
-    const me = (await meRes.json()) as { user?: { id?: string | number; role?: string }; id?: string | number; role?: string };
-    const user = me.user ?? me;
-
-    if (!user?.id) return false;
-    if (!user.role) return true;
-    return user.role === 'admin' || user.role === 'editor';
-  } catch {
-    return false;
-  }
-}
 
 function toTitle(slug: string): string {
   return slug
@@ -176,11 +150,13 @@ function extractConvertedSectionHTML(pageName: string, key: string, html: string
 }
 
 export async function POST(request: Request) {
-  if (!(await hasAdminSession(request))) {
-    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
+    const payload = await getPayload({ config: await payloadConfig });
+
+    if (!(await hasAdminSession(request, payload))) {
+      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = (await request.json()) as { pageName?: string };
     const pageName = body.pageName?.trim() || '';
 
@@ -204,8 +180,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const payload = await getPayload({ config: await payloadConfig });
-
     const existing = await payload.find({
       collection: 'pages',
       where: {
@@ -224,6 +198,8 @@ export async function POST(request: Request) {
     const title = toTitle(pageName) || pageName;
     let blocks: Record<string, unknown>[] = [];
     let convertedContent: Record<string, unknown> | null = null;
+    const formIds: Record<string, string | number> = {};
+    let registrySections: Array<{ key: string; label: string }> = [];
 
     const convertedConfig = getConvertedPageContentConfig(pageName);
     if (convertedConfig) {
@@ -244,7 +220,12 @@ export async function POST(request: Request) {
       // Load the editor registry dynamically to check for form definitions
       try {
         const registryMod = await import(`../../../../app/(site)/${pageName}/editor-registry`);
-        const registry = registryMod.default as { formDefinitions?: Record<string, FormDefinition> } | null;
+        const registry = registryMod.default as
+          | (ConvertedPageRegistry & { formDefinitions?: Record<string, FormDefinition> })
+          | null;
+        if (registry?.sections) {
+          registrySections = registry.sections.map((s) => ({ key: s.key, label: s.label }));
+        }
         if (registry?.formDefinitions) {
           for (const [sectionKey, formDef] of Object.entries(registry.formDefinitions)) {
             const section = convertedContent[sectionKey] as Record<string, unknown> | undefined;
@@ -255,6 +236,7 @@ export async function POST(request: Request) {
                 convertedContent[sectionKey] = {};
               }
               (convertedContent[sectionKey] as Record<string, unknown>).formId = formId;
+              formIds[sectionKey] = formId;
             }
           }
         }
@@ -342,12 +324,33 @@ export async function POST(request: Request) {
     }
 
     const pageId = String((page as { id?: string | number }).id ?? '');
+
+    let report: UploadReport | null = null;
+    try {
+      report = buildUploadReport({
+        action: existingDoc && existingId ? 'updated' : 'created',
+        pageId,
+        slug: pageName,
+        title,
+        convertedPageName: isRegisteredConverted ? pageName : null,
+        convertedContent,
+        blocks: blocks as ReadonlyArray<{ blockType?: string }>,
+        registrySections,
+        formIds,
+        baseUrl: new URL(request.url).origin,
+      });
+    } catch (reportError) {
+      console.error('[upload-converted-page] Failed to build upload report', reportError);
+      report = null;
+    }
+
     return NextResponse.json({
       ok: true,
       repairedExisting: Boolean(existingId),
       pageId,
       slug: pageName,
       adminUrl: pageId ? `/admin/collections/pages/${pageId}` : null,
+      ...(report ? { report } : {}),
     });
   } catch (error) {
     return NextResponse.json(

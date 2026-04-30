@@ -19,6 +19,7 @@ import {
   useEditorStore,
   serializeSectionsForPayload,
   deserializeSectionsFromPayload,
+  hasWidgetContainerBlocks,
 } from './store';
 import {
   getBlockDefinition,
@@ -49,6 +50,11 @@ import {
 } from '@/lib/converted-pages/editor-adapter';
 import { mergeConvertedContent } from '@/lib/converted-pages/merge-content';
 import { extractSectionOverrides, SECTION_OVERRIDES_KEY } from '@/lib/converted-pages/section-overrides';
+import {
+  validateConvertedPagePublish,
+  type ValidationIssue,
+} from '@/lib/converted-pages/validate-publish';
+import { PrePublishModal } from './PrePublishModal';
 import type { BlockDefinition } from './types';
 
 /** Auto-save fires this many milliseconds after the last unsaved change. */
@@ -60,6 +66,8 @@ type ConvertedSectionSpec = {
   key: string;
   label: string;
   icon?: string;
+  fieldLabels?: Record<string, string>;
+  fieldGroups?: Record<string, import('@/lib/converted-pages/field-labels').FieldGroup>;
 };
 
 type ConvertedContentResponse = {
@@ -94,6 +102,7 @@ type ToolbarProps = {
   canShowHistory: boolean;
   pageSlug?: string;
   pageId?: string;
+  convertedPageMissing?: boolean;
   onNavigateBack: () => void;
   onPageTitleChange: (title: string) => void;
   onSaveDraft: () => void;
@@ -109,6 +118,7 @@ function Toolbar({
   canShowHistory,
   pageSlug,
   pageId,
+  convertedPageMissing,
   onNavigateBack,
   onPageTitleChange,
   onSaveDraft,
@@ -117,6 +127,7 @@ function Toolbar({
   onSlugChange,
 }: ToolbarProps) {
   const saveStatus = useEditorStore((s) => s.saveStatus);
+  const hasWidgetContainer = useEditorStore((s) => hasWidgetContainerBlocks(s.sections));
   const responsiveMode = useEditorStore((s) => s.responsiveMode);
   const setResponsiveMode = useEditorStore((s) => s.setResponsiveMode);
   const canUndo = useStore(useEditorStore.temporal, (s) => s.pastStates.length > 0);
@@ -227,6 +238,28 @@ function Toolbar({
         </span>
       )}
 
+      {(mode === 'converted' || (mode === 'pages' && convertedPageName)) && (
+        <span
+          style={{
+            fontSize: '11px',
+            padding: '3px 8px',
+            borderRadius: '999px',
+            border: `1px solid ${convertedPageMissing ? '#854d0e' : '#1e3a4c'}`,
+            background: convertedPageMissing ? '#1c1407' : '#0b1f2a',
+            color: convertedPageMissing ? '#fbbf24' : '#7dd3fc',
+            letterSpacing: '0.02em',
+            whiteSpace: 'nowrap',
+          }}
+          title={
+            convertedPageMissing
+              ? 'No backing CMS page exists yet — one will be created on first save.'
+              : 'A CMS page already backs this converted page.'
+          }
+        >
+          {convertedPageMissing ? 'CMS page will be created on save' : 'Editing CMS page'}
+        </span>
+      )}
+
       <div style={{ flex: 1 }} />
 
       <span style={{ fontSize: '11px', color: statusColor }}>{statusText}</span>
@@ -284,24 +317,32 @@ function Toolbar({
         Save Draft
       </button>
 
-      <button
-        onClick={onPublish}
-        disabled={saveStatus === 'saving'}
-        title="Publish (Ctrl+Shift+S)"
-        style={{
-          background: saveStatus === 'saving' ? '#064e3b' : '#065f46',
-          border: '1px solid #059669',
-          borderRadius: '6px',
-          color: saveStatus === 'saving' ? '#6ee7b7' : '#a7f3d0',
-          cursor: saveStatus === 'saving' ? 'default' : 'pointer',
-          fontSize: '12px',
-          fontWeight: 600,
-          padding: '6px 14px',
-          opacity: saveStatus === 'saving' ? 0.7 : 1,
-        }}
-      >
-        Publish
-      </button>
+      {(() => {
+        const publishDisabled = saveStatus === 'saving' || hasWidgetContainer;
+        const publishTitle = hasWidgetContainer
+          ? 'Cannot publish: page contains widget-container blocks, which are experimental and not yet rendered on the public site. Save as draft, or remove the widget blocks before publishing.'
+          : 'Publish (Ctrl+Shift+S)';
+        return (
+          <button
+            onClick={onPublish}
+            disabled={publishDisabled}
+            title={publishTitle}
+            style={{
+              background: publishDisabled ? '#064e3b' : '#065f46',
+              border: '1px solid #059669',
+              borderRadius: '6px',
+              color: publishDisabled ? '#6ee7b7' : '#a7f3d0',
+              cursor: publishDisabled ? 'not-allowed' : 'pointer',
+              fontSize: '12px',
+              fontWeight: 600,
+              padding: '6px 14px',
+              opacity: publishDisabled ? 0.7 : 1,
+            }}
+          >
+            Publish
+          </button>
+        );
+      })()}
     </header>
   );
 }
@@ -591,6 +632,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
   const [pageSlug, setPageSlug] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [convertedBaseContent, setConvertedBaseContent] = useState<Record<string, unknown> | null>(null);
+  const [convertedPageMissing, setConvertedPageMissing] = useState(false);
 
   const setPageId = useEditorStore((s) => s.setPageId);
   const setEditorMode = useEditorStore((s) => s.setEditorMode);
@@ -612,6 +654,10 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleDirtyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toasts, show: showToast, dismiss } = useToast();
+  const [prePublishState, setPrePublishState] = useState<{
+    blocks: ValidationIssue[];
+    warnings: ValidationIssue[];
+  } | null>(null);
 
   const backHref = useMemo(
     () =>
@@ -708,6 +754,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
                     spec?.label ?? section.label ?? keyPart,
                     spec?.icon ?? '🧩',
                     block.data as Record<string, unknown>,
+                    spec ? { fieldLabels: spec.fieldLabels, fieldGroups: spec.fieldGroups } : undefined,
                   );
                 }
               }
@@ -720,7 +767,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
             setSectionStyleOverrides(extractSectionOverrides(effectiveContent));
             setConvertedSectionMeta({
               order: nextSections
-                .map((s) => String(s.columns[0]?.blocks[0]?.data.__sectionKey ?? ''))
+                .map((s) => String(s.columns[0]?.blocks[0]?.data?.__sectionKey ?? ''))
                 .filter(Boolean),
               instances: extractSectionInstances(effectiveContent),
               deleted: extractDeletedSections(effectiveContent),
@@ -822,6 +869,9 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
 
         if (pageDoc?.id != null) {
           setResolvedPageId(String(pageDoc.id));
+          setConvertedPageMissing(false);
+        } else {
+          setConvertedPageMissing(true);
         }
         if (typeof pageDoc?.title === 'string') {
           setPageTitle(pageDoc.title);
@@ -848,6 +898,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
                 spec?.label ?? section.label ?? keyPart,
                 spec?.icon ?? '🧩',
                 block.data as Record<string, unknown>,
+                spec ? { fieldLabels: spec.fieldLabels, fieldGroups: spec.fieldGroups } : undefined,
               );
             }
           }
@@ -862,7 +913,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         setSectionStyleOverrides(extractSectionOverrides(effectiveContent));
         setConvertedSectionMeta({
           order: nextSections
-            .map((s) => String(s.columns[0]?.blocks[0]?.data.__sectionKey ?? ''))
+            .map((s) => String(s.columns[0]?.blocks[0]?.data?.__sectionKey ?? ''))
             .filter(Boolean),
           instances: extractSectionInstances(effectiveContent),
           deleted: extractDeletedSections(effectiveContent),
@@ -929,11 +980,41 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
   }, [saveStatus, backHref]);
 
   const persist = useCallback(
-    async ({ status, notify }: { status: 'draft' | 'published'; notify: boolean }) => {
+    async ({
+      status,
+      notify,
+      skipValidation = false,
+    }: {
+      status: 'draft' | 'published';
+      notify: boolean;
+      skipValidation?: boolean;
+    }) => {
       if (saveStatus === 'saving') return false;
 
       if (editorMode === 'pages' && !pageId) return false;
       if ((editorMode === 'converted' || (editorMode === 'pages' && convertedPageName)) && !convertedPageName) {
+        return false;
+      }
+
+      // Publish guard: widget-container blocks have no public renderer yet,
+      // so publishing would silently drop their content. Drafts are still
+      // allowed so in-progress work isn't lost. Guard runs regardless of the
+      // NEXT_PUBLIC_WIDGET_EDITOR flag — once these blocks are persisted they
+      // survive flag toggles.
+      if (status === 'published' && hasWidgetContainerBlocks(sections)) {
+        setSaveStatus('error');
+        setTimeout(() => {
+          if (useEditorStore.getState().saveStatus === 'error') {
+            setSaveStatus('dirty');
+          }
+        }, 6000);
+        if (notify) {
+          showToast(
+            'Cannot publish: this page contains widget-container blocks, which are experimental and not yet rendered on the public site. Save as draft instead, or remove the widget blocks before publishing.',
+            'error',
+            6000,
+          );
+        }
         return false;
       }
 
@@ -975,18 +1056,114 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
           } else {
             delete (nextContent as Record<string, unknown>)[SECTION_OVERRIDES_KEY];
           }
-          res = await fetch(`/api/pages/${pageId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              title: pageTitle.trim() || 'Untitled Page',
-              convertedPageName,
-              convertedContent: nextContent,
-              blocks: [],
-              _status: status,
-            }),
-          });
+
+          if (status === 'published' && !skipValidation) {
+            const validation = validateConvertedPagePublish(nextContent);
+            if (!validation.canPublish) {
+              setPrePublishState({ blocks: validation.blocks, warnings: validation.warnings });
+              setSaveStatus('error');
+              setTimeout(() => {
+                if (useEditorStore.getState().saveStatus === 'error') {
+                  setSaveStatus('dirty');
+                }
+              }, 4000);
+              return false;
+            }
+            if (validation.warnings.length > 0) {
+              setPrePublishState({ blocks: [], warnings: validation.warnings });
+              setSaveStatus('dirty');
+              return false;
+            }
+          }
+
+          const needsCreate =
+            convertedPageMissing || pageId === `converted-${convertedPageName}`;
+          if (needsCreate) {
+            res = await fetch('/api/pages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                title: pageTitle.trim() || 'Untitled Page',
+                slug: convertedPageName,
+                convertedPageName,
+                convertedContent: nextContent,
+                blocks: [],
+                _status: status,
+              }),
+            });
+            if (res.ok) {
+              try {
+                const created = (await res.clone().json()) as {
+                  doc?: { id?: string | number };
+                  id?: string | number;
+                };
+                const createdId = created.doc?.id ?? created.id;
+                if (createdId != null) {
+                  setResolvedPageId(String(createdId));
+                  setConvertedPageMissing(false);
+                }
+              } catch {
+                // ignore parse errors; success handler still runs
+              }
+            } else if (res.status === 409 || res.status === 400) {
+              let isSlugCollision = false;
+              try {
+                const errBody = (await res.clone().json()) as Record<string, unknown>;
+                const collisionRe = /(must be unique|already exists|isn't available|already in use|duplicate)/i;
+                type ErrLeaf = { message?: string; field?: string; path?: string; label?: string };
+                const collectLeaves = (node: unknown, out: ErrLeaf[]): void => {
+                  if (!node || typeof node !== 'object') return;
+                  if (Array.isArray(node)) {
+                    node.forEach((n) => collectLeaves(n, out));
+                    return;
+                  }
+                  const obj = node as Record<string, unknown>;
+                  if (typeof obj.message === 'string' || typeof obj.path === 'string' || typeof obj.field === 'string' || typeof obj.label === 'string') {
+                    out.push(obj as ErrLeaf);
+                  }
+                  for (const v of Object.values(obj)) collectLeaves(v, out);
+                };
+                const leaves: ErrLeaf[] = [];
+                collectLeaves(errBody, leaves);
+                isSlugCollision = leaves.some((e) => {
+                  const onSlug =
+                    e.field === 'slug' || e.path === 'slug' || /slug/i.test(e.label ?? '') || /slug/i.test(e.message ?? '');
+                  return onSlug && collisionRe.test(e.message ?? '');
+                });
+              } catch {
+                // ignore parse errors; fall through to generic error path
+              }
+              if (isSlugCollision) {
+                setSaveStatus('error');
+                setTimeout(() => {
+                  if (useEditorStore.getState().saveStatus === 'error') {
+                    setSaveStatus('dirty');
+                  }
+                }, 4000);
+                if (notify) {
+                  showToast(
+                    'Save failed: slug already exists. Pick a different slug or open the existing CMS page.',
+                    'error',
+                  );
+                }
+                return false;
+              }
+            }
+          } else {
+            res = await fetch(`/api/pages/${pageId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                title: pageTitle.trim() || 'Untitled Page',
+                convertedPageName,
+                convertedContent: nextContent,
+                blocks: [],
+                _status: status,
+              }),
+            });
+          }
         } else {
           res = await fetch(`/api/pages/${pageId}`, {
             method: 'PATCH',
@@ -1055,6 +1232,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
       editorMode,
       pageId,
       convertedPageName,
+      convertedPageMissing,
       convertedBaseContent,
       sections,
       pageTitle,
@@ -1101,6 +1279,9 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
   const historyPageId = useMemo(() => {
     if (editorMode === 'pages') return pageId;
     if (editorMode === 'homepage') return 'homepage-global';
+    if (editorMode === 'converted' && pageId && !pageId.startsWith('converted-')) {
+      return pageId;
+    }
     return null;
   }, [editorMode, pageId]);
 
@@ -1148,6 +1329,7 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
         canShowHistory={Boolean(historyPageId)}
         pageSlug={pageSlug}
         pageId={pageId}
+        convertedPageMissing={convertedPageMissing}
         onNavigateBack={handleNavigateBack}
         onSlugChange={(newSlug) => setPageSlug(newSlug)}
         onPageTitleChange={(nextTitle) => {
@@ -1178,7 +1360,26 @@ export default function PageEditorView({ params, mode = 'pages' }: PageEditorVie
 
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
       {showHistory && historyPageId && (
-        <RevisionHistory pageId={historyPageId} onClose={() => setShowHistory(false)} />
+        <RevisionHistory
+          pageId={historyPageId}
+          onClose={() => setShowHistory(false)}
+          setConvertedBaseContent={setConvertedBaseContent}
+        />
+      )}
+      {prePublishState && (
+        <PrePublishModal
+          blocks={prePublishState.blocks}
+          warnings={prePublishState.warnings}
+          onCancel={() => setPrePublishState(null)}
+          onPublishAnyway={
+            prePublishState.blocks.length === 0 && prePublishState.warnings.length > 0
+              ? () => {
+                  setPrePublishState(null);
+                  void persist({ status: 'published', notify: true, skipValidation: true });
+                }
+              : undefined
+          }
+        />
       )}
     </div>
   );

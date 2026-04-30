@@ -2,9 +2,9 @@ import type { PageContent } from '../content';
 import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon } from '../../home/components/_icons';
 
-type IconName = 'phone' | 'calendar' | 'search' | 'bolt' | 'check' | 'arrow';
+type IconName = 'phone' | 'calendar' | 'search' | 'bolt' | 'check' | 'arrow' | 'mail';
 
-const KNOWN: IconName[] = ['phone', 'calendar', 'search', 'bolt', 'check', 'arrow'];
+const KNOWN: IconName[] = ['phone', 'calendar', 'search', 'bolt', 'check', 'arrow', 'mail'];
 
 function resolveIcon(name: string): IconName {
   return (KNOWN as string[]).includes(name) ? (name as IconName) : 'bolt';

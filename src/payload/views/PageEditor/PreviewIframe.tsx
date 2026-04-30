@@ -46,6 +46,8 @@ export function PreviewIframe({ src = '/page-editor-preview' }: PreviewIframePro
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
       const data = event.data as EditorMessage;
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      if (event.origin !== window.location.origin) return;
       if (!data?.type) return;
 
       if (data.type === 'EDITOR_READY') {
@@ -186,7 +188,7 @@ export function PreviewIframe({ src = '/page-editor-preview' }: PreviewIframePro
     if (!iframeRef.current?.contentWindow) return;
     iframeRef.current.contentWindow.postMessage(
       { type: 'UPDATE_SECTIONS', sections, responsiveMode, sectionStyleOverrides } satisfies EditorMessage,
-      '*',
+      window.location.origin,
     );
   }, [sections, responsiveMode, sectionStyleOverrides]);
 
@@ -203,7 +205,7 @@ export function PreviewIframe({ src = '/page-editor-preview' }: PreviewIframePro
     setSelectedNode(null);
     iframeRef.current.contentWindow.postMessage(
       { type: 'SELECT_BLOCK', blockId: selectedBlockId } satisfies EditorMessage,
-      '*',
+      window.location.origin,
     );
   }, [selectedBlockId, frameLoaded, setSelectedNode]);
 
@@ -215,7 +217,7 @@ export function PreviewIframe({ src = '/page-editor-preview' }: PreviewIframePro
       if (iframeRef.current?.contentWindow) {
         iframeRef.current.contentWindow.postMessage(
           { type: 'SELECT_BLOCK', blockId: selectedBlockId } satisfies EditorMessage,
-          '*',
+          window.location.origin,
         );
       }
     }, 30);

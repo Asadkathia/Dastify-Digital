@@ -268,6 +268,7 @@ export interface Page {
         | TimelineBlock
         | StepsBlock
         | AnnouncementBarBlock
+        | WidgetContainerBlock
       )[]
     | null;
   meta?: {
@@ -1280,6 +1281,26 @@ export interface AnnouncementBarBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WidgetContainerBlock".
+ */
+export interface WidgetContainerBlock {
+  label?: string | null;
+  layout?: string | null;
+  widgets?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'widget-container';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "services".
  */
 export interface Service {
@@ -1392,6 +1413,7 @@ export interface Service {
         | TimelineBlock
         | StepsBlock
         | AnnouncementBarBlock
+        | WidgetContainerBlock
       )[]
     | null;
   meta?: {
@@ -1515,6 +1537,7 @@ export interface CaseStudy {
         | TimelineBlock
         | StepsBlock
         | AnnouncementBarBlock
+        | WidgetContainerBlock
       )[]
     | null;
   meta?: {
@@ -1644,6 +1667,7 @@ export interface BlogPost {
         | TimelineBlock
         | StepsBlock
         | AnnouncementBarBlock
+        | WidgetContainerBlock
       )[]
     | null;
   meta?: {
@@ -2079,6 +2103,7 @@ export interface PagesSelect<T extends boolean = true> {
         'timeline-block'?: T | TimelineBlockSelect<T>;
         'steps-block'?: T | StepsBlockSelect<T>;
         'announcement-bar-block'?: T | AnnouncementBarBlockSelect<T>;
+        'widget-container'?: T | WidgetContainerBlockSelect<T>;
       };
   meta?:
     | T
@@ -2768,6 +2793,17 @@ export interface AnnouncementBarBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WidgetContainerBlock_select".
+ */
+export interface WidgetContainerBlockSelect<T extends boolean = true> {
+  label?: T;
+  layout?: T;
+  widgets?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "services_select".
  */
 export interface ServicesSelect<T extends boolean = true> {
@@ -2835,6 +2871,7 @@ export interface ServicesSelect<T extends boolean = true> {
         'timeline-block'?: T | TimelineBlockSelect<T>;
         'steps-block'?: T | StepsBlockSelect<T>;
         'announcement-bar-block'?: T | AnnouncementBarBlockSelect<T>;
+        'widget-container'?: T | WidgetContainerBlockSelect<T>;
       };
   meta?:
     | T
@@ -2912,6 +2949,7 @@ export interface CaseStudiesSelect<T extends boolean = true> {
         'timeline-block'?: T | TimelineBlockSelect<T>;
         'steps-block'?: T | StepsBlockSelect<T>;
         'announcement-bar-block'?: T | AnnouncementBarBlockSelect<T>;
+        'widget-container'?: T | WidgetContainerBlockSelect<T>;
       };
   meta?:
     | T
@@ -3005,6 +3043,7 @@ export interface BlogPostsSelect<T extends boolean = true> {
         'timeline-block'?: T | TimelineBlockSelect<T>;
         'steps-block'?: T | StepsBlockSelect<T>;
         'announcement-bar-block'?: T | AnnouncementBarBlockSelect<T>;
+        'widget-container'?: T | WidgetContainerBlockSelect<T>;
       };
   meta?:
     | T
@@ -3605,6 +3644,7 @@ export interface Homepage {
         | TimelineBlock
         | StepsBlock
         | AnnouncementBarBlock
+        | WidgetContainerBlock
       )[]
     | null;
   _status?: ('draft' | 'published') | null;
@@ -4065,6 +4105,7 @@ export interface HomepageSelect<T extends boolean = true> {
         'timeline-block'?: T | TimelineBlockSelect<T>;
         'steps-block'?: T | StepsBlockSelect<T>;
         'announcement-bar-block'?: T | AnnouncementBarBlockSelect<T>;
+        'widget-container'?: T | WidgetContainerBlockSelect<T>;
       };
   _status?: T;
   updatedAt?: T;
