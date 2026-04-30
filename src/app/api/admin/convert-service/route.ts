@@ -4,27 +4,8 @@ import { resolveModel } from '@/lib/ai/default-models';
 import { extractServiceFromHtml } from '@/lib/content-converters/service/extractor';
 import type { ServiceCommitInput } from '@/lib/content-converters/service/schema';
 import { getPayloadClient } from '@/lib/payload';
+import { hasAdminSession } from '@/lib/auth/has-admin-session';
 import { normalizeSlug } from '@/lib/cms/slug';
-
-async function hasAdminSession(request: Request): Promise<boolean> {
-  const auth = request.headers.get('authorization');
-  const secret = process.env.PAYLOAD_SECRET;
-  if (secret && auth === `Bearer ${secret}`) return true;
-
-  const cookie = request.headers.get('cookie');
-  if (!cookie) return false;
-  try {
-    const meRes = await fetch(new URL('/api/users/me', request.url), { headers: { cookie }, cache: 'no-store' });
-    if (!meRes.ok) return false;
-    const me = (await meRes.json()) as { user?: { id?: number | string; role?: string }; id?: number | string; role?: string };
-    const user = me.user ?? me;
-    if (!user?.id) return false;
-    if (!user.role) return true;
-    return user.role === 'admin' || user.role === 'editor';
-  } catch {
-    return false;
-  }
-}
 
 type ExtractRequest = {
   action: 'extract';
@@ -39,7 +20,8 @@ type ExtractRequest = {
 type CommitRequest = { action: 'commit' } & ServiceCommitInput;
 
 export async function POST(request: Request) {
-  if (!(await hasAdminSession(request))) {
+  const payload = await getPayloadClient();
+  if (!(await hasAdminSession(request, payload))) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 

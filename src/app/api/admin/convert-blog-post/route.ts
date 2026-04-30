@@ -4,6 +4,7 @@ import { resolveModel } from '@/lib/ai/default-models';
 import { extractBlogPostFromHtml } from '@/lib/content-converters/blog-post/extractor';
 import type { BlogPostCommitInput } from '@/lib/content-converters/blog-post/schema';
 import { getPayloadClient } from '@/lib/payload';
+import { hasAdminSession } from '@/lib/auth/has-admin-session';
 import { normalizeSlug } from '@/lib/cms/slug';
 
 /**
@@ -14,26 +15,6 @@ import { normalizeSlug } from '@/lib/cms/slug';
  * Kept as a single endpoint so the UI state machine (form → preview → commit)
  * doesn't need three different URLs. Body shape tells the server what to do.
  */
-
-async function hasAdminSession(request: Request): Promise<boolean> {
-  const auth = request.headers.get('authorization');
-  const secret = process.env.PAYLOAD_SECRET;
-  if (secret && auth === `Bearer ${secret}`) return true;
-
-  const cookie = request.headers.get('cookie');
-  if (!cookie) return false;
-  try {
-    const meRes = await fetch(new URL('/api/users/me', request.url), { headers: { cookie }, cache: 'no-store' });
-    if (!meRes.ok) return false;
-    const me = (await meRes.json()) as { user?: { id?: number | string; role?: string }; id?: number | string; role?: string };
-    const user = me.user ?? me;
-    if (!user?.id) return false;
-    if (!user.role) return true;
-    return user.role === 'admin' || user.role === 'editor';
-  } catch {
-    return false;
-  }
-}
 
 type ExtractRequest = {
   action: 'extract';
@@ -50,7 +31,8 @@ type CommitRequest = {
 } & BlogPostCommitInput;
 
 export async function POST(request: Request) {
-  if (!(await hasAdminSession(request))) {
+  const payload = await getPayloadClient();
+  if (!(await hasAdminSession(request, payload))) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 
