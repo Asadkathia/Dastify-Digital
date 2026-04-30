@@ -1854,10 +1854,47 @@ function ConvertedNodeInspector({
         </div>
       ) : null}
 
+      {(['color', 'backgroundColor'] as const).map((key) => {
+        const label = key === 'color' ? 'Text Color' : 'Background';
+        const raw = typeof styleValue[key] === 'string' ? String(styleValue[key]) : '';
+        const computed = node.computedStyles[key] || '';
+        const pickerValue = /^#[0-9a-fA-F]{6}$/.test(raw) ? raw : '#000000';
+        return (
+          <div key={key} style={{ marginBottom: '12px' }}>
+            <label style={labelStyle}>{label}</label>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <input
+                type="color"
+                value={pickerValue}
+                onChange={(e) => updateStyle(key, e.target.value)}
+                style={{ width: '36px', height: '32px', padding: 0, border: '1px solid #2a2a2a', borderRadius: '6px', background: '#0f0f0f', cursor: 'pointer', flexShrink: 0 }}
+                aria-label={`${label} picker`}
+              />
+              <input
+                value={raw}
+                placeholder={computed}
+                onChange={(e) => updateStyle(key, e.target.value)}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              {raw && (
+                <button
+                  type="button"
+                  onClick={() => updateStyle(key, '')}
+                  style={{ ...actionBtnStyle, flexShrink: 0 }}
+                  title="Clear override"
+                  aria-label={`Clear ${label}`}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <ColorSwatches onSelect={(c) => updateStyle(key, c === 'transparent' ? '' : c)} />
+          </div>
+        );
+      })}
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
         {[
-          ['color', 'Text Color'],
-          ['backgroundColor', 'Background'],
           ['fontSize', 'Font Size'],
           ['fontWeight', 'Font Weight'],
           ['lineHeight', 'Line Height'],
@@ -2613,9 +2650,10 @@ const actionBtnStyle: React.CSSProperties = {
 
 const BRAND_PALETTE: Array<{ label: string; value: string }> = [
   // Primary brand
-  { label: 'Brand Blue', value: '#0ea5e9' },
-  { label: 'Brand Dark', value: '#0369a1' },
-  { label: 'Brand Light', value: '#bae6fd' },
+  { label: 'Primary', value: '#0025e8' },
+  { label: 'Brand Dark', value: '#001ba3' },
+  { label: 'Brand Light', value: '#dbe1ff' },
+  { label: 'Brand Sky', value: '#0ea5e9' },
   // Neutrals
   { label: 'White', value: '#ffffff' },
   { label: 'Off White', value: '#f8fafc' },
