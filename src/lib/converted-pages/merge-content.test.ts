@@ -118,11 +118,8 @@ describe('mergeConvertedContent — legacy-shape migration', () => {
     expect(merged.main).toBeUndefined();
   });
 
-  it('lifts blog-1 main.{posts,categories} to top-level', () => {
-    const fallback = {
-      posts: [],
-      categories: [],
-    };
+  it('does not lift blog-1 main (no refactor — main stays as section key)', () => {
+    const fallback = { main: { posts: [], categories: [] } };
     const override = {
       main: {
         posts: [{ title: 'Saved post' }],
@@ -130,14 +127,12 @@ describe('mergeConvertedContent — legacy-shape migration', () => {
       },
     };
     const merged = mergeConvertedContent(fallback, override, 'blog-1') as {
-      posts: Array<{ title: string }>;
-      categories: string[];
-      main?: unknown;
+      main: { posts: Array<{ title: string }>; categories: string[] };
+      posts?: unknown;
     };
-    expect(merged.posts).toHaveLength(1);
-    expect(merged.posts[0].title).toBe('Saved post');
-    expect(merged.categories).toEqual(['SEO']);
-    expect(merged.main).toBeUndefined();
+    expect(merged.main.posts).toHaveLength(1);
+    expect(merged.main.posts[0].title).toBe('Saved post');
+    expect(merged.posts).toBeUndefined();
   });
 
   it('preserves non-lifted keys under main wrapper (e.g. meta)', () => {

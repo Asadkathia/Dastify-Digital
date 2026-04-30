@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { PageContent } from '../content';
 import { getConvertedNodeBinding } from '@/components/converted-editor';
 import { Icon } from '../../home/components/_icons';
-import { renderEmHtml } from '../../home/components/_emHtml';
+import { renderEmHtmlString } from '../../home/components/_emHtml';
 
 export default function Specialties({ data }: { data: PageContent['specialties'] }) {
   const firstSlug = data.tabs[0]?.slug ?? '';
@@ -14,7 +14,7 @@ export default function Specialties({ data }: { data: PageContent['specialties']
 
   const eyebrow = getConvertedNodeBinding(data, { field: 'eyebrow', defaultTag: 'div' });
   const EyebrowTag = eyebrow.Tag;
-  const heading = getConvertedNodeBinding(data, { field: 'heading', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const heading = getConvertedNodeBinding(data, { field: 'heading', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'], richText: true });
   const HeadingTag = heading.Tag;
   const intro = getConvertedNodeBinding(data, { field: 'intro', defaultTag: 'p' });
   const IntroTag = intro.Tag;
@@ -31,7 +31,7 @@ export default function Specialties({ data }: { data: PageContent['specialties']
       <div className="sv2-wrap">
         <div className="sv2-section-head sv2-section-head--center">
           <EyebrowTag {...eyebrow.props} className="sv2-eyebrow">{data.eyebrow}</EyebrowTag>
-          <HeadingTag {...heading.props} className="sv2-h2">{renderEmHtml(data.heading)}</HeadingTag>
+          <HeadingTag {...heading.props} className="sv2-h2" dangerouslySetInnerHTML={{ __html: renderEmHtmlString(data.heading) }} />
           <IntroTag {...intro.props} className="sv2-intro">{data.intro}</IntroTag>
         </div>
         <div className="sv2-specs__tabs" role="tablist">

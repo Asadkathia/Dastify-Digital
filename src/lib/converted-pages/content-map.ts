@@ -62,15 +62,18 @@ const CONTENT_CONFIG: Record<string, ConvertedPageContentConfig> = {
     contentFile: 'src/app/(site)/contact/content.ts',
     sections: [
       { key: 'hero', label: 'Hero', icon: '🦸' },
-      { key: 'main', label: 'Form + Info', icon: '✉️' },
+      { key: 'form', label: 'Form', icon: '✉️' },
+      { key: 'info', label: 'Info', icon: 'ℹ️' },
     ],
   },
   'book-session': {
     pageName: 'book-session',
     contentFile: 'src/app/(site)/book-session/content.ts',
     sections: [
-      { key: 'hero', label: 'Hero', icon: '🦸' },
-      { key: 'main', label: 'Scheduler + Sidebar', icon: '📅' },
+      { key: 'hero',      label: 'Hero',      icon: '🦸' },
+      { key: 'scheduler', label: 'Scheduler', icon: '📅' },
+      { key: 'form',      label: 'Form',      icon: '📝' },
+      { key: 'sidebar',   label: 'Sidebar',   icon: '📋' },
     ],
   },
   'blog-1': {

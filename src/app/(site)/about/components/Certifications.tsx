@@ -1,19 +1,19 @@
 import type { PageContent } from '../content';
 import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon, type IconName } from '../../home/components/_icons';
-import { renderEmHtml } from '../../home/components/_emHtml';
+import { renderEmHtmlString } from '../../home/components/_emHtml';
 
 export default function Certifications({ data }: { data: PageContent['certifications'] }) {
   const eyebrow = getConvertedNodeBinding(data, { field: 'eyebrow', defaultTag: 'div' });
   const EyebrowTag = eyebrow.Tag;
-  const heading = getConvertedNodeBinding(data, { field: 'heading', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const heading = getConvertedNodeBinding(data, { field: 'heading', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'], richText: true });
   const HeadingTag = heading.Tag;
   return (
     <section className="ab2-certs">
       <div className="ab2-wrap">
         <div className="ab2-section-head ab2-section-head--center ab2-section-head--light">
           <EyebrowTag {...eyebrow.props} className="ab2-eyebrow ab2-eyebrow--light">{data.eyebrow}</EyebrowTag>
-          <HeadingTag {...heading.props} className="ab2-h2 ab2-h2--light">{renderEmHtml(data.heading)}</HeadingTag>
+          <HeadingTag {...heading.props} className="ab2-h2 ab2-h2--light" dangerouslySetInnerHTML={{ __html: renderEmHtmlString(data.heading) }} />
         </div>
         <div className="ab2-certs__grid">
           {data.items.map((c, i) => {

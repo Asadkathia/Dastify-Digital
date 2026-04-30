@@ -1,15 +1,15 @@
 import type { PageContent } from '../content';
 import { getConvertedNodeBinding } from '@/components/converted-editor';
-import { renderEmHtml } from '../../home/components/_emHtml';
+import { renderEmHtmlString } from '../../home/components/_emHtml';
 
 export default function Process({ data }: { data: PageContent['process'] }) {
-  const heading = getConvertedNodeBinding(data, { field: 'heading', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const heading = getConvertedNodeBinding(data, { field: 'heading', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'], richText: true });
   const HeadingTag = heading.Tag;
   return (
     <section className="sv2-process">
       <div className="sv2-wrap">
         <div className="sv2-section-head sv2-section-head--center sv2-section-head--light">
-          <HeadingTag {...heading.props} className="sv2-h2 sv2-h2--light">{renderEmHtml(data.heading)}</HeadingTag>
+          <HeadingTag {...heading.props} className="sv2-h2 sv2-h2--light" dangerouslySetInnerHTML={{ __html: renderEmHtmlString(data.heading) }} />
         </div>
         <div className="sv2-process__track">
           {data.steps.map((s, i) => {

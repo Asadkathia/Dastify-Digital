@@ -1,19 +1,19 @@
 import type { PageContent } from '../content';
 import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon, type IconName } from '../../home/components/_icons';
-import { renderEmHtml } from '../../home/components/_emHtml';
+import { renderEmHtmlString } from '../../home/components/_emHtml';
 
 export default function CoreValues({ data }: { data: PageContent['coreValues'] }) {
   const eyebrow = getConvertedNodeBinding(data, { field: 'eyebrow', defaultTag: 'div' });
   const EyebrowTag = eyebrow.Tag;
-  const heading = getConvertedNodeBinding(data, { field: 'heading', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const heading = getConvertedNodeBinding(data, { field: 'heading', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'], richText: true });
   const HeadingTag = heading.Tag;
   return (
     <section className="ab2-values">
       <div className="ab2-wrap">
         <div className="ab2-section-head ab2-section-head--center">
           <EyebrowTag {...eyebrow.props} className="ab2-eyebrow">{data.eyebrow}</EyebrowTag>
-          <HeadingTag {...heading.props} className="ab2-h2">{renderEmHtml(data.heading)}</HeadingTag>
+          <HeadingTag {...heading.props} className="ab2-h2" dangerouslySetInnerHTML={{ __html: renderEmHtmlString(data.heading) }} />
         </div>
         <div className="ab2-values__grid">
           {data.items.map((v, i) => {

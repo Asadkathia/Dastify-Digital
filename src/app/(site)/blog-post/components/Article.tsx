@@ -2,10 +2,10 @@ import Link from 'next/link';
 import type { PageContent } from '../content';
 import { getConvertedNodeBinding } from '@/components/converted-editor';
 import { Icon } from '../../home/components/_icons';
-import { renderEmHtml } from '../../home/components/_emHtml';
+import { renderEmHtmlString } from '../../home/components/_emHtml';
 
 export default function Article({ data }: { data: PageContent['article'] }) {
-  const lead = getConvertedNodeBinding(data, { field: 'lead', defaultTag: 'p' });
+  const lead = getConvertedNodeBinding(data, { field: 'lead', defaultTag: 'p', richText: true });
   const LeadTag = lead.Tag;
   const inlineH = getConvertedNodeBinding(data, { field: 'inlineCta.heading', defaultTag: 'h3', allowedTags: ['h2', 'h3', 'h4', 'p'] });
   const InlineHTag = inlineH.Tag;
@@ -28,7 +28,7 @@ export default function Article({ data }: { data: PageContent['article'] }) {
       <div className="bp2-wrap">
         <div className="bp2-layout">
           <article className="bp2-article">
-            <LeadTag {...lead.props} className="bp2-lead">{renderEmHtml(data.lead)}</LeadTag>
+            <LeadTag {...lead.props} className="bp2-lead" dangerouslySetInnerHTML={{ __html: renderEmHtmlString(data.lead) }} />
             {/* bodyHtml is trusted markup originating from Payload's rich-text export
                 or from this file's defaultContent — both authored, never user input. */}
             <div className="bp2-prose" dangerouslySetInnerHTML={{ __html: data.bodyHtml }} />

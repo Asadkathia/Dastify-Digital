@@ -15,8 +15,7 @@ function cloneValue<T>(value: T): T {
 // Pages affected:
 // 1. /contact — `main.{form,info}` → top-level `form` + `info`
 // 2. /book-session — `main.{scheduler,form,sidebar}` → top-level
-// 3. /blog (registry: blog-1) — `main.{posts,categories}` → top-level
-// 4. /services (registry: services-convert) — `specialties.tabContent` (object
+// 3. /services (registry: services-convert) — `specialties.tabContent` (object
 //    map keyed by slug) merged into `specialties.tabs[].{headline,description,bullets}`
 //    by slug match
 function migrateLegacyShape(
@@ -31,7 +30,6 @@ function migrateLegacyShape(
   const liftSpecs: Record<string, LiftSpec | undefined> = {
     contact: { from: 'main', keys: ['form', 'info'] },
     'book-session': { from: 'main', keys: ['scheduler', 'form', 'sidebar'] },
-    'blog-1': { from: 'main', keys: ['posts', 'categories'] },
   };
 
   const spec = liftSpecs[pageName];

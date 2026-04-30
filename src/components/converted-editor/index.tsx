@@ -9,6 +9,12 @@ type BindingOptions = {
   allowedTags?: Array<keyof React.JSX.IntrinsicElements>;
   tagField?: string;
   styleField?: string;
+  /**
+   * When true, the inline-edit handler captures innerHTML (sanitized to
+   * `<em>` + line breaks) instead of plain innerText. Use for fields rendered
+   * through `renderEmHtml` so the italic/emphasis markup survives editing.
+   */
+  richText?: boolean;
 };
 
 const STYLE_KEYS: Array<keyof ConvertedNodeStyles> = [
@@ -64,6 +70,7 @@ export function getConvertedNodeBinding(
     allowedTags,
     tagField,
     styleField,
+    richText,
   }: BindingOptions,
 ) {
   const nodeKey = nodeKeyProp ?? sanitizeNodeKey(field);
@@ -80,6 +87,7 @@ export function getConvertedNodeBinding(
       'data-style-field': resolvedStyleField,
       'data-tag-field': allowedTags && allowedTags.length > 0 ? resolvedTagField : undefined,
       'data-allowed-tags': allowedTags && allowedTags.length > 0 ? allowedTags.join(',') : undefined,
+      'data-rich-text': richText ? ('true' as const) : undefined,
       style: styleToReact(styles),
     },
   };

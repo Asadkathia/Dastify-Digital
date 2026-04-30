@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { HomepageContent } from '@/lib/homepage-content';
 import { getConvertedNodeBinding } from '@/components/converted-editor';
 import { Icon } from './_icons';
-import { renderEmHtml } from './_emHtml';
+import { renderEmHtmlString } from './_emHtml';
 
 const TONE_PALETTE = ['primary', 'accent', 'support', 'primary-ink'] as const;
 type Tone = (typeof TONE_PALETTE)[number];
@@ -222,7 +222,7 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
   const EyebrowTag = eyebrow.Tag;
   const title = getConvertedNodeBinding(data, { field: 'titleLead', defaultTag: 'h2', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
   const TitleTag = title.Tag;
-  const titleEm = getConvertedNodeBinding(data, { field: 'titleEm', defaultTag: 'span' });
+  const titleEm = getConvertedNodeBinding(data, { field: 'titleEm', defaultTag: 'span', richText: true });
   const TitleEmTag = titleEm.Tag;
   const intro = getConvertedNodeBinding(data, { field: 'intro', defaultTag: 'p' });
   const IntroTag = intro.Tag;
@@ -246,7 +246,7 @@ export default function GrowthFunnel({ data }: { data: HomepageContent['growthFu
                 <EyebrowTag {...eyebrow.props} className="hp2-eyebrow">{data.eyebrow}</EyebrowTag>
                 <TitleTag {...title.props} className="hp2-h2">
                   {data.titleLead}{' '}
-                  <TitleEmTag {...titleEm.props} className="hp2-gf__title-em">{renderEmHtml(data.titleEm)}</TitleEmTag>
+                  <TitleEmTag {...titleEm.props} className="hp2-gf__title-em" dangerouslySetInnerHTML={{ __html: renderEmHtmlString(data.titleEm) }} />
                 </TitleTag>
                 {/* Editor-only binding for `intro`; not rendered in current layout. */}
                 <IntroTag {...intro.props} hidden>{data.intro}</IntroTag>

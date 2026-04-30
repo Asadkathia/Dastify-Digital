@@ -248,4 +248,6 @@ export type EditorMessage =
   | { type: 'EDITOR_READY' }
   | { type: 'DRAG_COMMIT'; drag: DragPayload; drop: DropTarget }
   | { type: 'WIDGET_CLICKED'; blockId: string; widgetId: string }
-  | { type: 'WIDGET_INLINE_EDIT_END'; blockId: string; widgetId: string; fieldName: string; value: string };
+  | { type: 'WIDGET_INLINE_EDIT_END'; blockId: string; widgetId: string; fieldName: string; value: string }
+  | { type: 'TRIGGER_UNDO' }
+  | { type: 'TRIGGER_REDO' };

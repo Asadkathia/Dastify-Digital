@@ -33,6 +33,36 @@ function buildPayloadShape(block: BlockInstance): Record<string, unknown> {
   return { blockType: block.blockType, ...block.data };
 }
 
+/**
+ * Sanitize the contenteditable's innerHTML for fields that use the renderEmHtmlString
+ * format ("plain text with optional <em>...</em> spans and \n line breaks").
+ * Strips everything except <em> tags, converts <br> to \n, and unescapes entities.
+ * Used when the editable element has `data-rich-text="true"`.
+ */
+function sanitizeEmRichText(html: string): string {
+  if (!html) return '';
+  let s = html;
+  // Normalize <br> variants to \n.
+  s = s.replace(/<br\s*\/?>/gi, '\n');
+  // Convert closing block-ish tags to \n so paragraph splits survive.
+  s = s.replace(/<\/(p|div)>/gi, '\n');
+  // Strip every other tag except <em> (case-insensitive, allow attrs which we drop).
+  s = s.replace(/<(?!\/?em\b)[^>]+>/gi, '');
+  // Drop any attrs from <em>: turn `<em class="x">` into `<em>`.
+  s = s.replace(/<em\b[^>]*>/gi, '<em>');
+  // Decode the few HTML entities a contenteditable typically inserts.
+  s = s
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&quot;/g, '"');
+  // Collapse runs of \n the editor inserts when navigating between lines.
+  s = s.replace(/\n{3,}/g, '\n\n');
+  return s.trim();
+}
+
 const INLINE_TEXT_FIELDS = [
   'title', 'subtitle', 'eyebrow', 'content', 'text', 'buttonLabel',
   'leftTitle', 'leftText', 'rightTitle', 'rightText',
@@ -430,10 +460,6 @@ function BlockWrapper({
     if (el.dataset.imageField === 'true') return;
     if (!block.blockType.startsWith('cp-') && !INLINE_TEXT_FIELDS.includes(fieldName)) return;
 
-    // Snapshot the original plain-text content before editing begins.
-    // We'll restore it on blur so React sees a clean DOM to reconcile against.
-    const originalText = el.innerText || el.textContent || '';
-
     el.contentEditable = 'true';
     el.focus();
     const range = document.caretRangeFromPoint?.(e.clientX, e.clientY);
@@ -442,23 +468,27 @@ function BlockWrapper({
     function handleBlur() {
       if (!el) return;
       const isRich = el.dataset.richText === 'true';
-      const value = isRich ? el.innerHTML : (el.innerText || el.textContent || '');
+      const value = isRich
+        ? sanitizeEmRichText(el.innerHTML)
+        : (el.innerText || el.textContent || '');
 
       // Turn off editing first
       el.contentEditable = 'false';
 
-      // Restore the element to its original plain-text content so React can
-      // reconcile without fighting browser-extension-injected span nodes.
-      // The store update will immediately re-render with the new value.
-      if (!isRich) {
-        el.textContent = originalText;
-      }
+      // IMPORTANT: do NOT mutate `el.textContent` or `el.innerHTML` here.
+      // The element may have React-managed structured children (e.g. nested
+      // `<em>` from `renderEmHtmlString`, `<TitleEmTag>` from `getConvertedNodeBinding`).
+      // Replacing `textContent` orphans those children — when React next
+      // reconciles, `removeChild` is called against a stale parent reference
+      // and crashes with "node to be removed is not a child of this node".
+      // Let React's next render fully replace the element's contents instead;
+      // it has the authoritative vDOM and will produce the correct DOM tree.
 
       el.removeEventListener('blur', handleBlur);
       el.removeEventListener('keydown', handleKeyDown);
 
-      // Defer the store update one tick so the DOM has fully settled
-      // (contentEditable cleanup, extension span removal) before React re-renders.
+      // Defer the store update one tick so the contentEditable=false setting
+      // has settled before React re-renders.
       requestAnimationFrame(() => {
         sendToParent({ type: 'INLINE_EDIT_END', blockId: block.id, fieldName: fieldName!, value });
       });
@@ -1257,9 +1287,29 @@ function PreviewInner() {
       }
     }
 
+    // Forward Cmd/Ctrl+Z / Cmd/Ctrl+Shift+Z from inside the iframe to the parent
+    // editor so undo/redo work even when the iframe has focus (e.g. right after
+    // an inline edit). Without this the keystroke is consumed by the iframe
+    // window — which has no undo stack — and the user has to reach for the
+    // toolbar arrows manually.
+    function handleIframeKeydown(e: KeyboardEvent) {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod || e.key.toLowerCase() !== 'z') return;
+      // Don't fight the browser when an editable input is focused — the user
+      // is mid-edit and expects a per-character undo.
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+      e.preventDefault();
+      sendToParent({ type: e.shiftKey ? 'TRIGGER_REDO' : 'TRIGGER_UNDO' });
+    }
+
     window.addEventListener('message', handleMessage);
+    window.addEventListener('keydown', handleIframeKeydown);
     sendToParent({ type: 'EDITOR_READY' });
-    return () => window.removeEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      window.removeEventListener('keydown', handleIframeKeydown);
+    };
   }, []);
 
   // Document-level dblclick handler for inline text editing. Runs in capture
@@ -1305,7 +1355,6 @@ function PreviewInner() {
       e.preventDefault();
       e.stopPropagation();
 
-      const originalText = fieldEl.innerText || fieldEl.textContent || '';
       fieldEl.contentEditable = 'true';
       fieldEl.focus();
 
@@ -1319,9 +1368,13 @@ function PreviewInner() {
       const handleBlur = () => {
         if (!fieldEl) return;
         const isRich = fieldEl.dataset.richText === 'true';
-        const value = isRich ? fieldEl.innerHTML : (fieldEl.innerText || fieldEl.textContent || '');
+        const value = isRich
+          ? sanitizeEmRichText(fieldEl.innerHTML)
+          : (fieldEl.innerText || fieldEl.textContent || '');
         fieldEl.contentEditable = 'false';
-        if (!isRich) fieldEl.textContent = originalText;
+        // IMPORTANT: do NOT mutate textContent/innerHTML here — see the matching
+        // comment in the per-block handler above for the full rationale.
+        // Mutating it orphans React-managed children and crashes the next render.
         fieldEl.removeEventListener('blur', handleBlur);
         fieldEl.removeEventListener('keydown', handleKeyDown);
         requestAnimationFrame(() => {

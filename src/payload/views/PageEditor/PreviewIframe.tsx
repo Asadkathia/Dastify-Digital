@@ -69,6 +69,13 @@ export function PreviewIframe({ src = '/page-editor-preview' }: PreviewIframePro
         updateBlockData(data.blockId, data.fieldName, data.value);
       }
 
+      if (data.type === 'TRIGGER_UNDO') {
+        useEditorStore.temporal.getState().undo();
+      }
+      if (data.type === 'TRIGGER_REDO') {
+        useEditorStore.temporal.getState().redo();
+      }
+
       if (data.type === 'WIDGET_CLICKED') {
         // Find the block's section+column to build full selection
         for (const sec of sections) {

@@ -3,7 +3,7 @@ import type { HomepageContent } from '@/lib/homepage-content';
 import { getConvertedNodeBinding, getConvertedImageBinding } from '@/components/converted-editor';
 import { Icon } from './_icons';
 import AnimCounter from './_AnimCounter';
-import { renderEmHtml } from './_emHtml';
+import { renderEmHtmlString } from './_emHtml';
 
 const TONE_PALETTE = ['primary', 'accent', 'support'] as const;
 type Tone = (typeof TONE_PALETTE)[number] | null;
@@ -76,7 +76,7 @@ function TrustLogos({ data, centered }: { data: HomepageContent['hero']; centere
 function HeroA({ data }: { data: HomepageContent['hero'] }) {
   const kickerNode = getConvertedNodeBinding(data, { field: 'kicker', defaultTag: 'div' });
   const KickerTag = kickerNode.Tag;
-  const headingNode = getConvertedNodeBinding(data, { field: 'headingA', defaultTag: 'h1', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const headingNode = getConvertedNodeBinding(data, { field: 'headingA', defaultTag: 'h1', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'], richText: true });
   const HeadingTag = headingNode.Tag;
   const subNode = getConvertedNodeBinding(data, { field: 'subA', defaultTag: 'p' });
   const SubTag = subNode.Tag;
@@ -93,7 +93,7 @@ function HeroA({ data }: { data: HomepageContent['hero'] }) {
             <i className="hp2-hero__dot" />
             {data.kicker}
           </KickerTag>
-          <HeadingTag {...headingNode.props} className="hp2-hero__h1">{renderEmHtml(data.headingA)}</HeadingTag>
+          <HeadingTag {...headingNode.props} className="hp2-hero__h1" dangerouslySetInnerHTML={{ __html: renderEmHtmlString(data.headingA) }} />
           <SubTag {...subNode.props} className="hp2-hero__sub">{data.subA}</SubTag>
           <div className="hp2-hero__ctas">
             <Link href={data.primaryCta.href} className="hp2-btn hp2-btn--primary hp2-btn--lg">
@@ -153,7 +153,7 @@ function HeroA({ data }: { data: HomepageContent['hero'] }) {
 function HeroB({ data }: { data: HomepageContent['hero'] }) {
   const eyebrowNode = getConvertedNodeBinding(data, { field: 'eyebrow', defaultTag: 'div' });
   const EyebrowTag = eyebrowNode.Tag;
-  const headingNode = getConvertedNodeBinding(data, { field: 'headingB', defaultTag: 'h1', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const headingNode = getConvertedNodeBinding(data, { field: 'headingB', defaultTag: 'h1', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'], richText: true });
   const HeadingTag = headingNode.Tag;
   const subNode = getConvertedNodeBinding(data, { field: 'subB', defaultTag: 'p' });
   const SubTag = subNode.Tag;
@@ -169,7 +169,7 @@ function HeroB({ data }: { data: HomepageContent['hero'] }) {
           <i className="hp2-hero__dot" />
           {data.eyebrow}
         </EyebrowTag>
-        <HeadingTag {...headingNode.props} className="hp2-hero--b__h1">{renderEmHtml(data.headingB)}</HeadingTag>
+        <HeadingTag {...headingNode.props} className="hp2-hero--b__h1" dangerouslySetInnerHTML={{ __html: renderEmHtmlString(data.headingB) }} />
         <SubTag {...subNode.props} className="hp2-hero--b__sub">{data.subB}</SubTag>
         <div className="hp2-hero--b__ctas">
           <Link href={data.primaryCta.href} className="hp2-btn hp2-btn--primary hp2-btn--lg">
@@ -207,7 +207,7 @@ function HeroB({ data }: { data: HomepageContent['hero'] }) {
 function HeroC({ data }: { data: HomepageContent['hero'] }) {
   const badgeNode = getConvertedNodeBinding(data, { field: 'badge', defaultTag: 'span' });
   const BadgeTag = badgeNode.Tag;
-  const headingNode = getConvertedNodeBinding(data, { field: 'headingC', defaultTag: 'h1', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'] });
+  const headingNode = getConvertedNodeBinding(data, { field: 'headingC', defaultTag: 'h1', allowedTags: ['h1', 'h2', 'h3', 'h4', 'p'], richText: true });
   const HeadingTag = headingNode.Tag;
   const subNode = getConvertedNodeBinding(data, { field: 'subC', defaultTag: 'p' });
   const SubTag = subNode.Tag;
@@ -227,7 +227,7 @@ function HeroC({ data }: { data: HomepageContent['hero'] }) {
           <Icon name="shield" size={14} />
           <BadgeTag {...badgeNode.props}>{data.badge}</BadgeTag>
         </div>
-        <HeadingTag {...headingNode.props} className="hp2-hero--c__h1">{renderEmHtml(data.headingC)}</HeadingTag>
+        <HeadingTag {...headingNode.props} className="hp2-hero--c__h1" dangerouslySetInnerHTML={{ __html: renderEmHtmlString(data.headingC) }} />
         <SubTag {...subNode.props} className="hp2-hero--c__sub">{data.subC}</SubTag>
         <div className="hp2-hero--c__ctas">
           <Link href={data.primaryCta.href} className="hp2-btn hp2-btn--primary hp2-btn--lg">
