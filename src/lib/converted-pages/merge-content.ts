@@ -101,11 +101,26 @@ export function mergeConvertedContent<T>(
 
   if (Array.isArray(fallback)) {
     if (!Array.isArray(effectiveOverride)) return cloneValue(fallback);
+    // Explicit empty override is the "marketing emptied this list" signal —
+    // preserved as a full reset.
     if (effectiveOverride.length === 0) return [] as T;
 
-    return Array.from({ length: effectiveOverride.length }, (_, index) =>
-      mergeConvertedContent(fallback[index], effectiveOverride[index]),
-    ) as T;
+    // New semantics: iterate the longer of the two arrays so trailing default
+    // elements are preserved when the override is shorter than the default.
+    // Per-element `null` in the override is the explicit "remove this row"
+    // sentinel and is omitted from the result.
+    const len = Math.max(effectiveOverride.length, (fallback as unknown[]).length);
+    const result: unknown[] = [];
+    for (let i = 0; i < len; i++) {
+      if (i < effectiveOverride.length) {
+        const o = effectiveOverride[i];
+        if (o === null) continue; // explicit removal sentinel
+        result.push(mergeConvertedContent((fallback as unknown[])[i], o));
+      } else {
+        result.push(cloneValue((fallback as unknown[])[i]));
+      }
+    }
+    return result as T;
   }
 
   if (isPlainObject(fallback)) {

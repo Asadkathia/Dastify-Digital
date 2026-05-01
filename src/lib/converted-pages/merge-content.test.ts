@@ -34,11 +34,14 @@ describe('mergeConvertedContent', () => {
     expect(mergeConvertedContent(fallback, [])).toEqual([]);
   });
 
-  it('merges arrays positionally', () => {
-    const fallback = [{ a: 1 }, { a: 2 }];
+  it('merges arrays positionally and preserves trailing default elements when override is shorter', () => {
+    // NEW SEMANTICS: a shorter override no longer truncates trailing defaults.
+    // This protects against accidental data loss when marketing edits only the
+    // first N items of an array (e.g. Contact page Phone-only override losing
+    // Email + Office Hours rows).
+    const fallback = [{ a: 1 }, { a: 2 }, { a: 3 }];
     const override = [{ a: 10 }];
-    // Length follows override; fallback[0] merged with override[0].
-    expect(mergeConvertedContent(fallback, override)).toEqual([{ a: 10 }]);
+    expect(mergeConvertedContent(fallback, override)).toEqual([{ a: 10 }, { a: 2 }, { a: 3 }]);
   });
 
   it('extends array length to match override', () => {
@@ -46,6 +49,34 @@ describe('mergeConvertedContent', () => {
     const override = [{ a: 10 }, { a: 20 }];
     // Second item has no fallback counterpart — override wins outright.
     expect(mergeConvertedContent(fallback, override)).toEqual([{ a: 10 }, { a: 20 }]);
+  });
+
+  it('treats null in override array as the "remove this row" sentinel', () => {
+    const fallback = [{ a: 1 }, { a: 2 }, { a: 3 }];
+    const override = [{ a: 10 }, null, { a: 30 }];
+    // null at index 1 omits that row; result re-indexes contiguously.
+    expect(mergeConvertedContent(fallback, override)).toEqual([{ a: 10 }, { a: 30 }]);
+  });
+
+  it('removal sentinel can shrink to empty without losing the explicit-empty distinction', () => {
+    const fallback = [{ a: 1 }];
+    // All present indices nulled out → result is empty, but distinct semantically
+    // from `[]` (which is always an explicit reset). Both yield [] here, but
+    // []  preserves trailing defaults => 0 length, while [null] of length 1 also
+    // signals "remove the only row".
+    expect(mergeConvertedContent(fallback, [null])).toEqual([]);
+  });
+
+  it('per-element merge: object override merges with default[i] per-key', () => {
+    const fallback = [{ a: 1, b: 2, c: 3 }];
+    const override = [{ b: 99 }];
+    // Object-merge per element preserved: a and c fall through from default.
+    expect(mergeConvertedContent(fallback, override)).toEqual([{ a: 1, b: 99, c: 3 }]);
+  });
+
+  it('returns empty array when override is an explicit empty array, regardless of fallback length', () => {
+    const fallback = [{ a: 1 }, { a: 2 }];
+    expect(mergeConvertedContent(fallback, [])).toEqual([]);
   });
 
   it('returns fallback when override is wrong type for an object', () => {
@@ -91,7 +122,9 @@ describe('mergeConvertedContent — catch-all renderer regression (reserved keys
     expect(merged.hero.title).toBe('Saved hero');
     expect(merged.hero.subtitle).toBe('Default sub'); // deep-merge preserved
     expect(merged.hero.cta.label).toBe('Saved');
-    expect(merged.features.items).toEqual([{ title: 'A2' }]); // array follows override length
+    // NEW SEMANTICS: a shorter override no longer truncates trailing defaults;
+    // the unaddressed default item falls through unchanged.
+    expect(merged.features.items).toEqual([{ title: 'A2' }, { title: 'B' }]);
     expect(merged.cta.label).toBe('Default cta'); // section absent in saved → default
   });
 
